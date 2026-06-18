@@ -1,5 +1,6 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v5'; // Tăng lên v5 để đổi vùng nhớ đệm hoàn toàn
+const CACHE_NAME = 'lich-van-trung-pwa-v7'; // Nâng lên v7 để xóa hoàn toàn tệp tin lỗi cũ ra khỏi bộ nhớ trình duyệt
 
+// Danh sách tệp cần tải lưu trữ phục vụ việc chạy ngoại tuyến độc lập
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,60 +8,54 @@ const ASSETS_TO_CACHE = [
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css',
   
-  'https://cdn.skypack.dev/react@18.2.0',
-  'https://cdn.skypack.dev/react-dom@18.2.0/client',
-  'https://cdn.skypack.dev/lucide-react@0.294.0',
-  'https://cdn.skypack.dev/react-toastify@9.1.3',
+  // Toàn bộ hệ sinh thái lõi bản phân phối tĩnh UMD
+  'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+  'https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js',
+  'https://unpkg.com/lucide-react@0.294.0/dist/umd/lucide-react.min.js',
+  'https://unpkg.com/react-toastify@9.1.3/dist/react-toastify.umd.js',
   
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+  // Bộ thư viện tương thích Firebase đám mây
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js'
 ];
 
+// Khởi tạo tiến trình cài đặt Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Đang tải trước toàn bộ tài nguyên cốt lõi (React & Firebase)...');
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => {
-      // Ép Service Worker mới kích hoạt ngay lập tức mà không cần chờ đợi các tab cũ đóng lại
-      return self.skipWaiting();
-    })
+    }).then(() => self.skipWaiting())
   );
 });
 
+// Tiến trình kích hoạt và làm sạch bộ nhớ đệm phiên bản cũ độc hại
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Đang xóa bộ nhớ đệm cũ để giải phóng dung lượng:', cache);
+            console.log('[SW] Đang xóa bộ nhớ đệm kẹt cũ:', cache);
             return caches.delete(cache);
           }
         })
       );
-    }).then(() => {
-      // Giúp Service Worker lập tức kiểm soát toàn bộ các tab đang mở
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
+// Cơ chế phản hồi và định tuyến truy vấn khi chạy Offline
 self.addEventListener('fetch', (event) => {
-  // Chỉ kiểm soát các tài nguyên tải qua giao thức HTTP/HTTPS ngoại vi
   if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // 1. Nếu tài nguyên đã tồn tại trong Cache, trả về ngay lập tức để chạy Offline
       if (cachedResponse) {
         return cachedResponse;
       }
-
-      // 2. Nếu chưa có trong Cache, tiến hành tải từ mạng Internet
       return fetch(event.request).then((networkResponse) => {
-        // Chỉ lưu đệm các phản hồi thành công và tải qua phương thức GET
         if (event.request.method === 'GET' && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -69,11 +64,9 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Trả về phản hồi thân thiện nếu người dùng đang ngoại tuyến hoàn toàn và tài nguyên chưa được lưu đệm
-        return new Response('Kết nối mạng không khả dụng và tài nguyên chưa được lưu ngoại tuyến.', {
-          status: 503,
-          statusText: 'Service Unavailable'
-        });
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
       });
     })
   );
