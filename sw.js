@@ -1,6 +1,5 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v3'; // Đổi v2 thành v3 để ép trình duyệt xóa cache cũ bị lỗi
+const CACHE_NAME = 'lich-van-trung-pwa-v4'; // Đổi thành v4 để ép trình duyệt làm sạch bộ nhớ đệm cũ
 
-// Danh sách tải trước bắt buộc đã chuyển sang CDN ổn định
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -8,17 +7,17 @@ const ASSETS_TO_CACHE = [
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css',
   
-  // Các thư viện cốt lõi chạy ứng dụng (Đồng bộ với importmap mới)
-  'https://unpkg.com/react@18.2.0/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js',
-  'https://unpkg.com/lucide-react@0.294.0/dist/umd/lucide-react.min.js',
-  'https://unpkg.com/react-toastify@9.1.3/dist/react-toastify.umd.js',
+  // Các thư viện cốt lõi chạy ứng dụng (Đã đồng bộ với importmap mới)
+  'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/esm/react.production.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/esm/react-dom-client.production.min.js',
+  'https://jspm.dev/lucide-react@0.294.0',
+  'https://jspm.dev/react-toastify@9.1.3',
   
   // Thư viện Google Firebase phục vụ đồng bộ dữ liệu đám mây
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
-];
+];;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
