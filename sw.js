@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v4'; // Đổi thành v4 để ép trình duyệt làm sạch bộ nhớ đệm cũ
+const CACHE_NAME = 'lich-van-trung-pwa-v5'; // Tăng lên v5 để đổi vùng nhớ đệm hoàn toàn
 
 const ASSETS_TO_CACHE = [
   './',
@@ -7,17 +7,15 @@ const ASSETS_TO_CACHE = [
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css',
   
-  // Các thư viện cốt lõi chạy ứng dụng (Đã đồng bộ với importmap mới)
-  'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/esm/react.production.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/esm/react-dom-client.production.min.js',
-  'https://jspm.dev/lucide-react@0.294.0',
-  'https://jspm.dev/react-toastify@9.1.3',
+  'https://cdn.skypack.dev/react@18.2.0',
+  'https://cdn.skypack.dev/react-dom@18.2.0/client',
+  'https://cdn.skypack.dev/lucide-react@0.294.0',
+  'https://cdn.skypack.dev/react-toastify@9.1.3',
   
-  // Thư viện Google Firebase phục vụ đồng bộ dữ liệu đám mây
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
-];;
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
