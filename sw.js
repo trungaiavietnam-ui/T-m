@@ -1,4 +1,5 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v11'; // Phiên bản v11 dọn dẹp các cache lỗi thời và kích hoạt tính năng thông báo ngầm mới
+// Dòng mới để kích hoạt làm mới toàn bộ hệ thống
+const CACHE_NAME = 'lich-van-trung-pwa-v12';
 
 // Danh sách các tài nguyên tĩnh nội bộ bắt buộc phải nạp đệm thành công để chạy Offline hoàn toàn
 const ASSETS_TO_CACHE = [
