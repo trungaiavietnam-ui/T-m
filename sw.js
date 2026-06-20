@@ -1,4 +1,5 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 để ép trình duyệt làm mới bộ nhớ đệm và cập nhật tính năng tìm kiếm toàn cục
+// Cập nhật toàn vẹn file sw.js (Nâng cấp phiên bản v14 kích hoạt tải lại ngay)
+const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 nhằm ép trình duyệt xóa bộ đệm cũ và giải phóng các tính năng mới nạp đệm
 
 // Danh sách các tài nguyên tĩnh nội bộ bắt buộc phải nạp đệm thành công để chạy Offline hoàn toàn
 const ASSETS_TO_CACHE = [
@@ -25,8 +26,8 @@ const MANUAL_CONFIG = {
     authDomain: "lich-van-trung.firebaseapp.com",
     projectId: "lich-van-trung",
     storageBucket: "lich-van-trung.firebasestorage.app",
-    messagingSenderId: "527946894050",
-    appId: "1:527946894050:web:4f0bf75fb626d70fb3dfa2"
+    messagingSenderId: "527946288674",
+    appId: "1:527946288674:web:86bfb1bbf86e08f237efb9"
 };
 
 if (!firebase.apps.length) {
@@ -34,79 +35,81 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// SỰ KIỆN CÀI ĐẶT: Nạp tất cả tài nguyên cốt lõi vào bộ nhớ đệm ẩn
+// 1. SỰ KIỆN KHỞI TẠO (INSTALL) - TẢI TRƯỚC TÀI NGUYÊN TĨNH VÀO CACHE
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Đang nạp đệm toàn bộ tài nguyên cốt lõi...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => {
-      // Ép Service Worker đang chờ trở thành hoạt động ngay lập tức
-      return self.skipWaiting();
-    })
-  );
-});
-
-// SỰ KIỆN KÍCH HOẠT: Xóa bỏ các bộ đệm phiên bản cũ để giải phóng không gian dung lượng
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Đang xóa bộ đệm cũ:', cache);
-            return caches.delete(cache);
-          }
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            console.log('[Service Worker] Đang thực hiện lưu đệm bắt buộc các tài nguyên cốt lõi...');
+            return cache.addAll(ASSETS_TO_CACHE);
+        }).then(() => {
+            // Ép buộc Service Worker mới được kích hoạt ngay lập tức mà không chờ đợi
+            return self.skipWaiting();
         })
-      );
-    }).then(() => {
-      return self.clients.claim();
-    })
-  );
+    );
 });
 
-// SỰ KIỆN FETCH: Chiến lược tối ưu chạy mạng kết hợp Offline hoàn toàn
+// 2. SỰ KIỆN KÍCH HOẠT (ACTIVATE) - XÓA BỎ BỘ ĐỆM CACHE CŨ LỖI THỜI
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cache) => {
+                    if (cache !== CACHE_NAME) {
+                        console.log('[Service Worker] Đang dọn dẹp bộ đệm phiên bản cũ:', cache);
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        }).then(() => {
+            // Cho phép SW ngay lập tức kiểm soát toàn bộ tất cả các tab đang mở của ứng dụng
+            return self.clients.claim();
+        })
+    );
+});
+
+// 3. SỰ KIỆN LẤY DỮ LIỆU (FETCH) - CHIẾN LƯỢC CACHE FIRST CHO OFFLINE
 self.addEventListener('fetch', (event) => {
-  if (!event.request.url.startsWith('http')) return;
+    if (!event.request.url.startsWith('http')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
 
-      return fetch(event.request).then((networkResponse) => {
-        if (event.request.method === 'GET' && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        return new Response('Kết nối mạng không khả dụng và tài nguyên chưa được lưu đệm.', {
-          status: 503,
-          statusText: 'Service Unavailable'
-        });
-      });
-    })
-  );
+            return fetch(event.request).then((networkResponse) => {
+                if (event.request.method === 'GET' && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                return new Response('Kết nối mạng không khả dụng và tài nguyên chưa được lưu đệm offline.', {
+                    status: 503,
+                    statusText: 'Service Unavailable'
+                });
+            });
+        })
+    );
 });
 
-// SỰ KIỆN BACKGROUND SYNC: Đồng bộ dữ liệu ngầm tự động từ IndexedDB lên Firestore đám mây khi có mạng trở lại
+// 4. SỰ KIỆN ĐỒNG BỘ NỀN (BACKGROUND SYNC) KHI CÓ MẠNG TRỞ LẠI
 self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-cloud-data') {
-        event.waitUntil(processSyncQueue());
+    if (event.tag === 'sync-pwa-data') {
+        console.log('[Sync] Thiết bị đã kết nối mạng trở lại! Đang bắt đầu tiến trình đồng bộ ngầm...');
+        event.waitUntil(processIndexedDBSyncQueue());
     }
 });
 
-// XỬ LÝ HÀNG ĐỢI ĐỒNG BỘ: Đọc dữ liệu từ IndexedDB và đẩy lên Firestore
-async function processSyncQueue() {
+// Tiến hành đọc dữ liệu lưu tạm trong IndexedDB Sync Queue và đẩy dần lên Cloud Firestore
+async function processIndexedDBSyncQueue() {
     try {
         const idb = await new Promise((resolve, reject) => {
-            const request = indexedDB.open('LichVanTrungOfflineDB', 1);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            const req = indexedDB.open('lich_van_trung_sync', 1);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
         });
 
         const tx = idb.transaction('sync_queue', 'readonly');
@@ -118,25 +121,16 @@ async function processSyncQueue() {
 
         if (!records || records.length === 0) return;
 
-        console.log(`[Sync] Phát hiện ${records.length} thao tác cần đồng bộ lên máy chủ đám mây...`);
-
         for (const record of records) {
-            const { id, collection, action, payload } = record;
+            const { id, action, collection, payload } = record;
             try {
-                const targetRef = db.collection(collection);
-
+                const targetRef = db.collection('users_sync_fallback').doc(collection);
                 if (action === 'add') {
-                    const firestoreAdd = { ...payload };
-                    if (firestoreAdd.deadlineTime) {
-                        firestoreAdd.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreAdd.deadlineTime.seconds * 1000);
-                    }
-                    if (firestoreAdd.date) {
-                        firestoreAdd.date = firebase.firestore.Timestamp.fromMillis(firestoreAdd.date.seconds * 1000);
-                    }
-                    await targetRef.doc(payload.id).set(firestoreAdd);
+                    await targetRef.collection('items').add(payload);
                 } else if (action === 'update') {
-                    const docToUpdate = targetRef.doc(payload.id);
+                    const docToUpdate = targetRef.collection('items').doc(payload.id);
                     const firestoreUpdate = { ...payload };
+                    delete firestoreUpdate.id;
                     if (firestoreUpdate.deadlineTime) {
                         firestoreUpdate.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.deadlineTime.seconds * 1000);
                     }
@@ -145,11 +139,10 @@ async function processSyncQueue() {
                     }
                     await docToUpdate.update(firestoreUpdate);
                 } else if (action === 'delete') {
-                    const docToDelete = targetRef.doc(payload.id);
+                    const docToDelete = targetRef.collection('items').doc(payload.id);
                     await docToDelete.delete();
                 } else if (action === 'set') {
-                    const firestoreSet = { ...payload };
-                    await targetRef.set(firestoreSet, { merge: true });
+                    await targetRef.set(payload, { merge: true });
                 }
 
                 const deleteTransaction = idb.transaction('sync_queue', 'readwrite');
