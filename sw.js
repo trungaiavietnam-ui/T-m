@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 nhằm giải phóng cache cũ và kích hoạt giao diện Tìm Kiếm Mới
+const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 để ép trình duyệt làm mới bộ nhớ đệm và cập nhật tính năng tìm kiếm toàn cục
 
 // Danh sách các tài nguyên tĩnh nội bộ bắt buộc phải nạp đệm thành công để chạy Offline hoàn toàn
 const ASSETS_TO_CACHE = [
@@ -25,8 +25,8 @@ const MANUAL_CONFIG = {
     authDomain: "lich-van-trung.firebaseapp.com",
     projectId: "lich-van-trung",
     storageBucket: "lich-van-trung.firebasestorage.app",
-    messagingSenderId: "527946115867",
-    appId: "1:527946115867:web:7f6d2f9bf8a8ccad22ae0a"
+    messagingSenderId: "527946894050",
+    appId: "1:527946894050:web:4f0bf75fb626d70fb3dfa2"
 };
 
 if (!firebase.apps.length) {
@@ -34,25 +34,27 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// 1. Sự kiện cài đặt Service Worker (Install Event)
+// SỰ KIỆN CÀI ĐẶT: Nạp tất cả tài nguyên cốt lõi vào bộ nhớ đệm ẩn
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Đang nạp đệm toàn bộ tài nguyên cốt lõi...');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => {
+      // Ép Service Worker đang chờ trở thành hoạt động ngay lập tức
       return self.skipWaiting();
     })
   );
 });
 
-// 2. Sự kiện kích hoạt Service Worker (Activate Event) - Giải phóng tài nguyên cũ
+// SỰ KIỆN KÍCH HOẠT: Xóa bỏ các bộ đệm phiên bản cũ để giải phóng không gian dung lượng
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Đang xóa bỏ bộ nhớ đệm lỗi thời hoặc phiên bản cũ:', cache);
+            console.log('[Service Worker] Đang xóa bộ đệm cũ:', cache);
             return caches.delete(cache);
           }
         })
@@ -63,7 +65,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Sự kiện kiểm soát tải tài nguyên mạng (Fetch Event) để chạy Offline
+// SỰ KIỆN FETCH: Chiến lược tối ưu chạy mạng kết hợp Offline hoàn toàn
 self.addEventListener('fetch', (event) => {
   if (!event.request.url.startsWith('http')) return;
 
@@ -83,91 +85,71 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch(() => {
         return new Response('Kết nối mạng không khả dụng và tài nguyên chưa được lưu đệm.', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' })
+          status: 503,
+          statusText: 'Service Unavailable'
         });
       });
     })
   );
 });
 
-// 4. Sự kiện đồng bộ hóa ngầm trong nền (Background Sync Event)
+// SỰ KIỆN BACKGROUND SYNC: Đồng bộ dữ liệu ngầm tự động từ IndexedDB lên Firestore đám mây khi có mạng trở lại
 self.addEventListener('sync', (event) => {
     if (event.tag === 'sync-cloud-data') {
-        event.waitUntil(syncOfflineDataWithCloud());
+        event.waitUntil(processSyncQueue());
     }
 });
 
-// Mở cơ sở dữ liệu IndexedDB tương thích
-function openIndexedDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('lich_van_trung_db', 2);
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
-// Logic xử lý tiến trình đồng bộ ngầm dữ liệu từ IndexedDB lên Firestore đám mây công cộng
-async function syncOfflineDataWithCloud() {
+// XỬ LÝ HÀNG ĐỢI ĐỒNG BỘ: Đọc dữ liệu từ IndexedDB và đẩy lên Firestore
+async function processSyncQueue() {
     try {
-        const idb = await openIndexedDB();
-        const readTransaction = idb.transaction('sync_queue', 'readonly');
-        const store = readTransaction.objectStore('sync_queue');
-        
-        const records = await new Promise((resolve, reject) => {
+        const idb = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('LichVanTrungOfflineDB', 1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        const tx = idb.transaction('sync_queue', 'readonly');
+        const store = tx.objectStore('sync_queue');
+        const records = await new Promise((resolve) => {
             const req = store.getAll();
             req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
         });
 
         if (!records || records.length === 0) return;
 
-        console.log(`[Sync] Tìm thấy ${records.length} tác vụ ngoại tuyến cần đồng bộ.`);
+        console.log(`[Sync] Phát hiện ${records.length} thao tác cần đồng bộ lên máy chủ đám mây...`);
 
         for (const record of records) {
-            const { id, action, collection, payload } = record;
-            
+            const { id, collection, action, payload } = record;
             try {
-                let targetRef;
-                const userUid = payload.uid || 'anon';
-
-                if (collection === 'timetable') {
-                    targetRef = db.collection('users').doc(userUid).collection('timetable');
-                } else {
-                    targetRef = db.collection('users').doc(userUid).collection(collection);
-                }
+                const targetRef = db.collection(collection);
 
                 if (action === 'add') {
-                    const firestorePayload = { ...payload };
-                    delete firestorePayload.id;
-                    delete firestorePayload.uid; 
-
-                    if (firestorePayload.deadlineTime) {
-                        firestorePayload.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestorePayload.deadlineTime.seconds * 1000);
+                    const firestoreAdd = { ...payload };
+                    if (firestoreAdd.deadlineTime) {
+                        firestoreAdd.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreAdd.deadlineTime.seconds * 1000);
                     }
-                    if (firestorePayload.date) {
-                        firestorePayload.date = firebase.firestore.Timestamp.fromMillis(firestorePayload.date.seconds * 1000);
+                    if (firestoreAdd.date) {
+                        firestoreAdd.date = firebase.firestore.Timestamp.fromMillis(firestoreAdd.date.seconds * 1000);
                     }
-                    await targetRef.doc(payload.id).set(firestorePayload);
+                    await targetRef.doc(payload.id).set(firestoreAdd);
                 } else if (action === 'update') {
+                    const docToUpdate = targetRef.doc(payload.id);
                     const firestoreUpdate = { ...payload };
-                    delete firestoreUpdate.id;
-                    delete firestoreUpdate.uid;
-
                     if (firestoreUpdate.deadlineTime) {
                         firestoreUpdate.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.deadlineTime.seconds * 1000);
                     }
                     if (firestoreUpdate.date) {
                         firestoreUpdate.date = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.date.seconds * 1000);
                     }
-                    await targetRef.doc(payload.id).update(firestoreUpdate);
+                    await docToUpdate.update(firestoreUpdate);
                 } else if (action === 'delete') {
-                    await targetRef.doc(payload.id).delete();
+                    const docToDelete = targetRef.doc(payload.id);
+                    await docToDelete.delete();
                 } else if (action === 'set') {
                     const firestoreSet = { ...payload };
-                    delete firestoreSet.uid;
-                    await targetRef.doc('weekly').set(firestoreSet, { merge: true });
+                    await targetRef.set(firestoreSet, { merge: true });
                 }
 
                 const deleteTransaction = idb.transaction('sync_queue', 'readwrite');
