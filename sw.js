@@ -1,6 +1,5 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 để ép trình duyệt làm mới bộ nhớ đệm và cập nhật tính năng tìm kiếm toàn cục
+const CACHE_NAME = 'lich-van-trung-pwa-v15'; // Nâng lên v15 để làm mới trình duyệt hoàn toàn
 
-// Danh sách các tài nguyên tĩnh nội bộ bắt buộc phải nạp đệm thành công để chạy Offline hoàn toàn
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -15,11 +14,9 @@ const ASSETS_TO_CACHE = [
   './libs/react-toastify.js'
 ];
 
-// Nhập trực tiếp các module Firebase cần thiết cho Background Sync trong SW
 importScripts('./libs/firebase-app.js');
 importScripts('./libs/firebase-firestore.js');
 
-// Khởi chạy ứng dụng Firebase ngầm trong Service Worker để xử lý đồng bộ
 const MANUAL_CONFIG = {
     apiKey: "AIzaSyBEgbs4brFEVbBhf7KaEhw8FekAJTUBFZ0",
     authDomain: "lich-van-trung.firebaseapp.com",
@@ -34,20 +31,17 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// SỰ KIỆN CÀI ĐẶT: Nạp tất cả tài nguyên cốt lõi vào bộ nhớ đệm ẩn
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Đang nạp đệm toàn bộ tài nguyên cốt lõi...');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => {
-      // Ép Service Worker đang chờ trở thành hoạt động ngay lập tức
       return self.skipWaiting();
     })
   );
 });
 
-// SỰ KIỆN KÍCH HOẠT: Xóa bỏ các bộ đệm phiên bản cũ để giải phóng không gian dung lượng
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -65,7 +59,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// SỰ KIỆN FETCH: Chiến lược tối ưu chạy mạng kết hợp Offline hoàn toàn
 self.addEventListener('fetch', (event) => {
   if (!event.request.url.startsWith('http')) return;
 
@@ -93,14 +86,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// SỰ KIỆN BACKGROUND SYNC: Đồng bộ dữ liệu ngầm tự động từ IndexedDB lên Firestore đám mây khi có mạng trở lại
 self.addEventListener('sync', (event) => {
     if (event.tag === 'sync-cloud-data') {
         event.waitUntil(processSyncQueue());
     }
 });
 
-// XỬ LÝ HÀNG ĐỢI ĐỒNG BỘ: Đọc dữ liệu từ IndexedDB và đẩy lên Firestore
 async function processSyncQueue() {
     try {
         const idb = await new Promise((resolve, reject) => {
@@ -118,7 +109,7 @@ async function processSyncQueue() {
 
         if (!records || records.length === 0) return;
 
-        console.log(`[Sync] Phát hiện ${records.length} thao tác cần đồng bộ lên máy chủ đám mây...`);
+        console.log(`[Sync] Phát hiện ${records.length} thao tác cần đồng bộ...`);
 
         for (const record of records) {
             const { id, collection, action, payload } = record;
@@ -126,30 +117,12 @@ async function processSyncQueue() {
                 const targetRef = db.collection(collection);
 
                 if (action === 'add') {
-                    const firestoreAdd = { ...payload };
-                    if (firestoreAdd.deadlineTime) {
-                        firestoreAdd.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreAdd.deadlineTime.seconds * 1000);
-                    }
-                    if (firestoreAdd.date) {
-                        firestoreAdd.date = firebase.firestore.Timestamp.fromMillis(firestoreAdd.date.seconds * 1000);
-                    }
-                    await targetRef.doc(payload.id).set(firestoreAdd);
+                    // Đẩy chuỗi dữ liệu gốc lên Firestore một cách an toàn mà không ép kiểu Timestamp lỗi
+                    await targetRef.doc(payload.id).set(payload);
                 } else if (action === 'update') {
-                    const docToUpdate = targetRef.doc(payload.id);
-                    const firestoreUpdate = { ...payload };
-                    if (firestoreUpdate.deadlineTime) {
-                        firestoreUpdate.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.deadlineTime.seconds * 1000);
-                    }
-                    if (firestoreUpdate.date) {
-                        firestoreUpdate.date = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.date.seconds * 1000);
-                    }
-                    await docToUpdate.update(firestoreUpdate);
+                    await targetRef.doc(payload.id).update(payload);
                 } else if (action === 'delete') {
-                    const docToDelete = targetRef.doc(payload.id);
-                    await docToDelete.delete();
-                } else if (action === 'set') {
-                    const firestoreSet = { ...payload };
-                    await targetRef.set(firestoreSet, { merge: true });
+                    await targetRef.doc(payload.id).delete();
                 }
 
                 const deleteTransaction = idb.transaction('sync_queue', 'readwrite');
@@ -159,12 +132,12 @@ async function processSyncQueue() {
                     req.onsuccess = () => resolve();
                     req.onerror = () => reject(req.error);
                 });
-                console.log(`[Sync] Đã đồng bộ & xóa bản ghi IndexedDB ID: ${id}`);
+                console.log(`[Sync] Đã đồng bộ thành công ID: ${id}`);
             } catch (err) {
-                console.error('[Sync] Lỗi đồng bộ hóa bản ghi:', record, err);
+                console.error('[Sync] Lỗi tại bản ghi:', record, err);
             }
         }
     } catch (e) {
-        console.error('[Sync] Lỗi tiến trình đồng bộ ngầm:', e);
+        console.error('[Sync] Lỗi tiến trình đồng bộ:', e);
     }
 }
