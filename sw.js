@@ -1,7 +1,6 @@
-// Tên kho bộ nhớ đệm mới - Thay đổi phiên bản để ép toàn bộ thiết bị cập nhật
-const CACHE_NAME = 'lich-van-trung-pwa-v4';
+// Tên kho bộ nhớ đệm mới - Tăng phiên bản lên v5 để buộc thiết bị xóa cache cũ lỗi
+const CACHE_NAME = 'lich-van-trung-pwa-v5';
 
-// Danh sách tài nguyên cốt lõi bắt buộc nạp để chạy Offline-First ổn định
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -18,26 +17,22 @@ const ASSETS_TO_CACHE = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 ];
 
-// 1. Cài đặt Service Worker và lưu trữ các thư viện CDN
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] Đang tải trước tài nguyên hệ thống...');
         return cache.addAll(ASSETS_TO_CACHE);
       })
       .then(() => self.skipWaiting())
   );
 });
 
-// 2. Kích hoạt và dọn dẹp sạch sẽ toàn bộ Cache cũ gây lỗi trắng trang
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Đang dọn kho dữ liệu cũ xung đột:', cache);
             return caches.delete(cache);
           }
         })
@@ -46,15 +41,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Cơ chế Đánh chặn thông minh: Network-First (Ưu tiên mạng, lỗi mới dùng cache)
-// Tránh lỗi trắng trang do Babel Standalone không tải được mã nguồn
 self.addEventListener('fetch', (event) => {
   if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Nếu lấy dữ liệu trực tuyến thành công, cập nhật ngay vào kho lưu trữ
         if (event.request.method === 'GET' && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -64,19 +56,12 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // Khi mất mạng hoàn toàn, tìm kiếm trong kho đệm Offline
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          
-          // Nếu là điều hướng trang chính, nạp lại index.html
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
-          
-          return new Response('Hệ thống đang chạy Offline. Tài nguyên mạng chưa được đồng bộ.', {
-            status: 503,
-            statusText: 'Service Unavailable'
-          });
+          return new Response('Hệ thống đang chạy Offline.', { status: 503 });
         });
       })
   );
