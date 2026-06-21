@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lịch vạn niên - Văn Trung</title>
     
-    <!-- START: Cấu hình Progressive Web App (PWA) -->
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lịch Văn Trung">
-    <!-- END: Cấu hình Progressive Web App (PWA) -->
 
-    <!-- ICON ỨNG DỤNG AN TOÀN -->
     <link id="favicon-link" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='20' width='80' height='70' rx='15' fill='white' stroke='%23DC2626' stroke-width='5'/><path d='M10 35h80' stroke='%23DC2626' stroke-width='5'/><text x='50' y='75' font-size='40' text-anchor='middle' fill='%23DC2626' font-family='sans-serif' font-weight='bold'>31</text></svg>">
 
-    <!-- KHỐI IMPORTMAP ĐỒNG BỘ CHỐNG LỖI ĐỊNH NGHĨA -->
     <script type="importmap">
     {
       "imports": {
@@ -48,7 +44,6 @@
 
     <div id="root"></div>
 
-    <!-- KHỐI BIÊN DỊCH JAVASCRIPT REACT CHUẨN XÁC CHỐNG LỖI WHITE-SCREEN -->
     <script type="babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
@@ -57,10 +52,9 @@
         } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getAuth } from 'firebase/auth';
-        import { getFirestore } from 'firestore'; // Nhập từ cdn importmap đã định nghĩa
+        import { getFirestore } from 'firebase/firebase-firestore'; 
         import { ToastContainer, toast } from 'react-toastify';
 
-        // --- HỆ THỐNG KINH PHÁP CÚ TRÍ TUỆ ---
         const PHAP_CU_LIST = [
             { id: 1, text: "Ý dẫn đầu các pháp, ý làm chủ, ý tạo. Nếu với ý ô nhiễm, nói năng hay hành động, khổ não bước theo sau, như xe chân vật kéo." },
             { id: 2, text: "Ý dẫn đầu các pháp, ý làm chủ, ý tạo. Nếu với ý thanh tịnh, nói năng hay hành động, an lạc bước theo sau, như bóng không rời hình." },
@@ -69,7 +63,6 @@
             { id: 5, text: "Với hận diệt hận thù, đời này không có được. Từ bi diệt hận thù, là định luật ngàn thu." }
         ];
 
-        // --- THUẬT TOÁN ĐỔI LỊCH ÂM DƯƠNG 2026 ĐƠN GIẢN ---
         const AM_LICH_2026 = {
             1: { offset: -12, name: "Ất Sửu" }, 2: { offset: -12, name: "Bính Dần" },
             3: { offset: -11, name: "Đinh Mão" }, 4: { offset: -11, name: "Mậu Thìn" },
@@ -88,13 +81,12 @@
             if (ngayAm <= 0) {
                 const prevMonthDays = new Date(nam, thang - 1, 0).getDate();
                 const prevCfg = AM_LICH_2026[thang - 1] || { offset: -12 };
-                ngayAm = day + prevMonthDays + prevCfg.offset;
+                ngayAm = ngay + prevMonthDays + prevCfg.offset; 
                 thangAm = thang - 1 || 12;
             }
             return { ngayAm, thangAm, chiMonth: MonthCfg.name };
         }
 
-        // --- KHỞI TẠO MANIFEST ĐỘNG TRÁNH LỖI PHÂN TÍCH CÚ PHÁP ---
         try {
             const manifestObj = {
                 "name": "Lịch Vạn Niên - Văn Trung",
@@ -114,12 +106,10 @@
             document.head.appendChild(mLink);
         } catch(err) { console.log("Manifest Dynamic Ignored"); }
 
-        // --- CẤU PHẦN CHÍNH CỦA ỨNG DỤNG ---
         const App = () => {
             const [currentDate, setCurrentDate] = useState(new Date());
             const [selectedDate, setSelectedDate] = useState(new Date());
             const [todos, setTodos] = useState([]);
-            const [notes, setNotes] = useState([]);
             const [events, setEvents] = useState([]);
             
             const [globalSearchQuery, setGlobalSearchQuery] = useState('');
@@ -135,9 +125,6 @@
                     { id: 'ev1', title: 'Họp Hội đồng Sư phạm đầu tuần', date: '2026-06-22', time: '07:30' },
                     { id: 'ev2', title: 'Nộp báo cáo rà soát văn bản GD', date: '2026-06-25', time: '11:00' }
                 ]);
-                setNotes([
-                    { id: 'nt1', title: 'Ràng buộc xếp TKB bằng FET', content: 'Cần cấu hình tránh trùng tiết và giới hạn số tiết buổi sáng tối đa.' }
-                ]);
             }, []);
 
             useEffect(() => {
@@ -150,11 +137,10 @@
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, []);
 
-            // ĐĂNG KÝ SERVICE WORKER TƯƠNG ĐỐI TRÊN GITHUB PAGES
             useEffect(() => {
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('./sw.js?v=8')
+                        navigator.serviceWorker.register('./sw.js?v=10')
                             .then(reg => console.log('SW Active:', reg.scope))
                             .catch(err => console.error('SW Error:', err));
                     });
@@ -180,7 +166,7 @@
 
             const globalSearchResults = useMemo(() => {
                 const query = clearTones(globalSearchQuery.trim());
-                if (!query) return { total: 0, todos: [], events: [], notes: [] };
+                if (!query) return { total: 0, todos: [], events: [] };
 
                 const matchedTodos = todos.filter(t => clearTones(t.title).includes(query));
                 const matchedEvents = events.filter(e => clearTones(e.title).includes(query));
@@ -215,7 +201,6 @@
             return (
                 <div className="min-h-screen bg-slate-100 flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-slate-200">
                     
-                    {/* TOP HEADER */}
                     <header className="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -223,7 +208,6 @@
                                 <h1 className="font-bold text-sm tracking-tight">LỊCH VẠN NIÊN KHỐI GD</h1>
                             </div>
 
-                            {/* TÌM KIẾM TOÀN CỤC */}
                             <div ref={searchContainerRef} className="flex-1 relative">
                                 <div className="relative">
                                     <Search className="w-4 h-4 text-blue-200 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -260,10 +244,7 @@
                         </div>
                     </header>
 
-                    {/* NỘI DUNG CHÍNH */}
                     <main className="flex-1 p-3 space-y-4 pb-24">
-                        
-                        {/* KHỐI KINH PHÁP CÚ */}
                         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-xs">
                             <div className="flex items-center gap-1 text-amber-700 font-bold text-xs mb-1">
                                 <Sparkles className="w-4 h-4 text-amber-500" /> LỜI VÀNG PHÁP CÚ HÔM NAY (Bài số {phapCuHomNay.id})
@@ -271,7 +252,6 @@
                             <p className="text-xs text-slate-700 italic leading-relaxed">"{phapCuHomNay.text}"</p>
                         </div>
 
-                        {/* ĐIỀU HƯỚNG THÁNG LỊCH */}
                         <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-xs border border-slate-200/60">
                             <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg">
                                 <ChevronLeft className="w-5 h-5 text-slate-600" />
@@ -282,10 +262,9 @@
                             </button>
                         </div>
 
-                        {/* LƯỚI Ô LỊCH VẠN NIÊN */}
                         <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
                             <div className="grid grid-cols-7 text-center font-bold text-[11px] text-slate-400 mb-2">
-                                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span class="text-rose-500">CN</span>
+                                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span className="text-rose-500">CN</span>
                             </div>
                             <div className="grid grid-cols-7 gap-1.5">
                                 {Array(adjustedStartIdx).fill(null).map((_, idx) => <div key={`empty-${idx}`}></div>)}
@@ -320,7 +299,6 @@
                             </div>
                         </div>
 
-                        {/* QUẢN LÝ VIỆC CẦN LÀM */}
                         <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-3">
                             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                 <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide flex items-center gap-1">
@@ -371,7 +349,6 @@
                         </div>
                     </main>
 
-                    {/* THANH ĐIỀU HƯỚNG CHÂN TRANG */}
                     <nav className="bg-white border-t border-slate-200 fixed bottom-0 max-w-md w-full h-14 flex justify-around items-center z-40 shadow-lg">
                         <button className="flex flex-col items-center gap-0.5 text-blue-600">
                             <CalendarIcon className="w-4 h-4" />
