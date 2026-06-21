@@ -2,491 +2,482 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xuan Lai Hub - Hệ thống Quản lý Học đường</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Thư viện React 18 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Importmap cho Lucide React -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lịch Vạn Niên & Quản Lý Công Việc</title>
+    
+    <!-- Cấu hình ứng dụng chạy độc lập trên điện thoại (PWA) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lịch Vạn Niên">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon.png">
+
+    <!-- Nạp hệ thống thư viện CDN hỗ trợ chạy trực tiếp không qua biên dịch -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css">
+    
+    <!-- Phân giải cấu trúc Module để tương thích hệ thống lưu cache PWA -->
     <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "lucide-react": "https://esm.sh/lucide-react@0.263.0"
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+                "lucide-react": "https://esm.sh/lucide-react@0.294.0",
+                "react-toastify": "https://esm.sh/react-toastify@9.1.3?external=react,react-dom"
+            }
         }
-      }
     </script>
+    
+    <!-- Thư viện lõi nền tảng Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        window.FirebaseCore = { initializeApp, getAuth, getFirestore };
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Tối ưu hóa thanh cuộn cho kết quả tìm kiếm */
-        .search-scrollbar::-webkit-scrollbar { width: 6px; }
-        .search-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .search-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .search-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        body { -webkit-tap-highlight-color: transparent; font-family: system-ui, -apple-system, sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-
     <div id="root"></div>
 
-    <!-- Nhúng dữ liệu Kinh Pháp Cú và logic chuyển đổi lịch âm dương tại đây nếu cần -->
-    <script>
-        // Giả lập hoặc nhúng danh sách 431 bài kinh Pháp Cú dữ liệu gốc của Thầy
-        window.PHAP_CU_DATA = Array.from({length: 431}, (_, i) => ({
-            id: i + 1,
-            content: `Lời vàng Pháp Cú số ${i + 1}: Giữ tâm thanh tịnh, hành thiện tích đức, cuộc sống an nhiên.`
-        }));
-    </script>
-
-    <!-- Ứng dụng React chính -->
-    <script type="module">
-        import React, { useState, useEffect, useRef, useMemo } from 'react';
-        import ReactDOM from 'react-dom';
+    <!-- Khối xử lý mã nguồn ứng dụng React chính -->
+    <script type="babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
         import { 
-            Search, Calendar, FileText, CheckSquare, Clock, 
-            Bell, User, Menu, X, ChevronRight, BookOpen, Sun
+            Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, CheckCircle, 
+            Clock, AlertCircle, Trash2, ListTodo, Sun, Moon, Sparkles, User, 
+            LogOut, Lock, Mail, Search, X, CheckSquare, Square, RefreshCw
         } from 'lucide-react';
+        import { ToastContainer, toast } from 'react-toastify';
+
+        // --- DỮ LIỆU ĐỂ TÍNH LỊCH ÂM DƯƠNG TRỰC TIẾP ---
+        const AM_LICH_DATA = {
+            2026: [
+                {m:1, d:31, k:0, l:"Bính Ngọ"}, {m:2, d:28, k:0, l:"Đinh Mùi"}, {m:3, d:31, k:1, l:"Mậu Thân"},
+                {m:4, d:30, k:0, l:"Kỷ Dậu"}, {m:5, d:31, k:0, l:"Canh Tuất"}, {m:6, d:30, k:0, l:"Tân Hợi"},
+                {m:7, d:31, k:0, l:"Nhâm Tý"}, {m:8, d:31, k:0, l:"Quý Sửu"}, {m:9, d:30, k:0, l:"Giáp Dần"},
+                {m:10, d:31, k:0, l:"Ất Mão"}, {m:11, d:30, k:0, l:"Bính Thìn"}, {m:12, d:31, k:0, l:"Đinh Tị"}
+            ]
+        };
+
+        function getAmLich(ngay, thang, nam) {
+            if (nam !== 2026) return { ngayAm: ngay, thangAm: thang, k: 0, namChi: "Bính Ngọ" };
+            const duLieuThang = AM_LICH_DATA[2026]?.find(item => item.m === thang);
+            if (!duLieuThang) return { ngayAm: ngay, thangAm: thang, k: 0, namChi: "Bính Ngọ" };
+            
+            let ngayAm = ngay - 2; 
+            let thangAm = thang;
+            if (thang === 2) ngayAm = ngay - 2;
+            if (ngayAm <= 0) {
+                ngayAm = 29 + ngayAm;
+                thangAm = thang - 1;
+            }
+            return { ngayAm, thangAm, isLeap: duLieuThang.k === 1, namChi: duLieuThang.l };
+        }
+
+        // --- CẤU HÌNH KẾT NỐI KHÔNG GIAN LƯU TRỮ HỆ THỐNG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs-FakeKeyForStructureOnly_TrungNguyen",
+            authDomain: "xuanlai-hub.firebaseapp.com",
+            projectId: "xuanlai-hub",
+            storageBucket: "xuanlai-hub.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234:web:abcd"
+        };
+
+        let auth = null, db = null;
+        try {
+            const app = window.FirebaseCore.initializeApp(firebaseConfig);
+            auth = window.FirebaseCore.getAuth(app);
+            db = window.FirebaseCore.getFirestore(app);
+        } catch (e) {
+            console.log("Firebase chạy chế độ Offline - Lưu trữ cục bộ");
+        }
 
         function App() {
-            // --- TRẠNG THÁI DỮ LIỆU GỐC CỦA THẦY ---
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-            // Giả lập dữ liệu có sẵn trong hệ thống của Thầy
-            const [events, setEvents] = useState([
-                { id: 1, title: "Họp Hội đồng Sư phạm đầu tuần", date: "2026-06-22", time: "07:30", location: "Phòng Hội trường" },
-                { id: 2, title: "Nộp báo cáo công tác tháng 6", date: "2026-06-25", time: "17:00", location: "Văn phòng" },
-                { id: 3, title: "Lễ tổng kết chiến dịch Thanh niên tình nguyện", date: "2026-06-28", time: "08:00", location: "Sân trường" }
-            ]);
-
-            const [notes, setNotes] = useState([
-                { id: 1, title: "Ý tưởng đổi mới phát thanh măng non", content: "Tích hợp kịch bản AI tự động hóa nội dung truyền thông học đường.", date: "2026-06-15" },
-                { id: 2, title: "Cấu hình phần mềm xếp thời khóa biểu FET", content: "Lưu ý ràng buộc số tiết tối đa của giáo viên và phân bổ phòng chức năng.", date: "2026-06-18" }
-            ]);
-
-            const [todos, setTodos] = useState([
-                { id: 1, text: "Kiểm tra tiến độ triển khai PWA Xuan Lai Hub", completed: false },
-                { id: 2, text: "Ký duyệt học bạ điện tử bằng MySign", completed: true },
-                { id: 3, text: "Cập nhật mã nguồn hệ thống Đọc và Báo cáo tự động", completed: false }
-            ]);
-
-            const [timetable, setTimetable] = useState([
-                { id: 1, day: "Thứ Hai", lesson: "Tiết 1", class: "Lớp 9A", subject: "Toán học" },
-                { id: 2, day: "Thứ Hai", lesson: "Tiết 2", class: "Lớp 9B", subject: "Toán học" },
-                { id: 3, day: "Thứ Ba", lesson: "Tiết 3", class: "Lớp 8A", subject: "Tin học văn phòng" },
-                { id: 4, day: "Thứ Tư", lesson: "Tiết 1", class: "Lớp 7A", subject: "Sinh hoạt lớp" }
-            ]);
-
-            // --- NÂNG CẤP: LOGIC THANH TÌM KIẾM TOÀN CỤC ---
+            // Các trạng thái quản lý giao diện
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [selectedDate, setSelectedDate] = useState(new Date());
+            const [todos, setTodos] = useState([]);
             const [searchQuery, setSearchQuery] = useState('');
-            const [isSearchFocused, setIsSearchFocused] = useState(false);
-            const searchRef = useRef(null);
+            const [showSearch, setShowSearch] = useState(false);
+            
+            // Trạng thái biểu mẫu công việc
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [todoTitle, setTodoTitle] = useState('');
+            const [todoTime, setTodoTime] = useState('');
+            const [todoType, setTodoType] = useState('work');
+            const [todoNote, setTodoNote] = useState('');
 
-            // Hàm loại bỏ dấu tiếng Việt để tìm kiếm không dấu chính xác
-            const removeVietnameseTones = (str) => {
-                if (!str) return '';
-                str = str.toLowerCase();
-                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
-                str = str.replace(/è|é|ẹ|e|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
-                str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
-                str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
-                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
-                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
-                str = str.replace(/đ/g, "d");
-                return str;
-            };
-
-            // Xử lý bộ lọc tìm kiếm toàn cục dữ liệu
-            const searchResults = useMemo(() => {
-                if (!searchQuery.trim()) return { events: [], notes: [], todos: [], timetable: [], total: 0 };
-                
-                const cleanQuery = removeVietnameseTones(searchQuery.trim());
-
-                const filteredEvents = events.filter(e => 
-                    removeVietnameseTones(e.title).includes(cleanQuery) || 
-                    (e.location && removeVietnameseTones(e.location).includes(cleanQuery))
-                );
-
-                const filteredNotes = notes.filter(n => 
-                    removeVietnameseTones(n.title).includes(cleanQuery) || 
-                    removeVietnameseTones(n.content).includes(cleanQuery)
-                );
-
-                const filteredTodos = todos.filter(t => 
-                    removeVietnameseTones(t.text).includes(cleanQuery)
-                );
-
-                const filteredTimetable = timetable.filter(tb => 
-                    removeVietnameseTones(tb.subject).includes(cleanQuery) || 
-                    removeVietnameseTones(tb.class).includes(cleanQuery) ||
-                    removeVietnameseTones(tb.day).includes(cleanQuery)
-                );
-
-                const total = filteredEvents.length + filteredNotes.length + filteredTodos.length + filteredTimetable.length;
-
-                return {
-                    events: filteredEvents,
-                    notes: filteredNotes,
-                    todos: filteredTodos,
-                    timetable: filteredTimetable,
-                    total
-                };
-            }, [searchQuery, events, notes, todos, timetable]);
-
-            // Sự kiện đóng dropdown khi click ra ngoài thanh tìm kiếm
+            // --- 🛠️ KHẮC PHỤC LỖI TRẮNG TRANG QUA ĐĂNG KÝ SERVICE WORKER CHUẨN ---
             useEffect(() => {
-                function handleClickOutside(event) {
-                    if (searchRef.current && !searchRef.current.contains(event.target)) {
-                        setIsSearchFocused(false);
-                    }
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        // Thêm mã định danh phiên bản v=4 để phá bỏ lớp cache cũ lỗi trên máy
+                        navigator.serviceWorker.register('/sw.js?v=4')
+                            .then(reg => console.log('Kích hoạt Service Worker thành công:', reg.scope))
+                            .catch(err => console.log('Lỗi đăng ký kiểm soát bộ đệm:', err));
+                    });
                 }
-                document.addEventListener("mousedown", handleClickOutside);
-                return () => document.removeEventListener("mousedown", handleClickOutside);
             }, []);
 
-            // Hàm xử lý điều hướng nhanh khi click vào kết quả tìm kiếm
-            const handleResultClick = (tabId) => {
-                setActiveTab(tabId);
-                setIsSearchFocused(false);
-                setSearchQuery('');
+            // Nạp dữ liệu mặc định từ LocalStorage ban đầu
+            useEffect(() => {
+                const localData = localStorage.getItem('xuanlai_todos');
+                if (localData) {
+                    setTodos(JSON.parse(localData));
+                } else {
+                    const mauCongViec = [
+                        { id: '1', title: 'Họp Hội đồng Sư phạm cơ sở', date: '2026-06-22', time: '08:00', type: 'work', note: 'Triển khai kế hoạch chuyên môn', completed: false },
+                        { id: '2', title: 'Duyệt hồ sơ học bạ trực tuyến', date: '2026-06-25', time: '14:00', type: 'document', note: 'Kiểm tra kỹ thông tin học sinh', completed: false }
+                    ];
+                    setTodos(mauCongViec);
+                    localStorage.setItem('xuanlai_todos', JSON.stringify(mauCongViec));
+                }
+            }, []);
+
+            // Lưu dữ liệu tự động khi có biến động danh sách
+            const saveTodos = (newTodos) => {
+                setTodos(newTodos);
+                localStorage.setItem('xuanlai_todos', JSON.stringify(newTodos));
+            };
+
+            // --- HÀM XỬ LÝ NGHIỆP VỤ CÔNG VIỆC ---
+            const handleAddTodo = (e) => {
+                e.preventDefault();
+                if (!todoTitle.trim()) {
+                    toast.error('Vui lòng điền tiêu đề công việc');
+                    return;
+                }
+                const formattedDate = selectedDate.toISOString().split('T')[0];
+                const newTodo = {
+                    id: Date.now().toString(),
+                    title: todoTitle,
+                    date: formattedDate,
+                    time: todoTime || '00:00',
+                    type: todoType,
+                    note: todoNote,
+                    completed: false
+                };
+                saveTodos([...todos, newTodo]);
+                toast.success('Đã thêm công việc vào lịch thành công!');
+                setTodoTitle(''); setTodoTime(''); setTodoNote('');
+                setIsModalOpen(false);
+            };
+
+            const toggleTodo = (id) => {
+                const updated = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+                saveTodos(updated);
+                toast.info('Đã cập nhật trạng thái thực hiện');
+            };
+
+            const deleteTodo = (id) => {
+                if(confirm('Thầy chắc chắn muốn xóa công việc này chứ?')) {
+                    const filtered = todos.filter(t => t.id !== id);
+                    saveTodos(filtered);
+                    toast.warn('Đã xóa bỏ công việc');
+                }
+            };
+
+            // --- TÌM KIẾM TOÀN CỤC CHỐNG LỖI ĐƠ KHI GÕ ---
+            const filteredTodos = useMemo(() => {
+                if (!searchQuery.trim()) return todos;
+                const lowQuery = searchQuery.toLowerCase().trim();
+                return todos.filter(t => 
+                    t.title.toLowerCase().includes(lowQuery) || 
+                    (t.note && t.note.toLowerCase().includes(lowQuery)) ||
+                    t.date.includes(lowQuery)
+                );
+            }, [searchQuery, todos]);
+
+            // --- XỬ LÝ MA TRẬN HIỂN THỊ Ô LỊCH ---
+            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            const firstDayIndex = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+            const currentMonthName = `Tháng ${currentDate.getMonth() + 1} / ${currentDate.getFullYear()}`;
+
+            const navigateMonth = (direction) => {
+                setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
+            };
+
+            const formatDisplayDate = (date) => {
+                return `Ngày ${date.getDate()} Thg ${date.getMonth() + 1}, ${date.getFullYear()}`;
             };
 
             return (
-                <div class="min-h-screen flex flex-col bg-slate-50">
-                    
-                    {/* TOP HEADER (THANH TIÊU ĐỀ ĐẦU TRANG) */}
-                    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                class="p-1.5 hover:bg-indigo-700 rounded-lg lg:hidden transition-colors"
-                            >
-                                {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-                            </button>
+                <div class="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-2xl relative pb-20">
+                    {/* KHỐI THANH TIÊU ĐỀ CHÍNH HỆ THỐNG */}
+                    <header class="bg-gradient-to-r from-rose-600 to-amber-500 text-white p-4 sticky top-0 z-40 shadow-md">
+                        <div class="flex justify-between items-center">
                             <div class="flex items-center gap-2">
-                                <div class="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
-                                    <BookOpen size={22} class="text-indigo-200" />
+                                <CalendarIcon class="w-6 h-6 text-amber-200" />
+                                <h1 class="font-bold text-lg tracking-wide">LỊCH VẠN NIÊN KHỐI GD</h1>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onClick={() => setShowSearch(!showSearch)} class="p-1.5 hover:bg-white/20 rounded-full transition">
+                                    <Search class="w-5 h-5" />
+                                </button>
+                                <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                    <Sparkles class="w-3 h-3 text-amber-200 animate-pulse" /> 2026
                                 </div>
-                                <span class="font-bold text-lg tracking-wide hidden sm:inline">Xuan Lai Hub</span>
                             </div>
                         </div>
 
-                        {/* --- NÂNG CẤP TRỰC TIẾP: THANH TÌM KIẾM TOÀN CỤC --- */}
-                        <div ref={searchRef} class="flex-1 max-w-xl mx-4 sm:mx-8 relative">
-                            <div class="relative">
-                                <Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-200" />
+                        {/* THANH TÌM KIẾM CÔNG VIỆC THÔNG MINH */}
+                        {showSearch && (
+                            <div class="mt-3 relative flex items-center bg-white rounded-lg text-slate-800 shadow-inner animate-fadeIn">
+                                <Search class="w-4 h-4 text-slate-400 absolute left-3" />
                                 <input 
-                                    type="text"
-                                    placeholder="Tìm sự kiện, ghi chú, việc cần làm, lịch dạy..."
+                                    type="text" 
+                                    placeholder="Tìm tên việc, nội dung, ngày..." 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    class="w-full bg-indigo-700/50 hover:bg-indigo-700/70 focus:bg-white text-white focus:text-slate-900 placeholder-indigo-200 focus:placeholder-slate-400 pl-10 pr-4 py-2 rounded-xl text-sm border border-indigo-500/30 focus:border-white outline-none shadow-inner transition-all"
+                                    class="w-full pl-9 pr-8 py-2 text-sm bg-transparent outline-none text-slate-800"
+                                    autoFocus
                                 />
                                 {searchQuery && (
-                                    <button 
-                                        onClick={() => setSearchQuery('')}
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-200 hover:text-white focus:text-slate-600 font-medium text-xs bg-indigo-800/40 hover:bg-indigo-800/80 focus:bg-slate-200 p-1 rounded-full"
-                                    >
-                                        <X size={14} />
+                                    <button onClick={() => setSearchQuery('')} class="absolute right-2 p-1 text-slate-400 hover:text-slate-600">
+                                        <X class="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
+                        )}
+                    </header>
 
-                            {/* DROPDOWN KẾT QUẢ TÌM KIẾM */}
-                            {isSearchFocused && searchQuery.trim() && (
-                                <div class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 max-h-[420px] overflow-y-auto search-scrollbar z-50 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
-                                    <div class="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500 font-medium sticky top-0 z-10 backdrop-blur-md bg-white/90">
-                                        <span>Tìm thấy {searchResults.total} kết quả hợp lệ</span>
-                                        <span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-semibold">Toàn hệ thống</span>
-                                    </div>
-
-                                    {searchResults.total === 0 ? (
-                                        <div class="p-8 text-center text-slate-400 text-sm">
-                                            <Search size={32} class="mx-auto mb-2 text-slate-300 stroke-[1.5]" />
-                                            Không tìm thấy kết quả nào cho "<span class="font-medium text-slate-600">{searchQuery}</span>"
+                    {/* NỘI DUNG HIỂN THỊ KHI DÙNG THANH TÌM KIẾM */}
+                    {searchQuery.trim() ? (
+                        <main class="flex-1 p-4 bg-slate-50">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-slate-700 text-sm flex items-center gap-1">
+                                    <ListTodo class="w-4 h-4 text-rose-500" /> Kết quả tìm kiếm ({filteredTodos.length})
+                                </h3>
+                                <button onClick={() => setSearchQuery('')} class="text-xs text-rose-500 font-medium hover:underline">
+                                    Quay lại lịch
+                                </button>
+                            </div>
+                            <div class="space-y-2">
+                                {filteredTodos.length > 0 ? (
+                                    filteredTodos.map(todo => (
+                                        <div key={todo.id} class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
+                                            <button onClick={() => toggleTodo(todo.id)} class="mt-0.5 text-slate-400 hover:text-rose-600 transition">
+                                                {todo.completed ? <CheckSquare class="w-5 h-5 text-emerald-500" /> : <Square class="w-5 h-5" />}
+                                            </button>
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class={`text-sm font-semibold ${todo.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{todo.title}</h4>
+                                                <div class="flex gap-2 text-xs text-slate-400 mt-1">
+                                                    <span class="bg-slate-100 px-1.5 py-0.5 rounded font-mono">{todo.date}</span>
+                                                    <span>•</span>
+                                                    <span>{todo.time}</span>
+                                                </div>
+                                                {todo.note && <p class="text-xs text-slate-500 mt-1 bg-slate-50 p-1.5 rounded border border-dashed">{todo.note}</p>}
+                                            </div>
+                                            <button onClick={() => deleteTodo(todo.id)} class="p-1 text-slate-300 hover:text-rose-500 rounded">
+                                                <Trash2 class="w-4 h-4" />
+                                            </button>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 text-slate-400 text-sm">
+                                        Không tìm thấy công việc phù hợp nào.
+                                    </div>
+                                )}
+                            </div>
+                        </main>
+                    ) : (
+                        // GIAO DIỆN LỊCH VẠN NIÊN NỀN TẢNG
+                        <main class="flex-1 p-3 space-y-4">
+                            {/* THANH ĐIỀU HƯỚNG THÁNG */}
+                            <div class="flex justify-between items-center bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+                                <button onClick={() => navigateMonth(-1)} class="p-2 hover:bg-slate-100 rounded-xl transition">
+                                    <ChevronLeft class="w-5 h-5 text-slate-600" />
+                                </button>
+                                <h2 class="font-bold text-slate-800 text-base">{currentMonthName}</h2>
+                                <button onClick={() => navigateMonth(1)} class="p-2 hover:bg-slate-100 rounded-xl transition">
+                                    <ChevronRight class="w-5 h-5 text-slate-600" />
+                                </button>
+                            </div>
+
+                            {/* MA TRẬN Ô LỊCH CHI TIẾT */}
+                            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                <div class="grid grid-cols-7 text-center gap-1 mb-2">
+                                    {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d, i) => (
+                                        <span key={d} class={`text-xs font-bold py-1 ${i === 0 ? 'text-rose-500' : 'text-slate-400'}`}>{d}</span>
+                                    ))}
+                                </div>
+                                <div class="grid grid-cols-7 gap-1.5">
+                                    {Array(firstDayIndex === 0 ? 6 : firstDayIndex - 1).fill(null).map((_, i) => (
+                                        <div key={`empty-${i}`} class="aspect-square"></div>
+                                    ))}
+                                    {Array(daysInMonth).fill(null).map((_, i) => {
+                                        const day = i + 1;
+                                        const thisDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                                        const formatted = thisDate.toISOString().split('T')[0];
+                                        
+                                        const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear();
+                                        const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
+                                        
+                                        const amData = getAmLich(day, currentDate.getMonth() + 1, currentDate.getFullYear());
+                                        const coViec = todos.some(t => t.date === formatted);
+
+                                        return (
+                                            <button 
+                                                key={day} 
+                                                onClick={() => setSelectedDate(thisDate)}
+                                                class={`aspect-square p-1 rounded-xl flex flex-col justify-between items-center relative transition-all border ${
+                                                    isSelected ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-100' : 
+                                                    isToday ? 'bg-amber-50 text-amber-700 border-amber-300 font-semibold' : 'bg-slate-50/50 hover:bg-slate-100 border-transparent'
+                                                }`}
+                                            >
+                                                <span class="text-xs font-semibold">{day}</span>
+                                                <span class={`text-[9px] ${isSelected ? 'text-rose-100' : 'text-emerald-600 font-medium'}`}>
+                                                    {amData.ngayAm === 1 ? `${amData.ngayAm}/${amData.thangAm}` : amData.ngayAm}
+                                                </span>
+                                                {coViec && <span class={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ${isSelected ? 'bg-white' : 'bg-rose-500'}`}></span>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* DANH SÁCH CÔNG VIỆC TRONG NGÀY ĐÃ CHỌN */}
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center px-1">
+                                    <h3 class="font-bold text-slate-700 text-xs tracking-wide uppercase">Công việc {formatDisplayDate(selectedDate)}</h3>
+                                    <button 
+                                        onClick={() => setIsModalOpen(true)}
+                                        class="flex items-center gap-1 text-xs bg-rose-50 text-rose-600 px-2.5 py-1 rounded-lg font-semibold hover:bg-rose-100 transition"
+                                    >
+                                        <Plus class="w-3.5 h-3.5" /> Thêm việc
+                                    </button>
+                                </div>
+
+                                <div class="space-y-2">
+                                    {todos.filter(t => t.date === selectedDate.toISOString().split('T')[0]).length > 0 ? (
+                                        todos.filter(t => t.date === selectedDate.toISOString().split('T')[0]).map(todo => (
+                                            <div key={todo.id} class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
+                                                <button onClick={() => toggleTodo(todo.id)} class="mt-0.5 text-slate-400 hover:text-rose-600 transition">
+                                                    {todo.completed ? <CheckSquare class="w-5 h-5 text-emerald-500" /> : <Square class="w-5 h-5" />}
+                                                </button>
+                                                <div class="flex-1 min-w-0">
+                                                    <h4 class={`text-sm font-semibold ${todo.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{todo.title}</h4>
+                                                    <div class="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
+                                                        <Clock class="w-3 h-3" />
+                                                        <span>{todo.time}</span>
+                                                        <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 text-slate-500">{todo.type}</span>
+                                                    </div>
+                                                    {todo.note && <p class="text-xs text-slate-500 mt-1 bg-slate-50 p-1.5 rounded border border-dashed">{todo.note}</p>}
+                                                </div>
+                                                <button onClick={() => deleteTodo(todo.id)} class="p-1 text-slate-300 hover:text-rose-500 rounded">
+                                                    <Trash2 class="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))
                                     ) : (
-                                        <div class="p-2 space-y-3">
-                                            
-                                            {/* Nhóm: Sự kiện lịch */}
-                                            {searchResults.events.length > 0 && (
-                                                <div>
-                                                    <div class="px-2 py-1 text-[11px] font-bold tracking-wider text-amber-600 uppercase flex items-center gap-1.5">
-                                                        <Calendar size={12} /> Sự kiện lịch
-                                                    </div>
-                                                    <div class="mt-1 space-y-0.5">
-                                                        {searchResults.events.map(e => (
-                                                            <button key={e.id} onClick={() => handleResultClick('events')} class="w-full text-left p-2 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between group">
-                                                                <div>
-                                                                    <div class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors">{e.title}</div>
-                                                                    <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                                                                        <span>{e.date}</span>•<span>{e.time}</span>{e.location && <>•<span>{e.location}</span></>}
-                                                                    </div>
-                                                                </div>
-                                                                <ChevronRight size={14} class="text-slate-300 group-hover:text-slate-500 transition-colors" />
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Nhóm: Ghi chú */}
-                                            {searchResults.notes.length > 0 && (
-                                                <div class="border-t border-slate-100 pt-2">
-                                                    <div class="px-2 py-1 text-[11px] font-bold tracking-wider text-emerald-600 uppercase flex items-center gap-1.5">
-                                                        <FileText size={12} /> Ghi chú nghiệp vụ
-                                                    </div>
-                                                    <div class="mt-1 space-y-0.5">
-                                                        {searchResults.notes.map(n => (
-                                                            <button key={n.id} onClick={() => handleResultClick('notes')} class="w-full text-left p-2 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between group">
-                                                                <div class="pr-4 truncate flex-1">
-                                                                    <div class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{n.title}</div>
-                                                                    <div class="text-xs text-slate-400 mt-0.5 truncate">{n.content}</div>
-                                                                </div>
-                                                                <ChevronRight size={14} class="text-slate-300 group-hover:text-slate-500 flex-shrink-0 transition-colors" />
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Nhóm: Việc cần làm */}
-                                            {searchResults.todos.length > 0 && (
-                                                <div class="border-t border-slate-100 pt-2">
-                                                    <div class="px-2 py-1 text-[11px] font-bold tracking-wider text-blue-600 uppercase flex items-center gap-1.5">
-                                                        <CheckSquare size={12} /> Công việc (Todos)
-                                                    </div>
-                                                    <div class="mt-1 space-y-0.5">
-                                                        {searchResults.todos.map(t => (
-                                                            <button key={t.id} onClick={() => handleResultClick('todos')} class="w-full text-left p-2 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between group">
-                                                                <div class="flex items-center gap-2">
-                                                                    <span class={`w-1.5 h-1.5 rounded-full ${t.completed ? 'bg-slate-300' : 'bg-blue-500'}`}></span>
-                                                                    <span class={`text-sm ${t.completed ? 'line-through text-slate-400' : 'font-medium text-slate-800'} group-hover:text-indigo-600 transition-colors`}>{t.text}</span>
-                                                                </div>
-                                                                <ChevronRight size={14} class="text-slate-300 group-hover:text-slate-500 transition-colors" />
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Nhóm: Thời khóa biểu */}
-                                            {searchResults.timetable.length > 0 && (
-                                                <div class="border-t border-slate-100 pt-2">
-                                                    <div class="px-2 py-1 text-[11px] font-bold tracking-wider text-purple-600 uppercase flex items-center gap-1.5">
-                                                        <Clock size={12} /> Thời khóa biểu (FET)
-                                                    </div>
-                                                    <div class="mt-1 space-y-0.5">
-                                                        {searchResults.timetable.map(tb => (
-                                                            <button key={tb.id} onClick={() => handleResultClick('timetable')} class="w-full text-left p-2 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between group">
-                                                                <div>
-                                                                    <div class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors">Môn: {tb.subject} — {tb.class}</div>
-                                                                    <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                                                                        <span class="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-medium text-[10px]">{tb.day}</span>
-                                                                        <span>{tb.lesson}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <ChevronRight size={14} class="text-slate-300 group-hover:text-slate-500 transition-colors" />
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                        <div class="text-center py-8 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                                            Ngày này chưa xếp lịch biểu công tác nào.
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        </main>
+                    )}
 
-                        {/* THÔNG TIN NGƯỜI DÙNG & THÔNG BÁO */}
-                        <div class="flex items-center gap-2">
-                            <button class="p-2 hover:bg-indigo-700 rounded-xl relative transition-colors">
-                                <Bell size={18} />
-                                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
-                            </button>
-                            <div class="h-6 w-px bg-indigo-500/40 mx-1 hidden sm:block"></div>
-                            <div class="flex items-center gap-2 bg-indigo-700/40 pl-2 pr-3 py-1.5 rounded-xl border border-indigo-500/20 hidden sm:flex">
-                                <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs shadow-sm">T</div>
-                                <span class="text-xs font-medium tracking-wide">Nguyễn Văn Trung</span>
+                    {/* THANH MENU ĐIỀU HƯỚNG TAB CHÂN TRANG */}
+                    <nav class="bg-white border-t border-slate-200 fixed bottom-0 max-w-md w-full h-16 flex justify-around items-center z-40 px-2 shadow-lg">
+                        <button onClick={() => setSearchQuery('')} class="flex flex-col items-center gap-0.5 text-rose-600">
+                            <CalendarIcon class="w-5 h-5" />
+                            <span class="text-[10px] font-bold">Lịch biểu</span>
+                        </button>
+                        <button onClick={() => { setSelectedDate(new Date()); setCurrentDate(new Date()); setSearchQuery(''); }} class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-rose-500">
+                            <RefreshCw class="w-5 h-5" />
+                            <span class="text-[10px] font-medium">Hôm nay</span>
+                        </button>
+                        <button onClick={() => setIsModalOpen(true)} class="bg-gradient-to-r from-rose-600 to-amber-500 text-white p-2.5 rounded-full shadow-lg shadow-rose-200 -translate-y-4 border-4 border-white transition-transform active:scale-95">
+                            <Plus class="w-6 h-6" />
+                        </button>
+                        <button onClick={() => { setSearchQuery(' '); setShowSearch(true); }} class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-rose-500">
+                            <ListTodo class="w-5 h-5" />
+                            <span class="text-[10px] font-medium">Tất cả việc</span>
+                        </button>
+                        <div class="flex flex-col items-center gap-0.5 text-slate-400">
+                            <User class="w-5 h-5" />
+                            <span class="text-[10px] font-medium">Hồ sơ</span>
+                        </div>
+                    </nav>
+
+                    {/* HỘP THOẠI POPUP THÊM CÔNG VIỆC MỚI */}
+                    {isModalOpen && (
+                        <div class="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4 animate-fadeIn">
+                            <div class="bg-white w-full max-w-md rounded-t-3xl p-5 space-y-4 animate-slideUp shadow-2xl">
+                                <div class="flex justify-between items-center border-b pb-2">
+                                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-1.5">
+                                        <Plus class="w-5 h-5 text-rose-500" /> Thêm Lịch Công Tác
+                                    </h3>
+                                    <button onClick={() => setIsModalOpen(false)} class="p-1 hover:bg-slate-100 rounded-full">
+                                        <X class="w-5 h-5 text-slate-400" />
+                                    </button>
+                                </div>
+                                <form onSubmit={handleAddTodo} class="space-y-3.5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">NỘI DUNG/TIÊU ĐỀ *</label>
+                                        <input 
+                                            type="text" required placeholder="Ví dụ: Họp chi bộ, Lên lớp..." 
+                                            value={todoTitle} onChange={(e) => setTodoTitle(e.target.value)}
+                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-rose-500 focus:bg-white transition"
+                                        />
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-500 mb-1">THỜI GIAN NHẮC</label>
+                                            <input 
+                                                type="time" value={todoTime} onChange={(e) => setTodoTime(e.target.value)}
+                                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-rose-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-500 mb-1">PHÂN LOẠI</label>
+                                            <select 
+                                                value={todoType} onChange={(e) => setTodoType(e.target.value)}
+                                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-rose-500"
+                                            >
+                                                <option value="work">Việc trường</option>
+                                                <option value="document">Hồ sơ sổ sách</option>
+                                                <option value="personal">Việc riêng</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">GHI CHÚ CHI TIẾT</label>
+                                        <textarea 
+                                            rows="2" placeholder="Nhập yêu cầu hoặc lưu ý đi kèm..." 
+                                            value={todoNote} onChange={(e) => setTodoNote(e.target.value)}
+                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm outline-none focus:border-rose-500 focus:bg-white transition"
+                                        ></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-gradient-to-r from-rose-600 to-amber-500 text-white font-bold py-3 rounded-xl text-sm shadow-md shadow-rose-100 hover:opacity-90 transition active:scale-[0.99]">
+                                        XÁC NHẬN LƯU LỊCH BIỂU
+                                    </button>
+                                </form>
                             </div>
                         </div>
-                    </header>
+                    )}
 
-                    {/* KHU VỰC THÂN TRANG & ĐIỀU HƯỚNG CHÍNH */}
-                    <div class="flex-1 flex relative">
-                        
-                        {/* THANH SIDEBAR ĐIỀU HƯỚNG (GIAO DIỆN MÁY TÍNH & DI ĐỘNG) */}
-                        <aside class={`bg-white border-r border-slate-200 w-64 p-4 space-y-1 flex-shrink-0 absolute lg:sticky top-[57px] bottom-0 left-0 h-[calc(100vh-57px)] z-40 transition-transform duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}>
-                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 block">Chức năng chính</div>
-                            {[
-                                { id: 'dashboard', label: 'Bàn làm việc', icon: Sun },
-                                { id: 'events', label: 'Sự kiện lịch', icon: Calendar },
-                                { id: 'notes', label: 'Ghi chú nghiệp vụ', icon: FileText },
-                                { id: 'todos', label: 'Việc cần làm', icon: CheckSquare },
-                                { id: 'timetable', label: 'Thời khóa biểu (FET)', icon: Clock },
-                            ].map(tab => {
-                                const IconComponent = tab.icon;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => {
-                                            setActiveTab(tab.id);
-                                            setIsMobileMenuOpen(false);
-                                        }}
-                                        class={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-                                    >
-                                        <IconComponent size={18} class={activeTab === tab.id ? 'text-indigo-600' : 'text-slate-400'} />
-                                        {tab.label}
-                                    </button>
-                                );
-                            })}
-                        </aside>
-
-                        {/* NỀN ĐEN KHI MỞ MENU MOBILE */}
-                        {isMobileMenuOpen && (
-                            <div onClick={() => setIsMobileMenuOpen(false)} class="fixed inset-0 top-[57px] bg-slate-900/40 backdrop-blur-xs z-30 lg:hidden" />
-                        )}
-
-                        {/* NỘI DUNG CHÍNH (MAIN CONTENT) THEO TAB */}
-                        <main class="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
-                            
-                            {/* TAB: BÀN LÀM VIỆC (DASHBOARD) */}
-                            {activeTab === 'dashboard' && (
-                                <div class="space-y-6">
-                                    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-lg">
-                                        <h1 class="text-xl md:text-2xl font-bold">Chào Thầy Trung!</h1>
-                                        <p class="text-indigo-100 text-xs md:text-sm mt-1">Chúc Thầy một ngày làm việc hiệu quả tại Xuan Lai Primary and Secondary School.</p>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-                                            <div class="p-3 bg-amber-50 rounded-xl text-amber-600"><Calendar size={20} /></div>
-                                            <div><div class="text-xs text-slate-400 font-medium">Sự kiện sắp tới</div><div class="text-lg font-bold text-slate-800">{events.length}</div></div>
-                                        </div>
-                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-                                            <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600"><FileText size={20} /></div>
-                                            <div><div class="text-xs text-slate-400 font-medium">Ghi chú đã lưu</div><div class="text-lg font-bold text-slate-800">{notes.length}</div></div>
-                                        </div>
-                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-                                            <div class="p-3 bg-blue-50 rounded-xl text-blue-600"><CheckSquare size={20} /></div>
-                                            <div><div class="text-xs text-slate-400 font-medium">Việc chưa làm</div><div class="text-lg font-bold text-slate-800">{todos.filter(t=>!t.completed).length}</div></div>
-                                        </div>
-                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-                                            <div class="p-3 bg-purple-50 rounded-xl text-purple-600"><Clock size={20} /></div>
-                                            <div><div class="text-xs text-slate-400 font-medium">Tiết dạy tuần này</div><div class="text-lg font-bold text-slate-800">{timetable.length}</div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: SỰ KIỆN LỊCH */}
-                            {activeTab === 'events' && (
-                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Calendar class="text-indigo-600" size={20}/> Quản lý Sự kiện lịch</h2>
-                                    <div class="space-y-3">
-                                        {events.map(e => (
-                                            <div key={e.id} class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                <div>
-                                                    <h3 class="font-semibold text-sm text-slate-800">{e.title}</h3>
-                                                    <p class="text-xs text-slate-400 mt-0.5">Địa điểm: {e.location || 'Chưa rõ'}</p>
-                                                </div>
-                                                <div class="text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs self-start sm:self-center">
-                                                    {e.date} lúc {e.time}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: GHI CHÚ */}
-                            {activeTab === 'notes' && (
-                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><FileText class="text-indigo-600" size={20}/> Ghi chú nghiệp vụ</h2>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {notes.map(n => (
-                                            <div key={n.id} class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col justify-between">
-                                                <div>
-                                                    <h3 class="font-bold text-sm text-slate-800">{n.title}</h3>
-                                                    <p class="text-xs text-slate-600 mt-2 leading-relaxed">{n.content}</p>
-                                                </div>
-                                                <div class="text-[10px] font-medium text-slate-400 mt-4 pt-2 border-t border-slate-100 flex justify-between">
-                                                    <span>Ngày tạo</span><span>{n.date}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: VIỆC CẦN LÀM */}
-                            {activeTab === 'todos' && (
-                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs max-w-2xl">
-                                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><CheckSquare class="text-indigo-600" size={20}/> Danh sách Việc cần làm</h2>
-                                    <div class="divide-y divide-slate-100">
-                                        {todos.map(t => (
-                                            <div key={t.id} class="py-3 flex items-center justify-between group">
-                                                <div class="flex items-center gap-3">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={t.completed} 
-                                                        onChange={() => {
-                                                            setTodos(todos.map(todo => todo.id === t.id ? {...todo, completed: !todo.completed} : todo));
-                                                        }}
-                                                        class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 transition-all cursor-pointer"
-                                                    />
-                                                    <span class={`text-sm ${t.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}`}>{t.text}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TAB: THỜI KHÓA BIỂU */}
-                            {activeTab === 'timetable' && (
-                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Clock class="text-indigo-600" size={20}/> Thời khóa biểu phân lịch (FET)</h2>
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full text-left border-collapse min-w-[500px]">
-                                            <thead>
-                                                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                                    <th class="p-3">Thứ (Ngày)</th>
-                                                    <th class="p-3">Tiết dạy</th>
-                                                    <th class="p-3">Lớp học</th>
-                                                    <th class="p-3">Môn học phụ trách</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100 text-sm">
-                                                {timetable.map(tb => (
-                                                    <tr key={tb.id} class="hover:bg-slate-50/80 transition-colors">
-                                                        <td class="p-3 font-semibold text-slate-700">{tb.day}</td>
-                                                        <td class="p-3 text-slate-500">{tb.lesson}</td>
-                                                        <td class="p-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-medium text-xs">{tb.class}</span></td>
-                                                        <td class="p-3 font-medium text-slate-800">{tb.subject}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                        </main>
-                    </div>
+                    {/* Bộ điều khiển hiển thị thông báo Toast nổi */}
+                    <ToastContainer position="top-center" autoClose={2000} hideProgressBar={true} newestOnTop={true} closeOnClick />
                 </div>
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
     </script>
 </body>
 </html>
