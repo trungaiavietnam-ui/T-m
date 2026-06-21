@@ -1,5 +1,5 @@
 // Tên kho lưu trữ bộ nhớ đệm (Cache Name) - Cập nhật phiên bản khi thay đổi mã nguồn
-const CACHE_NAME = 'xuanlai-hub-cache-v2';
+const CACHE_NAME = 'xuanlai-hub-cache-v3';
 
 // Danh sách các tài nguyên tĩnh cần được lưu đệm ngay khi cài đặt PWA
 const ASSETS_TO_CACHE = [
