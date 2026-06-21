@@ -5,43 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lịch vạn niên - Văn Trung</title>
     
-    <!-- START: Cấu hình Progressive Web App (PWA) Cơ bản -->
+    <!-- START: Cấu hình Progressive Web App (PWA) -->
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lịch Văn Trung">
-
-    <!-- Khởi tạo Web App Manifest động bằng Script để chống lỗi xung đột dấu ngoặc kép -->
-    <script>
-        const manifestObj = {
-            "name": "Lịch Vạn Niên - Văn Trung",
-            "short_name": "Lịch Văn Trung",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#f3f4f6",
-            "theme_color": "#2563eb",
-            "orientation": "portrait",
-            "icons": [
-                {
-                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='20' width='80' height='70' rx='15' fill='white' stroke='%23DC2626' stroke-width='5'/><path d='M10 35h80' stroke='%23DC2626' stroke-width='5'/><text x='50' y='75' font-size='40' text-anchor='middle' fill='%23DC2626' font-family='sans-serif' font-weight='bold'>31</text></svg>",
-                    "sizes": "192x192",
-                    "type": "image/svg+xml"
-                }
-            ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = manifestURL;
-        document.head.appendChild(manifestLink);
-    </script>
     <!-- END: Cấu hình Progressive Web App (PWA) -->
 
     <!-- ICON ỨNG DỤNG AN TOÀN -->
-    <link class="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2270%22 rx=%2215%22 fill=%22white%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><path d=%22M10 35h80%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><text x=%2250%22 y=%2275%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23DC2626%22 font-family=%22sans-serif%22 font-weight=%22bold%22>31</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2270%22 rx=%2215%22 fill=%22white%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><path d=%22M10 35h80%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><text x=%2250%22 y=%2275%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23DC2626%22 font-family=%22sans-serif%22 font-weight=%22bold%22>31</text></svg>">
+    <link id="favicon-link" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='20' width='80' height='70' rx='15' fill='white' stroke='%23DC2626' stroke-width='5'/><path d='M10 35h80' stroke='%23DC2626' stroke-width='5'/><text x='50' y='75' font-size='40' text-anchor='middle' fill='%23DC2626' font-family='sans-serif' font-weight='bold'>31</text></svg>">
 
     <!-- KHỐI IMPORTMAP ĐỒNG BỘ CHỐNG LỖI ĐỊNH NGHĨA -->
     <script type="importmap">
@@ -75,7 +48,7 @@
 
     <div id="root"></div>
 
-    <!-- KHỐI BIÊN DỊCH JAVASCRIPT REACT -->
+    <!-- KHỐI BIÊN DỊCH JAVASCRIPT REACT CHUẨN XÁC CHỐNG LỖI WHITE-SCREEN -->
     <script type="babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
@@ -84,7 +57,7 @@
         } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getAuth } from 'firebase/auth';
-        import { getFirestore } from 'firebase/firestore';
+        import { getFirestore } from 'firestore'; // Nhập từ cdn importmap đã định nghĩa
         import { ToastContainer, toast } from 'react-toastify';
 
         // --- HỆ THỐNG KINH PHÁP CÚ TRÍ TUỆ ---
@@ -121,19 +94,25 @@
             return { ngayAm, thangAm, chiMonth: MonthCfg.name };
         }
 
-        // Cấu hình Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAs-FakeKeyForStructureOnly_TrungNguyen",
-            authDomain: "xuanlai-hub.firebaseapp.com",
-            projectId: "xuanlai-hub",
-            storageBucket: "xuanlai-hub.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234:web:abcd"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // --- KHỞI TẠO MANIFEST ĐỘNG TRÁNH LỖI PHÂN TÍCH CÚ PHÁP ---
+        try {
+            const manifestObj = {
+                "name": "Lịch Vạn Niên - Văn Trung",
+                "short_name": "Lịch Văn Trung",
+                "start_url": ".",
+                "display": "standalone",
+                "background_color": "#f3f4f6",
+                "theme_color": "#2563eb",
+                "orientation": "portrait",
+                "icons": [{"src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='20' width='80' height='70' rx='15' fill='white' stroke='%23DC2626' stroke-width='5'/><path d='M10 35h80' stroke='%23DC2626' stroke-width='5'/><text x='50' y='75' font-size='40' text-anchor='middle' fill='%23DC2626' font-family='sans-serif' font-weight='bold'>31</text></svg>","sizes": "192x192","type": "image/svg+xml"}]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            let mLink = document.createElement('link');
+            mLink.rel = 'manifest';
+            mLink.href = manifestURL;
+            document.head.appendChild(mLink);
+        } catch(err) { console.log("Manifest Dynamic Ignored"); }
 
         // --- CẤU PHẦN CHÍNH CỦA ỨNG DỤNG ---
         const App = () => {
@@ -143,14 +122,11 @@
             const [notes, setNotes] = useState([]);
             const [events, setEvents] = useState([]);
             
-            // Tìm kiếm toàn cục nâng cấp
             const [globalSearchQuery, setGlobalSearchQuery] = useState('');
             const [isSearchFocused, setIsSearchFocused] = useState(false);
             const searchContainerRef = useRef(null);
-
             const [newTodoText, setNewTodoText] = useState('');
 
-            // Khởi tạo dữ liệu mẫu ban đầu
             useEffect(() => {
                 const storedTodos = localStorage.getItem('local_todos');
                 if (storedTodos) setTodos(JSON.parse(storedTodos));
@@ -174,13 +150,13 @@
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, []);
 
-            // SERVICE WORKER ĐƯỜNG DẪN TƯƠNG ĐỐI AN TOÀN CHO GITHUB PAGES
+            // ĐĂNG KÝ SERVICE WORKER TƯƠNG ĐỐI TRÊN GITHUB PAGES
             useEffect(() => {
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('./sw.js?v=7')
-                            .then(reg => console.log('Service Worker vận hành ổn định:', reg.scope))
-                            .catch(err => console.error('Lỗi khởi động Service Worker:', err));
+                        navigator.serviceWorker.register('./sw.js?v=8')
+                            .then(reg => console.log('SW Active:', reg.scope))
+                            .catch(err => console.error('SW Error:', err));
                     });
                 }
             }, []);
@@ -208,15 +184,13 @@
 
                 const matchedTodos = todos.filter(t => clearTones(t.title).includes(query));
                 const matchedEvents = events.filter(e => clearTones(e.title).includes(query));
-                const matchedNotes = notes.filter(n => clearTones(n.title).includes(query) || clearTones(n.content).includes(query));
                 
                 return {
-                    total: matchedTodos.length + matchedEvents.length + matchedNotes.length,
+                    total: matchedTodos.length + matchedEvents.length,
                     todos: matchedTodos,
-                    events: matchedEvents,
-                    notes: matchedNotes
+                    events: matchedEvents
                 };
-            }, [globalSearchQuery, todos, events, notes]);
+            }, [globalSearchQuery, todos, events]);
 
             const addCurrentTodo = () => {
                 if (!newTodoText.trim()) return;
@@ -231,7 +205,7 @@
                 setTodos(updated);
                 localStorage.setItem('local_todos', JSON.stringify(updated));
                 setNewTodoText('');
-                toast.success("Đã thêm việc cần làm thành công!");
+                toast.success("Đã thêm việc cần làm!");
             };
 
             const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -239,51 +213,45 @@
             const adjustedStartIdx = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
             return (
-                <div class="min-h-screen bg-slate-100 flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-slate-200">
+                <div className="min-h-screen bg-slate-100 flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-slate-200">
                     
                     {/* TOP HEADER */}
-                    <header class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-1.5 flex-shrink-0">
-                                <CalendarIcon class="w-5 h-5 text-amber-300" />
-                                <h1 class="font-bold text-sm tracking-tight">LỊCH VẠN NIÊN KHỐI GD</h1>
+                    <header className="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <CalendarIcon className="w-5 h-5 text-amber-300" />
+                                <h1 className="font-bold text-sm tracking-tight">LỊCH VẠN NIÊN KHỐI GD</h1>
                             </div>
 
                             {/* TÌM KIẾM TOÀN CỤC */}
-                            <div ref={searchContainerRef} class="flex-1 relative">
-                                <div class="relative">
-                                    <Search class="w-4 h-4 text-blue-200 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                            <div ref={searchContainerRef} className="flex-1 relative">
+                                <div className="relative">
+                                    <Search className="w-4 h-4 text-blue-200 absolute left-2.5 top-1/2 -translate-y-1/2" />
                                     <input 
                                         type="text" 
                                         placeholder="Tìm sự kiện, việc làm..." 
                                         value={globalSearchQuery}
                                         onChange={(e) => setGlobalSearchQuery(e.target.value)}
                                         onFocus={() => setIsSearchFocused(true)}
-                                        class="w-full bg-blue-700/50 hover:bg-blue-700/70 focus:bg-white text-white focus:text-slate-800 placeholder-blue-200 focus:placeholder-slate-400 pl-8 pr-7 py-1.5 rounded-xl text-xs outline-none transition border border-transparent focus:border-blue-300"
+                                        className="w-full bg-blue-700/50 hover:bg-blue-700/70 focus:bg-white text-white focus:text-slate-800 placeholder-blue-200 focus:placeholder-slate-400 pl-8 pr-7 py-1.5 rounded-xl text-xs outline-none transition border border-transparent focus:border-blue-300"
                                     />
                                     {globalSearchQuery && (
-                                        <X onClick={() => setGlobalSearchQuery('')} class="w-3.5 h-3.5 text-blue-200 hover:text-white absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer" />
+                                        <X onClick={() => setGlobalSearchQuery('')} className="w-3.5 h-3.5 text-blue-200 hover:text-white absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer" />
                                     )}
                                 </div>
 
                                 {isSearchFocused && globalSearchQuery.trim() && (
-                                    <div class="absolute top-full left-0 right-0 mt-1 bg-white text-slate-800 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 p-2 border border-slate-200 text-xs animate-fadeIn">
-                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-100">
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white text-slate-800 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 p-2 border border-slate-200 text-xs animate-fadeIn">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 border-b border-slate-100">
                                             Tìm thấy {globalSearchResults.total} kết quả
                                         </div>
                                         {globalSearchResults.total === 0 && (
-                                            <div class="p-4 text-center text-slate-400 italic">Không tìm thấy kết quả</div>
+                                            <div className="p-4 text-center text-slate-400 italic">Không tìm thấy kết quả</div>
                                         )}
                                         {globalSearchResults.todos.map(t => (
-                                            <div key={t.id} class="p-2 hover:bg-slate-50 rounded-lg flex items-center justify-between border-b border-slate-50">
-                                                <span class="font-medium truncate pr-2">{t.title}</span>
-                                                <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">{t.date}</span>
-                                            </div>
-                                        ))}
-                                        {globalSearchResults.events.map(e => (
-                                            <div key={e.id} class="p-2 hover:bg-amber-50 rounded-lg flex items-center justify-between border-b border-slate-50">
-                                                <span class="font-semibold text-amber-700 truncate pr-2">Sự kiện: {e.title}</span>
-                                                <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">{e.time}</span>
+                                            <div key={t.id} className="p-2 hover:bg-slate-50 rounded-lg flex items-center justify-between border-b border-slate-50">
+                                                <span className="font-medium truncate pr-2">{t.title}</span>
+                                                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">{t.date}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -293,33 +261,33 @@
                     </header>
 
                     {/* NỘI DUNG CHÍNH */}
-                    <main class="flex-1 p-3 space-y-4 pb-24">
+                    <main className="flex-1 p-3 space-y-4 pb-24">
                         
                         {/* KHỐI KINH PHÁP CÚ */}
-                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-xs">
-                            <div class="flex items-center gap-1 text-amber-700 font-bold text-xs mb-1">
-                                <Sparkles class="w-4 h-4 text-amber-500" /> LỜI VÀNG PHÁP CÚ HÔM NAY (Bài số {phapCuHomNay.id})
+                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 shadow-xs">
+                            <div className="flex items-center gap-1 text-amber-700 font-bold text-xs mb-1">
+                                <Sparkles className="w-4 h-4 text-amber-500" /> LỜI VÀNG PHÁP CÚ HÔM NAY (Bài số {phapCuHomNay.id})
                             </div>
-                            <p class="text-xs text-slate-700 italic leading-relaxed">"{phapCuHomNay.text}"</p>
+                            <p className="text-xs text-slate-700 italic leading-relaxed">"{phapCuHomNay.text}"</p>
                         </div>
 
                         {/* ĐIỀU HƯỚNG THÁNG LỊCH */}
-                        <div class="flex items-center justify-between bg-white p-2 rounded-xl shadow-xs border border-slate-200/60">
-                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} class="p-1 hover:bg-slate-100 rounded-lg">
-                                <ChevronLeft class="w-5 h-5 text-slate-600" />
+                        <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-xs border border-slate-200/60">
+                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg">
+                                <ChevronLeft className="w-5 h-5 text-slate-600" />
                             </button>
-                            <span class="font-bold text-slate-800 text-sm">Tháng {currentDate.getMonth() + 1} / {currentDate.getFullYear()}</span>
-                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} class="p-1 hover:bg-slate-100 rounded-lg">
-                                <ChevronRight class="w-5 h-5 text-slate-600" />
+                            <span className="font-bold text-slate-800 text-sm">Tháng {currentDate.getMonth() + 1} / {currentDate.getFullYear()}</span>
+                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg">
+                                <ChevronRight className="w-5 h-5 text-slate-600" />
                             </button>
                         </div>
 
                         {/* LƯỚI Ô LỊCH VẠN NIÊN */}
-                        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-                            <div class="grid grid-cols-7 text-center font-bold text-[11px] text-slate-400 mb-2">
+                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                            <div className="grid grid-cols-7 text-center font-bold text-[11px] text-slate-400 mb-2">
                                 <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span class="text-rose-500">CN</span>
                             </div>
-                            <div class="grid grid-cols-7 gap-1.5">
+                            <div className="grid grid-cols-7 gap-1.5">
                                 {Array(adjustedStartIdx).fill(null).map((_, idx) => <div key={`empty-${idx}`}></div>)}
                                 {Array(daysInMonth).fill(null).map((_, idx) => {
                                     const day = idx + 1;
@@ -336,16 +304,16 @@
                                         <button 
                                             key={day} 
                                             onClick={() => setSelectedDate(dateObj)}
-                                            class={`aspect-square rounded-xl p-1 flex flex-col justify-between items-center relative transition-all text-xs border ${
+                                            className={`aspect-square rounded-xl p-1 flex flex-col justify-between items-center relative transition-all text-xs border ${
                                                 isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100' : 
                                                 isToday ? 'bg-amber-100 text-amber-800 border-amber-300 font-bold' : 'bg-slate-50 hover:bg-slate-100 border-transparent'
                                             }`}
                                         >
-                                            <span class="font-semibold">{day}</span>
-                                            <span class={`text-[9px] ${isSelected ? 'text-blue-100' : 'text-emerald-600 font-medium'}`}>
+                                            <span className="font-semibold">{day}</span>
+                                            <span className={`text-[9px] ${isSelected ? 'text-blue-100' : 'text-emerald-600 font-medium'}`}>
                                                 {amLich.ngayAm === 1 ? `${amLich.ngayAm}/${amLich.thangAm}` : amLich.ngayAm}
                                             </span>
-                                            {hasTodos && <span class={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ${isSelected ? 'bg-white' : 'bg-rose-500'}`}></span>}
+                                            {hasTodos && <span className={`w-1.5 h-1.5 rounded-full absolute top-1 right-1 ${isSelected ? 'bg-white' : 'bg-rose-500'}`}></span>}
                                         </button>
                                     );
                                 })}
@@ -353,35 +321,35 @@
                         </div>
 
                         {/* QUẢN LÝ VIỆC CẦN LÀM */}
-                        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wide flex items-center gap-1">
-                                    <ListTodo class="w-4 h-4 text-blue-500" /> Việc ngày {selectedDate.getDate()}/{selectedDate.getMonth() + 1}
+                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide flex items-center gap-1">
+                                    <ListTodo className="w-4 h-4 text-blue-500" /> Việc ngày {selectedDate.getDate()}/{selectedDate.getMonth() + 1}
                                 </h3>
-                                <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
                                     {tinhLichAm(selectedDate.getDate(), selectedDate.getMonth() + 1, selectedDate.getFullYear()).chiMonth}
-                                end</span>
+                                </span>
                             </div>
 
-                            <div class="flex gap-2">
+                            <div className="flex gap-2">
                                 <input 
                                     type="text" placeholder="Thêm việc cần làm nhanh..." 
                                     value={newTodoText} onChange={(e) => setNewTodoText(e.target.value)}
-                                    class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 focus:bg-white transition"
+                                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 focus:bg-white transition"
                                 />
-                                <button onClick={addCurrentTodo} class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-xs transition">
+                                <button onClick={addCurrentTodo} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-xs transition">
                                     Thêm
                                 </button>
                             </div>
 
-                            <div class="space-y-1.5">
+                            <div className="space-y-1.5">
                                 {todos.filter(t => t.date === selectedDate.toISOString().split('T')[0]).length > 0 ? (
                                     todos.filter(t => t.date === selectedDate.toISOString().split('T')[0]).map(todo => (
-                                        <div key={todo.id} class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                                            <div class="flex items-center gap-2">
-                                                <Clock class="w-3.5 h-3.5 text-slate-400" />
-                                                <span class="font-mono text-[11px] text-slate-500">{todo.time}</span>
-                                                <span class="font-medium text-slate-700">{todo.title}</span>
+                                        <div key={todo.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="font-mono text-[11px] text-slate-500">{todo.time}</span>
+                                                <span className="font-medium text-slate-700">{todo.title}</span>
                                             </div>
                                             <button 
                                                 onClick={() => {
@@ -390,32 +358,32 @@
                                                     localStorage.setItem('local_todos', JSON.stringify(filtered));
                                                     toast.warn("Đã xóa công việc.");
                                                 }} 
-                                                class="text-slate-300 hover:text-rose-500 p-1"
+                                                className="text-slate-300 hover:text-rose-500 p-1"
                                             >
-                                                <Trash2 class="w-3.5 h-3.5" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     ))
                                 ) : (
-                                    <div class="text-center py-6 text-slate-400 italic text-[11px]">Chưa xếp lịch công tác cho ngày này.</div>
+                                    <div className="text-center py-6 text-slate-400 italic text-[11px]">Chưa xếp lịch công tác cho ngày này.</div>
                                 )}
                             </div>
                         </div>
                     </main>
 
                     {/* THANH ĐIỀU HƯỚNG CHÂN TRANG */}
-                    <nav class="bg-white border-t border-slate-200 fixed bottom-0 max-w-md w-full h-14 flex justify-around items-center z-40 shadow-lg">
-                        <button class="flex flex-col items-center gap-0.5 text-blue-600">
-                            <CalendarIcon class="w-4 h-4" />
-                            <span class="text-[9px] font-bold">Lịch biểu</span>
+                    <nav className="bg-white border-t border-slate-200 fixed bottom-0 max-w-md w-full h-14 flex justify-around items-center z-40 shadow-lg">
+                        <button className="flex flex-col items-center gap-0.5 text-blue-600">
+                            <CalendarIcon className="w-4 h-4" />
+                            <span className="text-[9px] font-bold">Lịch biểu</span>
                         </button>
-                        <button onClick={() => { setSelectedDate(new Date()); setCurrentDate(new Date()); }} class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-blue-600">
-                            <RefreshCw class="w-4 h-4" />
-                            <span class="text-[9px] font-medium">Hôm nay</span>
+                        <button onClick={() => { setSelectedDate(new Date()); setCurrentDate(new Date()); }} className="flex flex-col items-center gap-0.5 text-slate-400 hover:text-blue-600">
+                            <RefreshCw className="w-4 h-4" />
+                            <span className="text-[9px] font-medium">Hôm nay</span>
                         </button>
-                        <div class="flex flex-col items-center gap-0.5 text-slate-400">
-                            <User class="w-4 h-4" />
-                            <span class="text-[9px] font-medium">Hồ sơ</span>
+                        <div className="flex flex-col items-center gap-0.5 text-slate-400">
+                            <User className="w-4 h-4" />
+                            <span className="text-[9px] font-medium">Hồ sơ</span>
                         </div>
                     </nav>
 
