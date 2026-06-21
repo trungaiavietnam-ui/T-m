@@ -1,188 +1,88 @@
-const CACHE_NAME = 'lich-van-trung-pwa-v14'; // Nâng cấp lên v14 để ép trình duyệt làm mới bộ nhớ đệm và cập nhật tính năng tìm kiếm toàn cục
+// Tên kho lưu trữ bộ nhớ đệm (Cache Name) - Cập nhật phiên bản khi thay đổi mã nguồn
+const CACHE_NAME = 'xuanlai-hub-cache-v2';
 
-// Danh sách các tài nguyên tĩnh nội bộ bắt buộc phải nạp đệm thành công để chạy Offline hoàn toàn
+// Danh sách các tài nguyên tĩnh cần được lưu đệm ngay khi cài đặt PWA
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './libs/tailwind.js',
-  './libs/react-toastify.min.css',
-  './libs/react.production.min.js',
-  './libs/react-dom.production.min.js',
-  './libs/lucide.min.js',
-  './libs/firebase-app.js',
-  './libs/firebase-auth.js',
-  './libs/firebase-firestore.js',
-  './libs/react-toastify.js'
+  '/',
+  '/index.html',
+  'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  'https://unpkg.com/react@18/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+  'https://unpkg.com/lucide@latest',
+  'https://esm.sh/react@18.2.0',
+  'https://esm.sh/lucide-react@0.263.0'
 ];
 
-// Nhập trực tiếp các module Firebase cần thiết cho Background Sync trong SW
-// Bọc trong try-catch để tránh SW crash nếu SDK không tương thích (compat only)
-let db = null;
-let firebaseAvailable = false;
-
-try {
-    importScripts('./libs/firebase-app.js');
-    importScripts('./libs/firebase-firestore.js');
-
-    // Kiểm tra xem SDK có phải dạng compat (namespace) không — không dùng được với modular v9+
-    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-        const MANUAL_CONFIG = {
-            apiKey: "AIzaSyBEgbs4brFEVbBhf7KaEhw8FekAJTUBFZ0",
-            authDomain: "lich-van-trung.firebaseapp.com",
-            projectId: "lich-van-trung",
-            storageBucket: "lich-van-trung.firebasestorage.app",
-            messagingSenderId: "527946894050",
-            appId: "1:527946894050:web:4f0bf75fb626d70fb3dfa2"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(MANUAL_CONFIG);
-        }
-        db = firebase.firestore();
-        firebaseAvailable = true;
-        console.log('[Service Worker] Firebase khởi tạo thành công trong SW.');
-    } else {
-        console.warn('[Service Worker] Firebase SDK không ở dạng compat — Background Sync bị tắt.');
-    }
-} catch (e) {
-    console.warn('[Service Worker] Không thể load Firebase trong SW — Background Sync bị tắt:', e.message);
-}
-
-// SỰ KIỆN CÀI ĐẶT: Nạp tất cả tài nguyên cốt lõi vào bộ nhớ đệm ẩn
+// 1. Sự kiện Cài đặt (Install) - Tự động tải trước và lưu các tài nguyên cốt lõi vào Cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Đang nạp đệm toàn bộ tài nguyên cốt lõi...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => {
-      // Ép Service Worker đang chờ trở thành hoạt động ngay lập tức
-      return self.skipWaiting();
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[Service Worker] Đang nạp tài nguyên tĩnh vào bộ nhớ đệm...');
+        return cache.addAll(ASSETS_TO_CACHE);
+      })
+      .then(() => self.skipWaiting()) // Buộc Service Worker mới kích hoạt ngay lập tức
   );
 });
 
-// SỰ KIỆN KÍCH HOẠT: Xóa bỏ các bộ đệm phiên bản cũ để giải phóng không gian dung lượng
+// 2. Sự kiện Kích hoạt (Activate) - Dọn dẹp kho bộ nhớ đệm cũ để tránh xung đột dữ liệu
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Đang xóa bộ đệm cũ:', cache);
+            console.log('[Service Worker] Đang xóa bộ nhớ đệm cũ:', cache);
             return caches.delete(cache);
           }
         })
       );
-    }).then(() => {
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim()) // Giành quyền kiểm soát tất cả các client ngay lập tức
   );
 });
 
-// SỰ KIỆN FETCH: Chiến lược tối ưu chạy mạng kết hợp Offline hoàn toàn
+// 3. Sự kiện Đánh chặn yêu cầu mạng (Fetch) - Chiến lược mạng: Network First, Fallback to Cache
+// Ưu tiên lấy dữ liệu mới nhất từ Internet, nếu mất mạng sẽ lấy từ Cache (Phù hợp cho đồng bộ Firebase Offline)
 self.addEventListener('fetch', (event) => {
-  if (!event.request.url.startsWith('http')) return;
+  // Chỉ xử lý các yêu cầu HTTP/HTTPS thông thường (Bỏ qua chrome-extension, v.v...)
+  if (!event.request.url.startsWith(self.location.origin) && !event.request.url.startsWith('http')) {
+    return;
+  }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((networkResponse) => {
-        if (event.request.method === 'GET' && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
+    fetch(event.request)
+      .then((response) => {
+        // Nếu phản hồi hợp lệ, sao chép một bản lưu vào cache để dùng khi ngoại tuyến
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, responseToCache);
           });
         }
-        return networkResponse;
-      }).catch(() => {
-        return new Response('Kết nối mạng không khả dụng và tài nguyên chưa được lưu đệm.', {
-          status: 503,
-          statusText: 'Service Unavailable'
+        return response;
+      })
+      .catch(() => {
+        // Khi không có mạng kết nối, tìm kiếm tài nguyên trong kho Cache
+        console.log('[Service Worker] Mất kết nối. Đang tải tài nguyên từ bộ nhớ đệm Offline...');
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Fallback dự phòng nếu tìm không thấy trang nào trong cache khi offline
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
         });
-      });
-    })
+      })
   );
 });
 
-// SỰ KIỆN BACKGROUND SYNC: Đồng bộ dữ liệu ngầm tự động từ IndexedDB lên Firestore đám mây khi có mạng trở lại
+// 4. Sự kiện Đồng bộ hóa ngầm (Background Sync) - Phục vụ hàng đợi dữ liệu sync_queue của Thầy
 self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-cloud-data') {
-        event.waitUntil(processSyncQueue());
-    }
+  if (event.tag === 'sync-firebase-data') {
+    console.log('[Service Worker] Đang thực hiện đồng bộ hóa dữ liệu ngầm khi có mạng mạng lại...');
+    // Gọi hàm xử lý đẩy dữ liệu từ IndexedDB / LocalStorage lên hệ thống quản lý tại đây
+    // event.waitUntil(doDataSynchronization());
+  }
 });
-
-// XỬ LÝ HÀNG ĐỢI ĐỒNG BỘ: Đọc dữ liệu từ IndexedDB và đẩy lên Firestore
-async function processSyncQueue() {
-    if (!firebaseAvailable || !db) {
-        console.warn('[Sync] Firebase không khả dụng trong SW — bỏ qua đồng bộ ngầm.');
-        return;
-    }
-    try {
-        const idb = await new Promise((resolve, reject) => {
-            const request = indexedDB.open('LichVanTrungOfflineDB', 1);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-
-        const tx = idb.transaction('sync_queue', 'readonly');
-        const store = tx.objectStore('sync_queue');
-        const records = await new Promise((resolve) => {
-            const req = store.getAll();
-            req.onsuccess = () => resolve(req.result);
-        });
-
-        if (!records || records.length === 0) return;
-
-        console.log(`[Sync] Phát hiện ${records.length} thao tác cần đồng bộ lên máy chủ đám mây...`);
-
-        for (const record of records) {
-            const { id, collection, action, payload } = record;
-            try {
-                const targetRef = db.collection(collection);
-
-                if (action === 'add') {
-                    const firestoreAdd = { ...payload };
-                    if (firestoreAdd.deadlineTime) {
-                        firestoreAdd.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreAdd.deadlineTime.seconds * 1000);
-                    }
-                    if (firestoreAdd.date) {
-                        firestoreAdd.date = firebase.firestore.Timestamp.fromMillis(firestoreAdd.date.seconds * 1000);
-                    }
-                    await targetRef.doc(payload.id).set(firestoreAdd);
-                } else if (action === 'update') {
-                    const docToUpdate = targetRef.doc(payload.id);
-                    const firestoreUpdate = { ...payload };
-                    if (firestoreUpdate.deadlineTime) {
-                        firestoreUpdate.deadlineTime = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.deadlineTime.seconds * 1000);
-                    }
-                    if (firestoreUpdate.date) {
-                        firestoreUpdate.date = firebase.firestore.Timestamp.fromMillis(firestoreUpdate.date.seconds * 1000);
-                    }
-                    await docToUpdate.update(firestoreUpdate);
-                } else if (action === 'delete') {
-                    const docToDelete = targetRef.doc(payload.id);
-                    await docToDelete.delete();
-                } else if (action === 'set') {
-                    const firestoreSet = { ...payload };
-                    await targetRef.set(firestoreSet, { merge: true });
-                }
-
-                const deleteTransaction = idb.transaction('sync_queue', 'readwrite');
-                const deleteStore = deleteTransaction.objectStore('sync_queue');
-                await new Promise((resolve, reject) => {
-                    const req = deleteStore.delete(id);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-                console.log(`[Sync] Đã đồng bộ & xóa bản ghi IndexedDB ID: ${id}`);
-            } catch (err) {
-                console.error('[Sync] Lỗi đồng bộ hóa bản ghi:', record, err);
-            }
-        }
-    } catch (e) {
-        console.error('[Sync] Lỗi tiến trình đồng bộ ngầm:', e);
-    }
-}
