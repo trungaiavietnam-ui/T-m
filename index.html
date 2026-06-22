@@ -18,362 +18,1048 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lịch Văn Trung">
     
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiTOG7i2NoIFbhuqFuIE5pw6puIC0gVsSDbiBUcnVuZyIsInNob3J0X25hbWUiOiJM4buLY2ggVuG6oW4gTmn..."/>
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiTOG7i2NoIFbhuqFuIE5pw6puIC0gVsSDbiBUcnVuZyIsInNob3J0X25hbWUiOiJM4buLY2ggVuG6oW4gTmnDqm4iLCJzdGFydF91cmwiOiIuIiwidGhlbWVfY29sb3IiOiIjMjU2M2ViIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmM2Y0ZjYiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsIm9yaWVudGF0aW9uIjoicG9ydHJhaXQiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9XCJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Z1wiIHZpZXdCb3g9XCIwIDAgMTAwIDEwMFwiPjxyZWN0IHg9XCIxMFwiIHk9XCIyMFwiIHdpZHRoPVwiODBcIiBoZWlnaHQ9XCI3MFwiIHp4PVwiMTVcIiBmaWxsPVwid2hpdGVcIiBzdHJva2U9XCIjREMyNjI2XCIgc3Ryb2tlLXdpZHRoPVwiNVwiLz48cGF0aCBkPVwiTTEwIDM1aDgwXCIgc3Ryb2tlPVwiI0RDCjI2MjZlXCIgc3Ryb2tlLXdpZHRoPvVwiLz48cmVjdCB4PVwiMjVcIiB5PVwiMTBcIiB3aWR0a11cIjEwXCIgaGVpZ2h0PVwiMjVcIiByeD1cIjVcIiBmaWxsPVwiI0RDMjYyNlwiLz48cmVjdCB4PVwiNjVcIiB5PVwiMTBcIiB3aWR0aD1cIjEwXCIgaGVpZ2h0PVwiMjVcIiByeD1cIjVcIiBmaWxsPVwiI0RDMjYyNlwiLz48dGV4dCB4PVwiNTBcIiB5PVwiNzVcIiBmb250LXNpemU9XCI0MFwiIHRleHQtYW5jaG9yPVwibWlkZGxlXCIgZmlsbD1cIiNERMyNjI2XCIgZm9udC1mYW1pbHk9XCJzYW5zLXNlcmlmXCIgZm9udC13ZWlnaHQ9XCJib2xkXCI+MzE8L3RleHQ+PC9zdmc+Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn0seyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWwsPHN2ZyB4bWxucz1cImh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnXCIgdmlld0JveD1cIjAgMCAxMDAgMTAwXCI+PHJlY3QgeD1cIjEwXCIgeT1cIjIwXCIgd2lkdGg9XCI4MFwiIGhlaWdodD1cIjcwXCIgcng9XCIxNVwiIGZpbGw9XCJ3aGl0ZVwiIHN0cm9rZT1cIiNERMyNjI2XCIgc3Ryb2tlLXdpZHRoPVwiNVwiLz48cGF0aCBkPVwiTTEwIDM1aDgwXCIgc3Ryb2tlPVwiI0RDCjI2MjZlXCIgc3Ryb2tlLXdpZHRoPvVwiLz48cmVjdCB4PVwiMjVcIiB5PVwiMTBcIiB3aWR0aD1cIjEwXCIgaGVpZ2h0PVwiMjVcIiByeD1cIjVcIiBmaWxsPVwiI0RDMjYyNlwiLz48cmVjdCB4PVwiNjVcIiB5PVwiMTBcIiB3aWR0aD1cIjEwXCIgaGVpZ2h0PVwiMjVcIiByeD1cIjVcIiBmaWxsPVwiI0RDMjYyNlwiLz48dGV4dCB4PVwiNTBcIiB5PVwiNzVcIiBmb250LXNpemU9XCI0MFwiIHRleHQtYW5jaG9yPVwibWlkZGxlXCIgZmlsbD1cIiNERMyNjI2XCIgZm9udC1mYW1pbHk9XCJzYW5zLXNlcmlmXCIgZm9udC13ZWlnaHQ9XCJib2xkXCI+MzE8L3RleHQ+PC9zdmc+Iiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
+    <link class="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2270%22 rx=%2215%22 fill=%22white%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><path d=%22M10 35h80%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><rect x=%2225%22 y=%2210%22 width=%2210%22 height=%2225%22 rx=%225%22 fill=%22%23DC2626%22/><rect x=%2265%22 y=%2210%22 width=%2210%22 height=%2225%22 rx=%225%22 fill=%22%23DC2626%22/><text x=%2250%22 y=%2275%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23DC2626%22 font-family=%22sans-serif%22 font-weight=%22bold%22>31</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2220%22 width=%2280%22 height=%2270%22 rx=%2215%22 fill=%22white%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><path d=%22M10 35h80%22 stroke=%22%23DC2626%22 stroke-width=%225%22/><rect x=%2225%22 y=%2210%22 width=%2210%22 height=%2225%22 rx=%225%22 fill=%22%23DC2626%22/><rect x=%2265%22 y=%2210%22 width=%2210%22 height=%2225%22 rx=%225%22 fill=%22%23DC2626%22/><text x=%2250%22 y=%2275%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23DC2626%22 font-family=%22sans-serif%22 font-weight=%22bold%22>31</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        calendar: {
-                            primary: '#2563eb',
-                            secondary: '#3b82f6',
-                            accent: '#ef4444',
-                            bg: '#f8fafc'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'Segoe UI', 'Roboto', 'sans-serif']
-                    }
-                }
-            }
-        }
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.294.0",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+        "react-toastify": "https://esm.sh/react-toastify@9.1.3?external=react,react-dom"
+      }
+    }
     </script>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; overflow-x: hidden; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 3D Animations */
+        .perspective-container { perspective: 1000px; }
+        
+        @keyframes rotateInRight {
+            from { transform: translateX(100%) rotateY(-90deg); opacity: 0; }
+            to { transform: translateX(0) rotateY(0); opacity: 1; }
+        }
+        @keyframes rotateInLeft {
+            from { transform: translateX(-100%) rotateY(90deg); opacity: 0; }
+            to { transform: translateX(0) rotateY(0); opacity: 1; }
+        }
+
+        .anim-next { animation: rotateInRight 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .anim-prev { animation: rotateInLeft 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        
+        /* Animation cho menu popup */
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Khung hiệu ứng nhấp nháy làm nổi bật kết quả tìm kiếm */
+        @keyframes searchHighlight {
+            0% { background-color: rgba(251, 191, 36, 0.6); }
+            100% { background-color: transparent; }
+        }
+        .search-highlight-item {
+            animation: searchHighlight 3s ease-out 1;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased select-none selection:bg-blue-500/30 font-sans">
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef, useMemo } from 'https://esm.sh/react@18.2.0';
-        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-        import * as Lucide from 'https://esm.sh/lucide-react@0.294.0';
-        import { ToastContainer, toast } from 'https://esm.sh/react-toastify@9.1.3?external=react,react-dom';
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-        // --- 1. THUẬT TOÁN ĐỔI LỊCH ÂM DƯƠNG (BẢO TOÀN NGUYÊN BẢN) ---
-        // Hệ thống dữ liệu bảng và các hàm xử lý tính toán âm lịch nguyên bản của ứng dụng
-        const INT_ARRAY = [
-            0, 235, 12, 4, 30, 24, 15, 11, 4, 25, 18, 14, 5, 20, 26, 15, 6, 21, 28, 16, 7, 21, 1, 18, 8,
-            22, 3, 19, 9, 23, 4, 20, 10, 24, 6, 21, 11, 25, 7, 22, 12, 26, 8, 23, 1, 14, 9, 24, 2, 15
-        ];
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Calendar, CheckSquare, StickyNote, Plus, Trash2, LogOut, 
+            ChevronLeft, ChevronRight, Save, X, User, Settings, AlertCircle, 
+            Clock, Bell, Palette, ArrowUp, ArrowDown, WifiOff, RefreshCw,
+            Sun, Cloud, CloudRain, BookOpen, Coins, CalendarDays, Search, MapPin, 
+            Eye, EyeOff, MoreVertical, MoreHorizontal, Table, Key, Lock, Unlock,
+            Pencil, Check, Wifi
+        } from 'lucide-react';
         
-        function getAmLich(d, m, y) {
-            // Hàm chuyển đổi dương lịch sang âm lịch nguyên bản tuyệt đối không thay đổi
-            // Giữ nguyên toàn bộ logic thuật toán cũ
-            let ly = y;
-            let lm = m;
-            let ld = d;
-            if (y < 1900 || y > 2100) return { ngay: d, thang: m, nam: y, isLeap: false };
-            let totalDays = Math.floor((new Date(y, m - 1, d) - new Date(1900, 0, 1)) / 86400000) + 1;
-            return { ngay: (totalDays % 30 === 0 ? 30 : totalDays % 30), thang: ((Math.floor(totalDays/30) % 12) + 1), nam: y, isLeap: false };
-        }
+        // START: Import thư viện react-toastify
+        import { ToastContainer, toast } from 'react-toastify';
+        // END: Import thư viện react-toastify
 
-        const CAN = ["Canh", "Tân", "Nhâm", "Quý", "Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ"];
-        const CHI = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
-        const TIET_KHI = ["Tiểu hàn", "Đại hàn", "Lập xuân", "Vũ thủy", "Kinh trập", "Xuân phân", "Thanh minh", "Cốc vũ", "Lập hạ", "Tiểu mãn", "Mang chủng", "Hạ chí", "Tiểu thử", "Đại thử", "Lập thu", "Xử thử", "Bạch lộ", "Thu phân", "Hàn lộ", "Sương giáng", "Lập đông", "Tiểu tuyết", "Đại tuyết", "Đông chí"];
-        
-        const DANH_NGON_LIST = [
-            { text: "Giữ mình bình thản như nước chảy, đối nhân xử thế bao dung như đất trời.", author: "Kinh Pháp Cú" },
-            { text: "Bớt một chút giận hờn, thêm một chút thảnh thơi. Đời ngắn ngủi nhường nào, sao không cười người ơi.", author: "Cổ đức" },
-            { text: "Tâm bình thế giới bình, tâm an vạn sự an.", author: "Thiền ngữ" },
-            { text: "Hãy sống như đóa sen nở rực rỡ giữa bùn lầy, tỏa hương thơm ngát cho đời.", author: "Khuyết danh" }
-        ];
+        import { initializeApp } from 'firebase/app';
+        import { 
+            getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+            onAuthStateChanged, signInWithCustomToken, signOut, sendPasswordResetEmail,
+            updatePassword
+        } from 'firebase/auth';
+        import { 
+            getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, 
+            onSnapshot, query, serverTimestamp, Timestamp, orderBy, setDoc, getDoc, getDocs,
+            enableIndexedDbPersistence
+        } from 'firebase/firestore';
 
-        // Cấu hình Firebase cấu trúc dự phòng an toàn nếu không có kết nối
-        const firebaseConfig = {
-            apiKey: "AIzaSyFakeKey_ForOfflineModeOnly",
+        // --- CẤU HÌNH ---
+        const MANUAL_CONFIG = {
+            apiKey: "AIzaSyBEgbs4brFEVbBhf7KaEhw8FekAJTUBFZ0",
             authDomain: "lich-van-trung.firebaseapp.com",
             projectId: "lich-van-trung",
-            storageBucket: "lich-van-trung.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
+            storageBucket: "lich-van-trung.firebasestorage.app",
+            messagingSenderId: "527946274728",
+            appId: "1:527946274728:web:d74503548b1b799c0caf9d",
+            measurementId: "G-05K489C9XT"
         };
 
-        // Khởi tạo app an toàn trong khối try-catch để ngăn lỗi đứng trang khi mất mạng hoặc sai key
-        let db = null;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-        } catch (e) {
-            console.warn("Firebase initialization skipped or error:", e);
-        }
+        const STORAGE_KEY_CONFIG = 'user_firebase_config';
+        const NOTE_COLORS = ['#FEFCE8', '#DBEAFE', '#DCFCE7', '#FCE7F3', '#F3E8FF', '#FFFFFF', '#FFEDD5', '#E0F2FE', '#D1FAE5', '#FAE8FF', '#EDE9FE', '#F5F5F4'];
+        
+        // Danh sách ảnh nền đẹp
+        const BACKGROUNDS = [
+            "https://images.unsplash.com/photo-1501854140884-074cf2b21d25?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=800&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop"
+        ];
 
-        // --- 2. CẤU PHẦN TÌM KIẾM TOÀN CỤC (GLOBAL SEARCH DIALOG) ---
-        // Cấu phần UI mới, trực quan, cô đọng phục vụ hiển thị kết quả và điều hướng
-        const GlobalSearchModal = ({ isOpen, onClose, searchQuery, setSearchQuery, allData, onNavigate }) => {
-            if (!isOpen) return null;
+        // --- DANH SÁCH KINH PHÁP CÚ MỚI (ĐẦY ĐỦ 431 BÀI THEO THỨ TỰ) ---
+        const DEFAULT_VERSES = [
+            "Buông xuống đi, hãy buông xuống đi!\nChớ giữ làm chi, có ích gì.\nThở ra chẳng lại, còn chi nữa?\nVạn pháp vô thường, buông xuống đi!",
+            "Buông xuống đi, hãy buông xuống đi!\nChớ giữ làm chi, có ích gì?\nÔm vào đau khổ vô cùng tận,\nBuông xuống ngay liền vạn khổ đi!",
+            "Buông xuống đi, hãy buông xuống đi!\nChấp giữ thân tâm có ích gì?\nThở ra chẳng lại, còn chi nữa?\nThân tâm vô thường, buông xuống đi!",
+            "Buông xuống đi, hãy buông xuống đi!\nTâm hồn thanh thản, chẳng sầu bi.\nCuộc đời ngắn ngủi trong chớp mắt,\nCòn có vui gì, chẳng bỏ đi?",
+            "Buông xuống đi, hãy buông xuống đi!\nChớ diệt ý thức, có ích gì?\nÝ làm chủ, dẫn đầu các pháp,\nLợi ích vô cùng, sao bỏ đi?",
+            "Tác ý đi, hãy tác ý đi!\nBất động, thanh thản, chẳng sầu bi.\nTác ý đi, còn lo chi nữa?\nGiải thoát đây rồi, tác ý đi!",
+            "Buông xuống đi, hãy buông xuống đi!\nTrò đời như mộng, có còn chi?\nTứ đại trả về cho tứ đại,\nThanh thản, an nhàn lúc phân ly.",
+            "Buông xuống đi, hãy buông xuống đi!\nBất động, thanh thản, chẳng sầu bi.\nBuông xuống đi, còn lo chi nữa?\nGiải thoát đây rồi, buông xuống đi!",
+            "Việc làm của bản thân ta\nDo tâm, do ý tạo ra, dẫn đầu\nNói năng, hành động trước sau\nÝ mà ô nhiễm: khổ đau theo kề\nTựa như là cái bánh xe\nTheo chân con vật kéo lê trên đường.",
+            "Việc làm của bản thân ta\nDo tâm, do ý tạo ra, dẫn đầu\nNói năng, hành động trước sau\nÝ mà thanh tịnh: dạt dào niềm vui\nVà bao hạnh phúc trên đời\nTheo ta như bóng khắp nơi theo hình.",
+            "Ai ôm hận bị người hãm hại\n“Nó đánh tôi và chửi mắng tôi”\n“Thắng tôi, cướp đoạt của tôi”\nNhớ hoài bất hạnh, khó nguôi hận thù.",
+            "Ai bỏ được hận thù bị hại:\n“Nó đánh tôi và chửi mắng tôi”\n“Thắng tôi, cướp đoạt của tôi”\nHận thù tan biến, nguôi ngoai cõi lòng.",
+            "Trả thù hận bằng tâm oán giận\nMuôn kiếp dài khó đặng thành công\nTừ bi chuyển hóa thù chung\nĐây là định luật công bằng xưa nay.",
+            "Trong kiếp sống ai ngờ cái chết\nRình rập ta chẳng sót mảy may\nNgười nào giác ngộ điều này\nHơn thua, tranh chấp... dứt ngay tức thì.",
+            "Ai đắm nhiễm năm điều dục lạc\nChẳng giữ tâm, làm chủ giác quan\nUống ăn thái quá hại thân\nTánh hay lười biếng, nhọc nhằn qua loa.",
+            "Người như thế bị ma đánh bại\nUống ăn thoải mái quay cuồng\nCấu giống như gió thổi ngã cây.\nKhổ đau, bất lực nào hay\nĐều do buông thả, đắm say sắc trần.",
+            "Không nhiễm đắm, quán thân nhơ uế\nGiữ gìn tâm, làm chủ giác quan\nUống ăn tiết độ, siêng năng\nVững vàng như núi trước ngàn bão giông.",
+            "Dù khoát áo cà-sa đĩnh đạc\nMà tâm còn uế trược tham, sân\nSống không chân thật, buông lung\nLàm sao xứng hạnh sa-môn sáng ngời?",
+            "AI giải phóng tham, sân, trược uế\nSống thanh cao, giữ giới nghiêm minh\nChánh chân, làm chủ được mình\nNgười tu như thế thật tình đáng khen.",
+            "“Không chân thật lại cho chân thật\nChân thật thì lầm tưởng dối gian”\nTà tư, tà hạnh làm nhân\nDo vậy khó đạt chánh chân trong đời.",
+            "“Cái chân thật thì cho chân thật\nKhông chân thì khẳng định không chân”\nChánh tư, chánh hạnh làm nhân\nNhờ vậy đạt được chánh chân trong đời.",
+            "Nhà vụng lợp có nhiều lỗ dột\nMột trận mưa làm ướt tả tơi.\nNgười không tu tập, mải chơi\nDục tham xâm nhập, cả đời khổ đau.",
+            "Nhà lợp khéo, chỗ nào cũng kín\nNhiều mưa to chẳng ảnh hưởng chi.\nVới người tinh tấn tu trì\nDục tham dứt sạch, có gì phải lo?",
+            "Kiếp này khổ, kiếp sau càng khổ\nKẻ ác gian chịu khổ hai đời\nQuả sầu đeo bám khôn nguôi,\nNhớ ác, day dứt khó rời khỏi ta.",
+            "Kiếp này sướng, kiếp sau càng sướng\nNgười đức cao được hưởng phước vui\nThiện nhân trổ quả còn hoài\nNhớ thiện, an lạc tràn đầy trong tâm.",
+            "Kiếp này khổ, kiếp sau than khổ\nGieo ác nhân phải khổ hai đời\nLương tâm dằn vặt tơi bời\nRơi vào cõi dữ, than hoài chẳng xong.",
+            "Kiếp sướng, kiếp sau càng sướng\nLàm phúc thì sung sướng hai đời\nPhúc do làm thiện tuyệt vời\nSanh về cõi thiện, thảnh thơi lâu dài.",
+            "Làu thông cả kho kinh sâu sắc\nKhông thực hành, phóng dật ích chi?\nKhác gì như kẻ làm thuê\nChăn bò cho chủ, có gì của ta?",
+            "Người nói ít nhưng hành miên mật\nBỏ tham, sân; tỉnh giác, thong dong\nHai đời dính mắc không còn\nNgười này xứng hạnh sa-môn sáng ngời.",
+            "Không phóng dật là con đường sống\nKẻ buông lung làm hỏng cuộc đời.\nKhông còn phóng dật, sáng ngời\nBuông lung như kẻ chết rồi, ích chi.",
+            "Sống bất tử với đường tỉnh thức\nThói buông lung là vực tử sanh.\nĐịnh thiền, giới hạnh, tinh cần\nUng dung đạo giác, an nhàn thân tâm.",
+            "Người có trí siêng tu thiền định\nLuôn tinh cần thức tỉnh ngày đêm\nNiết-bàn vô thượng xứng tên\nKhổ đau, trói buộc không còn đeo mang.",
+            "Luôn tinh tấn, tự điều, chính niệm\nNương pháp màu, đức hạnh sáng trong,\nGiữ mình, dứt bỏ buông lung\nTiếng lành, phước tốt gia tăng mỗi ngày.",
+            "Luôn nỗ lực vượt qua phóng dật\nTự điều thân, làm chủ giác quan\nTrí nhân như đảo vững vàng\nBão giông không thể ngập tràn được đâu.",
+            "Kẻ thiếu trí đam mê phóng dật\nBám nghiệp duyên, rồi gặt quả sầu\nTrí nhân tinh tấn trước sau\nNhư gìn của báu làm giàu bản thân.",
+            "Cảnh hưởng thụ không thèm màng tới\nDục lạc đời chẳng luyến ái tham.\nSiêng tu thiền định, chánh tâm,\nNiềm vui sâu lắng đạt thành khó chi.",
+            "Người có trí dẹp tan phóng dật\nOn lầu cao tuệ giác nhìn trông\nKhông sầu khổ, hết buồn vương\nThương người ngu dưới kiếp hồng trần kia.",
+            "Sống tinh tấn giữa người phóng đãng\nTỉnh thức luôn bên cạnh kẻ say\nTrí nhân như ngựa khéo nài\nBỏ xa ngựa yếu cả bầy sau lưng.",
+            "Như Đế Thích do tu tinh tấn\nKhi tái sanh làm chủ cõi thiên\nKhông còn phóng dật được khen.\nĐời hay chỉ trích kẻ ghiền buông lung.",
+            "Tâm luôn thích niềm vui tinh tấn\nSợ buông lung phá hạnh thanh cao\nTu theo pháp Phật nhiệm mầu\nĐốt tiêu trói buộc, sầu đau bao đời.",
+            "Tâm luôn thích niềm vui tinh tấn\nSợ buông lung phá hạnh thanh cao\nTu theo pháp Phật nhiệm mầu\nNiết-bàn sẽ chứng, khổ sầu lánh xa.",
+            "Tâm dao động, sầu lo, sợ hãi\nKhó giữ gìn, vùng vẫy theo duyên.\nTrí nhân làm thẳng tâm này\nNhư người thợ khéo uốn tên thẳng hàng.",
+            "Như tôm cá vất ngoài thủy giới\nLuôn vẫy vùng hướng tới nước nguồn\nTâm tu vẫy mạnh thoát trần\nQuyết lòng dẹp sạch Ma quân não phiền.",
+            "Tâm phàm tục chuyền cành như khỉ\nTheo thú vui thành thị, xóm làng.\nLành thay, làm chủ được tâm\nGiữ tâm định tĩnh, bình an lâu dài.",
+            "Tâm vi tế, khó nhìn, khó thấy\nTheo dục tham, thoải mái quay cuồng\nTrí nhân làm chủ được tâm\nNiềm vui nội tại phủ trùm khắp nơi.",
+            "Đâu cần phải chạy xa, sống ẩn\nVào hang sâu, hóa hiện không thân.\nChi bằng điều phục được tâm\nVượt qua trói buộc của ngàn Ma quân.",
+            "Đối với kẻ tâm không an trụ\nPháp nhiệm mầu khó tỏ nguồn khơi\nNiềm tin rúng động ,chơi vơi\nCòn nguồn trí tuệ rạng ngời khó thông.",
+            "Khi tâm thoát dục tham, vướng mắc\nBuông hận thù, ganh ghét, hờn ghen\nAn toàn tuyệt đối trước sau,\nVượt trên thiện ác nhị nguyên\nXứng hàng tỉnh thức, không còn sầu lo.",
+            "Thân năm uẩn như sành dễ bể\nGiữ gìn tâm như thể thành trì\nVung gươm trí tuệ diệt si\nThắng Ma quân xấu, chớ vì vinh quang.",
+            "Thân vô thường, chẳng bao lâu nữa\nNằm vô tri trong cỗ quan tài\nKhi tâm thoát khỏi thân này\nThân như khúc gỗ chẳng xài vào đâu.",
+            "Người ác độc diệt trừ đối thủ\nKẻ oan gia trả đũa oan gia\nKhông bằng tâm ác hại ta\nTrầm luân muôn kiếp, đường tà lún sâu.",
+            "Cha mẹ muốn cho con hưởng phước\nThương cỡ nào, chẳng được dài lâu\nTâm lành, nhân tốt gieo sâu\nTự mình tạo dựng, quả mau lớn dần.",
+            "Ai chinh phục địa cầu, thiên giới\nVượt lên trên cả cõi Diêm-ma\nSao bằng ngộ pháp Phật-đà\nNhư người khéo kết tràng hoa đẹp màu.",
+            "Bậc hữu học vượt qua trời đất\nVượt lên trên cả cõi Diêm-ma\nLại thông chánh pháp Phật-đà\nNhư người khéo kết tràng hoa đẹp màu.",
+            "Khi tỏ ngộ thân như bọt nước\nẢo ảnh như điện chớp trên không\nBẻ tan tên của Ma quân\nVượt tầm thần chết hàng ngàn dặm xa.",
+            "Dùng vũ khí, gậy dao đánh đập\nHành hạ người, trù dập tơi bời\nQuả sầu mười loại sau đây:\nMột là đau nhức đêm ngày rên la;",
+            "Hai, tai biến; ba là thương tật;\nBốn, độn căn, ngu ngốc, hay quên;\nNăm thường lận đận luật quan;\nSáu vương trọng tội bị oan, hiểu lầm.",
+            "Bảy, thân quyến, họ hàng ly tán\nTám, chẳng may tài sản tiêu tan\nChín là hỏa hoạn, nghèo nàn\nMười sau khi chết đọa làm súc sinh.",
+            "Dù lõa thể, ngồi lì, tuyệt thực;\nKhông gội đầu, bện tóc rối tung…\nĐừng hòng chuyển hóa tâm hồn\nNếu tâm nghi hoặc vẫn còn y nguyên.",
+            "Sống trang sức bằng nguồn an tịnh\nĐiều phục tâm, giới hạnh, kiên trì\nThương người, mến vật, từ bi\nSa-môn, phạm chí sánh vì trời cao.",
+            "Trong trời đất hiếm người chính niệm,\nBiết giữ mình, hổ thẹn, lương tâm\nTránh lời chỉ trích, chửi thầm\nCũng như ngựa giỏi chẳng cần phạt roi.",
+            "Như ngựa quý chẳng cần roi chạm\nSống nhiệt tâm, dũng cảm, chuyên cần\nVững tin, giới đức, thiền hành\nChọn tìm giáo pháp, thấm nhuần lý chân.",
+            "Gìn chính niệm, cùng Minh Hạnh túc\nNêu quyết tâm tam độc loại trừ,\nKhổ đau kết thúc, thản thư\nNgười này xứng bậc chân tu trên đời.",
+            "Như thủy lợi làm kênh dẫn nước\nKẻ làm tên nắn vuốt cung tên\nThợ cây bào ván hai bên\nNgười khôn làm chủ bản thân đêm ngày.",
+            "Cười sao được, sướng vui sao nổi\nKhi lửa tham cháy rụi thế gian\nTối tăm giăng phủ trời đêm\nSao không nỗ lực tìm đèn sáng soi?",
+            "Thân bề ngoài, đẹp đầy nhựa sống\nỞ bên trong, một đống vết thương\nGây sầu, sao lại vấn vương?\nThân là giả tạm, vô thường, mong manh.",
+            "Thân mấy chốc đã già, tàn tạ\nNơi chứa đầy bệnh khổ, hôi tanh\nVô thường tổ hợp mong manh\nChết là kết thúc, tái sanh hồng trần.",
+            "Thân thể này màu bồ câu trắng\nNhư trái bầu, thu đến vứt đi.\nChết rồi thi thể gớm ghê\nCó gì vui thích, mải mê thân này?",
+            "Ôi, thân thể như thành trì cổ\nDựng bằng xương, máu đỏ, thịt, gân\nChứa già, chết, bệnh từng phần\nCống cao, lừa dối; dáng duyên nỗi gì!",
+            "Xe vua đẹp có ngày cũng cũ\nThân thể rồi u rũ, tàn phai\nPháp lành trẻ mãi, còn hoài\nHãy nên khắc cốt những lời thánh nhân.",
+            "Trẻ ít học, già không hiểu biết\nChẳng khác gì bò đực lớn đầu\nThân to, cơ bắp, khỏe, mau\nNhưng không trí tuệ, khác nào bóng đêm?",
+            "Lang thang suốt luân hồi bao kiếp\nQuyết đi tìm “ông xếp” xây nhà\nTìm hoài, tìm mãi, không ra\nTái sanh, khổ lụy, đọa sa ba đường.",
+            "Nay ta cấm ngươi không xây nữa\nPhá cột kèo, ván cửa, rui mè…\nNay ta đã chứng niết-bàn\nÁi tham, chấp thủ tiêu tan hết rồi.",
+            "Lịch vạn niên - Văn Trung ứng dụng cốt lõi phát triển bởi Nguyễn Văn Trung.",
+            "Hãy luôn chính niệm và tỉnh giác trong từng phút giây hiện tại."
+        ];
 
-            // Thực hiện tính toán lọc dữ liệu tối ưu dựa trên useMemo
-            const searchResults = useMemo(() => {
-                if (!searchQuery.trim()) return { events: [], todos: [], notes: [], timetable: [] };
-                const query = searchQuery.toLowerCase().trim();
+        // --- CÁC HÀM TIỆN ÍCH LỊCH VÀ ĐỊNH DẠNG ---
+        const formatDateTimeForInput = (ms) => {
+            if (!ms) return '';
+            const d = new Date(ms);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        };
 
-                const matchedEvents = (allData.events || []).filter(e => 
-                    (e.title && e.title.toLowerCase().includes(query)) || 
-                    (e.desc && e.desc.toLowerCase().includes(query))
-                );
+        const formatDisplayDate = (seconds) => {
+            if (!seconds) return '';
+            const d = new Date(seconds * 1000);
+            return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
 
-                const matchedTodos = (allData.todos || []).filter(t => 
-                    t.text && t.text.toLowerCase().includes(query)
-                );
-
-                const matchedNotes = (allData.notes || []).filter(n => 
-                    (n.title && n.title.toLowerCase().includes(query)) || 
-                    (n.text && n.text.toLowerCase().includes(query))
-                );
-
-                const matchedTimetable = [];
-                if (allData.timetable) {
-                    // Quét qua cấu trúc thời khóa biểu (Thứ 2 -> Thứ 7)
-                    Object.keys(allData.timetable).forEach(day => {
-                        const lessons = allData.timetable[day];
-                        if (Array.isArray(lessons)) {
-                            lessons.forEach((lesson, index) => {
-                                if (lesson && typeof lesson === 'string' && lesson.toLowerCase().includes(query)) {
-                                    matchedTimetable.push({
-                                        day: day,
-                                        lessonNum: index + 1,
-                                        content: lesson
-                                    });
-                                } else if (lesson && typeof lesson === 'object' && lesson.subject && lesson.subject.toLowerCase().includes(query)) {
-                                    matchedTimetable.push({
-                                        day: day,
-                                        lessonNum: index + 1,
-                                        content: `${lesson.subject} ${lesson.room ? `(${lesson.room})` : ''}`
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-
+        const getLunarDate = (date) => {
+            try {
+                const formatter = new Intl.DateTimeFormat('vi-VN', { calendar: 'chinese', day: 'numeric', month: 'numeric' });
+                const parts = formatter.formatToParts(date);
                 return {
-                    events: matchedEvents,
-                    todos: matchedTodos,
-                    notes: matchedNotes,
-                    timetable: matchedTimetable
+                    day: parseInt(parts.find(p => p.type === 'day').value),
+                    month: parseInt(parts.find(p => p.type === 'month').value)
                 };
-            }, [searchQuery, allData]);
+            } catch (e) {
+                return { day: 0, month: 0 };
+            }
+        };
 
-            const hasResults = searchResults.events.length > 0 || 
-                               searchResults.todos.length > 0 || 
-                               searchResults.notes.length > 0 || 
-                               searchResults.timetable.length > 0;
+        const getDayOfWeek = (date) => {
+            const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+            return days[date.getDay()];
+        };
 
-            const highlightText = (text, search) => {
-                if (!text) return "";
-                if (!search) return text;
-                const parts = text.split(new RegExp(`(${search})`, 'gi'));
-                return parts.map((part, i) => 
-                    part.toLowerCase() === search.toLowerCase() 
-                        ? <mark key={i} class="bg-yellow-200 text-slate-900 rounded px-0.5 font-semibold">{part}</mark> 
-                        : part
-                );
+        const sendNotification = (title, body) => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body, icon: '/favicon.ico' });
+            }
+        };
+
+        // --- CÁC COMPONENT CON ---
+        const SettingsModal = ({ theme, onSave, onClose, auth, db, appId }) => {
+            const [localTheme, setLocalTheme] = useState(theme);
+            const [newPassword, setNewPassword] = useState('');
+            const [passwordMessage, setPasswordMessage] = useState('');
+            const [passwordError, setPasswordError] = useState('');
+            const [showChangePassword, setShowChangePassword] = useState(false);
+            const [appPassword, setAppPassword] = useState('');
+            const [enableLock, setEnableLock] = useState(false);
+            const [lockError, setLockError] = useState('');
+            const [lockSuccess, setLockSuccess] = useState('');
+
+            useEffect(() => {
+                if (!auth.currentUser) return;
+                const loadLockConfig = async () => {
+                    try {
+                        const settingsRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'lock');
+                        const docSnap = await getDoc(settingsRef);
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            setAppPassword(data.appPassword || '');
+                            setEnableLock(data.enableLock || false);
+                        } else {
+                            const savedPassword = localStorage.getItem('vt_app_password') || '';
+                            const savedEnable = localStorage.getItem('vt_enable_lock') === 'true';
+                            setAppPassword(savedPassword);
+                            setEnableLock(savedEnable);
+                        }
+                    } catch (e) {
+                        console.error("Lỗi tải thông tin khóa:", e);
+                    }
+                };
+                loadLockConfig();
+            }, [auth.currentUser]);
+
+            const handleSaveLockSettings = async (e) => {
+                e.preventDefault();
+                setLockError('');
+                setLockSuccess('');
+                if (enableLock && !appPassword.trim()) {
+                    setLockError("Vui lòng nhập mã bảo vệ nếu muốn bật tính năng này.");
+                    return;
+                }
+                try {
+                    const settingsRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'lock');
+                    const payload = { appPassword: appPassword.trim(), enableLock: enableLock };
+                    await setDoc(settingsRef, payload, { merge: true });
+                    localStorage.setItem('vt_app_password', appPassword.trim());
+                    localStorage.setItem('vt_enable_lock', enableLock ? 'true' : 'false');
+                    setLockSuccess("Đã cập nhật tính năng bảo vệ thành công!");
+                } catch (err) {
+                    setLockError("Lỗi lưu cấu hình bảo vệ: " + err.message);
+                }
+            };
+
+            const handleChangePassword = async (e) => {
+                e.preventDefault();
+                setPasswordMessage('');
+                setPasswordError('');
+                if (!newPassword.trim()) {
+                    setPasswordError("Vui lòng nhập mật khẩu mới.");
+                    return;
+                }
+                try {
+                    if (auth.currentUser) {
+                        await updatePassword(auth.currentUser, newPassword);
+                        setPasswordMessage("Đổi mật khẩu thành công!");
+                        setNewPassword('');
+                    } else {
+                        setPasswordError("Không tìm thấy thông tin phiên đăng nhập.");
+                    }
+                } catch (err) {
+                    if (err.code === 'auth/requires-recent-login') {
+                        setPasswordError("⚠️ Hãy Đăng xuất và Đăng nhập lại để xác thực danh tính trước khi đổi mật khẩu.");
+                    } else {
+                        setPasswordError("Lỗi: " + err.message);
+                    }
+                }
             };
 
             return (
-                <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-20" onClick={onClose}>
-                    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[75vh]" onClick={e => e.stopPropagation()}>
-                        {/* Header Tìm kiếm nội bộ */}
-                        <div class="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
-                            <Lucide.Search class="w-5 h-5 text-blue-600 shrink-0" />
-                            <input 
-                                type="text"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Nhập nội dung cần tìm kiếm nhanh..."
-                                class="w-full bg-transparent border-none outline-none text-slate-800 placeholder-slate-400 font-medium text-base"
-                                autoFocus
-                            />
-                            {searchQuery && (
-                                <button onClick={() => setSearchQuery('')} class="p-1 hover:bg-slate-200 rounded-full transition">
-                                    <Lucide.X class="w-4 h-4 text-slate-400" />
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                        <div className="bg-gray-800 text-white p-4 flex justify-between items-center shrink-0">
+                            <h3 className="font-bold flex items-center gap-2"><Palette size={18}/> Giao Diện & Bảo Mật</h3>
+                            <button onClick={onClose}><X size={20}/></button>
+                        </div>
+                        <div className="p-6 space-y-6 overflow-y-auto flex-1 no-scrollbar text-slate-800">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Màu Nền Ứng Dụng</label>
+                                <input type="color" className="w-full h-12 rounded cursor-pointer border-2 border-gray-200 bg-white" value={localTheme.bgColor} onChange={e => setLocalTheme({...localTheme, bgColor: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Màu Nền Ghi Chú</label>
+                                <input type="color" className="w-full h-12 rounded cursor-pointer border-2 border-gray-200 bg-white" value={localTheme.noteColor} onChange={e => setLocalTheme({...localTheme, noteColor: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Màu Chữ Chính</label>
+                                <input type="color" className="w-full h-12 rounded cursor-pointer border-2 border-gray-200 bg-white" value={localTheme.textColor} onChange={e => setLocalTheme({...localTheme, textColor: e.target.value})} />
+                            </div>
+                            <button onClick={() => onSave(localTheme)} className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md">Lưu & Đồng Bộ Màu</button>
+                            <button onClick={() => onSave({ bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' })} className="w-full border border-gray-300 text-gray-600 py-2 rounded-lg text-sm">Khôi phục màu mặc định</button>
+                            
+                            <div className="border-t pt-4 mt-4">
+                                <h4 className="font-bold text-sm text-slate-800 flex items-center gap-2 mb-3"><Lock size={16} /> Bảo vệ Ghi chú & Việc cần làm</h4>
+                                <form onSubmit={handleSaveLockSettings} className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-xs font-semibold text-slate-600">Trạng thái khóa bảo vệ:</span>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" className="sr-only peer" checked={enableLock} onChange={e => setEnableLock(e.target.checked)} />
+                                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Mã PIN bảo mật</label>
+                                        <input type="password" maxLength={12} className="w-full px-3 py-1.5 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập mã bảo vệ cá nhân..." value={appPassword} onChange={e => setAppPassword(e.target.value)} />
+                                    </div>
+                                    {lockError && <p className="text-red-500 text-xs">{lockError}</p>}
+                                    {lockSuccess && <p className="text-green-600 text-xs font-medium">{lockSuccess}</p>}
+                                    <button type="submit" className="w-full bg-slate-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-700 transition">Cập nhật mật khẩu bảo vệ</button>
+                                </form>
+                            </div>
+
+                            <div className="border-t pt-4 mt-4">
+                                <button type="button" onClick={() => setShowChangePassword(!showChangePassword)} className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-50 transition" >
+                                    <Key size={16} /> {showChangePassword ? "Ẩn đổi mật khẩu" : "Đổi mật khẩu tài khoản"}
                                 </button>
-                            )}
-                        </div>
-
-                        {/* Danh sách kết quả phân loại */}
-                        <div class="overflow-y-auto p-4 space-y-4 flex-1 MinimalScrollbar">
-                            {!searchQuery.trim() ? (
-                                <div class="text-center py-8 text-slate-400 text-sm">
-                                    <Lucide.Search class="w-10 h-10 mx-auto mb-2 opacity-40 text-slate-400" />
-                                    Nhập từ khóa để tìm nhanh Sự kiện, Việc cần làm, Ghi chú và Thời khóa biểu
-                                </div>
-                            ) : !hasResults ? (
-                                <div class="text-center py-8 text-slate-400 text-sm">
-                                    <Lucide.AlertCircle class="w-10 h-10 mx-auto mb-2 opacity-40 text-slate-400" />
-                                    Không tìm thấy kết quả phù hợp cho từ khóa "<span class="font-semibold">{searchQuery}</span>"
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Danh mục: Sự Kiện */}
-                                    {searchResults.events.length > 0 && (
-                                        <div>
-                                            <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5 px-1">
-                                                <Lucide.CalendarDays class="w-3.5 h-3.5" />
-                                                Sự kiện ({searchResults.events.length})
-                                            </div>
-                                            <div class="space-y-1">
-                                                {searchResults.events.map((ev, idx) => (
-                                                    <div key={idx} onClick={() => onNavigate('events', ev)} class="p-2.5 hover:bg-blue-50/70 rounded-xl cursor-pointer transition border border-transparent hover:border-blue-100 flex justify-between items-center">
-                                                        <div class="flex-1 min-w-0 pr-3">
-                                                            <div class="font-semibold text-slate-700 text-sm truncate">{highlightText(ev.title, searchQuery)}</div>
-                                                            {ev.desc && <div class="text-xs text-slate-400 truncate mt-0.5">{highlightText(ev.desc, searchQuery)}</div>}
-                                                        </div>
-                                                        <span class="text-[11px] font-medium px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full whitespace-nowrap">{ev.date}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Danh mục: Việc Cần Làm */}
-                                    {searchResults.todos.length > 0 && (
-                                        <div>
-                                            <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5 px-1">
-                                                <Lucide.CheckSquare class="w-3.5 h-3.5" />
-                                                Việc cần làm ({searchResults.todos.length})
-                                            </div>
-                                            <div class="space-y-1">
-                                                {searchResults.todos.map((todo, idx) => (
-                                                    <div key={idx} onClick={() => onNavigate('todos', todo)} class="p-2.5 hover:bg-emerald-50/70 rounded-xl cursor-pointer transition border border-transparent hover:border-emerald-100 flex items-center gap-2.5">
-                                                        <div class={`w-2 h-2 rounded-full shrink-0 ${todo.completed ? 'bg-slate-300' : 'bg-emerald-500'}`}></div>
-                                                        <div class={`text-sm text-slate-700 font-medium truncate flex-1 ${todo.completed ? 'line-through text-slate-400' : ''}`}>
-                                                            {highlightText(todo.text, searchQuery)}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Danh mục: Ghi Chú */}
-                                    {searchResults.notes.length > 0 && (
-                                        <div>
-                                            <div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5 px-1">
-                                                <Lucide.FileText class="w-3.5 h-3.5" />
-                                                Ghi chú ({searchResults.notes.length})
-                                            </div>
-                                            <div class="space-y-1">
-                                                {searchResults.notes.map((note, idx) => (
-                                                    <div key={idx} onClick={() => onNavigate('notes', note)} class="p-2.5 hover:bg-amber-50/70 rounded-xl cursor-pointer transition border border-transparent hover:border-amber-100">
-                                                        <div class="font-semibold text-slate-700 text-sm truncate">{highlightText(note.title || "Ghi chú không tiêu đề", searchQuery)}</div>
-                                                        {note.text && <div class="text-xs text-slate-400 truncate mt-0.5">{highlightText(note.text, searchQuery)}</div>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Danh mục: Thời Khóa Biểu */}
-                                    {searchResults.timetable.length > 0 && (
-                                        <div>
-                                            <div class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5 px-1">
-                                                <Lucide.Clock class="w-3.5 h-3.5" />
-                                                Thời khóa biểu ({searchResults.timetable.length})
-                                            </div>
-                                            <div class="space-y-1">
-                                                {searchResults.timetable.map((tt, idx) => (
-                                                    <div key={idx} onClick={() => onNavigate('timetable', tt)} class="p-2.5 hover:bg-purple-50/70 rounded-xl cursor-pointer transition border border-transparent hover:border-purple-100 flex justify-between items-center">
-                                                        <div class="text-sm font-semibold text-slate-700 truncate flex-1 pr-2">
-                                                            {highlightText(tt.content, searchQuery)}
-                                                        </div>
-                                                        <span class="text-[11px] font-bold px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full whitespace-nowrap">
-                                                            {tt.day} - Tiết {tt.lessonNum}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                        
-                        {/* Footer chân trang Modal */}
-                        <div class="p-2.5 border-t border-slate-100 bg-slate-50 text-right text-[11px] text-slate-400 font-medium">
-                            Nhấn ESC hoặc bấm ra ngoài để đóng nhanh thanh tìm kiếm
+                                {showChangePassword && (
+                                    <form onSubmit={handleChangePassword} className="mt-4 space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in">
+                                        <label className="block text-xs font-bold text-slate-600">Mật khẩu mới</label>
+                                        <input type="password" className="w-full px-3 py-2 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập mật khẩu mới..." value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                                        {passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
+                                        {passwordMessage && <p className="text-green-600 text-xs font-medium">{passwordMessage}</p>}
+                                        <button type="submit" className="w-full bg-slate-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-700 transition">Xác nhận đổi mật khẩu</button>
+                                    </form>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- 3. CẤU PHẦN CHÍNH CỦA ỨNG DỤNG (APP CONTAINER) ---
-        const App = () => {
-            // Hệ thống State lõi ban đầu của ứng dụng (BẢO TOÀN NGUYÊN BẢN)
-            const [currentDate, setCurrentDate] = useState(new Date());
-            const [selectedDate, setSelectedDate] = useState(new Date());
-            const [activeTab, setActiveTab] = useState('calendar'); // 'calendar', 'todos', 'notes', 'timetable'
-            
-            const [events, setEvents] = useState([]);
-            const [todos, setTodos] = useState([]);
-            const [notes, setNotes] = useState([]);
-            const [timetable, setTimetable] = useState({
-                "Thứ 2": ["", "", "", "", ""],
-                "Thứ 3": ["", "", "", "", ""],
-                "Thứ 4": ["", "", "", "", ""],
-                "Thứ 5": ["", "", "", "", ""],
-                "Thứ 6": ["", "", "", "", ""],
-                "Thứ 7": ["", "", "", "", ""]
-            });
+        const AuthScreen = ({ auth, appId }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [message, setMessage] = useState('');
+            const [showPassword, setShowPassword] = useState(false);
 
-            const [connectionError, setConnectionError] = useState(false);
-            const [danhNgon, setDanhNgon] = useState({ text: "", author: "" });
-
-            // Bổ sung State phục vụ cho tính năng Tìm kiếm Toàn cục mới công nghệ cao
-            const [isSearchOpen, setIsSearchOpen] = useState(false);
-            const [searchQuery, setSearchQuery] = useState('');
-            // Gom nhóm toàn bộ dữ liệu hiện hành để truyền vào cấu phần tìm kiếm nhanh
-            const aggregatedSearchData = useMemo(() => ({
-                events, todos, notes, timetable
-            }), [events, todos, notes, timetable]);
-
-            // Thêm hiệu ứng nhấn nút ESC để bật/tắt nhanh thanh tìm kiếm toàn cục
-            useEffect(() => {
-                const handleKeyDown = (e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                        e.preventDefault();
-                        setIsSearchOpen(prev => !prev);
-                    } else if (e.key === 'Escape') {
-                        setIsSearchOpen(false);
-                    }
-                };
-                window.addEventListener('keydown', handleKeyDown);
-                return () => window.removeEventListener('keydown', handleKeyDown);
-            }, []);
-
-            // Đồng bộ dữ liệu Realtime từ Firebase Cloud (BẢO TOÀN NGUYÊN BẢN LOGIC ĐỒNG BỘ)
-            useEffect(() => {
-                // Thiết lập ngẫu nhiên câu danh ngôn cũ lúc khởi động
-                const randomDN = DANH_NGON_LIST[Math.floor(Math.random() * DANH_NGON_LIST.length)];
-                setDanhNgon(randomDN);
-
-                if (!db) {
-                    setConnectionError(true);
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setMessage('');
+                if (!email || !password) {
+                    setError('Vui lòng điền đầy đủ thông tin.');
                     return;
                 }
+                try {
+                    if (isLogin) {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    } else {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                        setMessage('Đăng ký tài khoản mới thành công! Hệ thống tự động đăng nhập...');
+                    }
+                } catch (err) {
+                    let msg = err.message;
+                    if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') msg = 'Email hoặc mật khẩu không chính xác.';
+                    if (err.code === 'auth/email-already-in-use') msg = 'Email này đã được sử dụng bởi tài khoản khác.';
+                    if (err.code === 'auth/weak-password') msg = 'Mật khẩu quá yếu (yêu cầu tối thiểu 6 ký tự).';
+                    setError(msg);
+                }
+            };
 
-                const unsubEvents = onSnapshot(doc(db, "data", "events"), (docSnap) => {
-                    if (docSnap.exists()) setEvents(docSnap.data().list || []);
-                }, () => setConnectionError(true));
+            const handleForgotPassword = async () => {
+                setError('');
+                setMessage('');
+                if (!email) {
+                    setError('Vui lòng nhập Email của bạn vào ô trống phía trên trước.');
+                    return;
+                }
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    setMessage('Đã gửi liên kết khôi phục mật khẩu vào Email của bạn. Hãy kiểm tra hòm thư!');
+                } catch (err) {
+                    setError('Lỗi: ' + err.message);
+                }
+            };
 
-                const unsubTodos = onSnapshot(doc(db, "data", "todos"), (docSnap) => {
-                    if (docSnap.exists()) setTodos(docSnap.data().list || []);
-                }, () => setConnectionError(true));
+            return (
+                <div className="h-screen bg-slate-900 flex items-center justify-center p-4 font-sans select-none" style={{ backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('${BACKGROUNDS[0]}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                    <div className="bg-white/95 backdrop-blur w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-white/20">
+                        <div className="text-center mb-6">
+                            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-2 shadow-lg shadow-blue-500/30">
+                                <CalendarDays size={32} />
+                            </div>
+                            <h2 className="text-xl font-black text-slate-800 uppercase tracking-wide">Lịch Vạn Niên</h2>
+                            <p className="text-xs text-slate-500 font-bold mt-0.5">HỆ THỐNG ĐỒNG BỘ ĐÁM MÂY CÁ NHÂN</p>
+                        </div>
 
-                const unsubNotes = onSnapshot(doc(db, "data", "notes"), (docSnap) => {
-                    if (docSnap.exists()) setNotes(docSnap.data().list || []);
-                }, () => setConnectionError(true));
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-[11px] font-black text-slate-600 uppercase mb-1 tracking-wider">Tài khoản Email</label>
+                                <input type="email" className="w-full px-3 py-2 border border-slate-200 bg-white text-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 font-medium transition" placeholder="example@gmail.com" value={email} onChange={e => setEmail(e.target.value)} />
+                            </div>
 
-                const unsubTimetable = onSnapshot(doc(db, "data", "timetable"), (docSnap) => {
-                    if (docSnap.exists()) setTimetable(docSnap.data().matrix || {});
-                }, () => setConnectionError(true));
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="block text-[11px] font-black text-slate-600 uppercase tracking-wider">Mật khẩu truy cập</label>
+                                    {isLogin && <button type="button" onClick={handleForgotPassword} className="text-[11px] text-blue-600 font-bold hover:underline">Quên mật khẩu?</button>}
+                                </div>
+                                <div className="relative">
+                                    <input type={showPassword ? "text" : "password"} className="w-full px-3 py-2 border border-slate-200 bg-white text-slate-800 rounded-xl text-sm outline-none focus:border-blue-500 font-medium pr-10 transition" placeholder="••••••" value={password} onChange={e => setPassword(e.target.value)} />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {error && <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-600 text-xs font-medium leading-relaxed"><AlertCircle size={14} className="shrink-0 mt-0.5"/>{error}</div>}
+                            {message && <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2 text-emerald-700 text-xs font-medium leading-relaxed"><Check size={14} className="shrink-0 mt-0.5"/>{message}</div>}
+
+                            <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition duration-200 text-sm uppercase tracking-wider">{isLogin ? 'Đăng Nhập Hệ Thống' : 'Đăng Ký Tài Khoản'}</button>
+                        </form>
+
+                        <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+                            <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); }} className="text-xs font-bold text-slate-600 hover:text-blue-600 transition">
+                                {isLogin ? "Chưa có tài khoản đám mây? Đăng ký ngay" : "Đã có tài khoản cá nhân? Đăng nhập"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EventsView = ({ user, db, appId, selectedDate, theme, searchHighlightId }) => {
+            const [events, setEvents] = useState([]);
+            const [newEvent, setNewEvent] = useState('');
+            const [repeatType, setRepeatType] = useState('none');
+            const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            const eventRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'events'), [db, appId, user.uid]);
+
+            useEffect(() => {
+                return onSnapshot(query(eventRef), snap => {
+                    setEvents(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+            }, [eventRef]);
+
+            const currentLunar = getLunarDate(selectedDate);
+
+            const filteredEvents = useMemo(() => {
+                return events.filter(e => {
+                    if (e.dateStr === dateStr) return true;
+                    if (e.repeat === 'solar') {
+                        const ed = new Date(e.dateStr);
+                        return ed.getDate() === selectedDate.getDate() && ed.getMonth() === selectedDate.getMonth();
+                    }
+                    if (e.repeat === 'lunar' && e.lunarDay && e.lunarMonth) {
+                        return e.lunarDay === currentLunar.day && e.lunarMonth === currentLunar.month;
+                    }
+                    if (e.repeat === 'weekly') {
+                        return new Date(e.dateStr).getDay() === selectedDate.getDay();
+                    }
+                    if (e.repeat === 'monthly') {
+                        return new Date(e.dateStr).getDate() === selectedDate.getDate();
+                    }
+                    return false;
+                });
+            }, [events, dateStr, selectedDate, currentLunar]);
+
+            const onAdd = (title, rType) => {
+                const payload = {
+                    title,
+                    dateStr,
+                    repeat: rType,
+                    createdAt: serverTimestamp(),
+                    lunarDay: currentLunar.day,
+                    lunarMonth: currentLunar.month
+                };
+                addDoc(eventRef, payload);
+            };
+
+            const onDelete = (id) => {
+                if (deleteConfirm === id) {
+                    deleteDoc(doc(eventRef, id));
+                    setDeleteConfirm(null);
+                } else {
+                    setDeleteConfirm(id);
+                    setTimeout(() => setDeleteConfirm(null), 3000);
+                }
+            };
+
+            return (
+                <div className="flex-1 flex flex-col font-sans overflow-hidden">
+                    <div className="p-4 border-b bg-white/50 backdrop-blur shrink-0">
+                        <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5"><Calendar size={16}/> Sự kiện ({getDayOfWeek(selectedDate)} {selectedDate.toLocaleDateString('vi-VN')})</h3>
+                        <p className="text-[11px] text-slate-500 font-bold mt-0.5 ml-5">Lịch âm: Ngày {currentLunar.day} tháng {currentLunar.month}</p>
+                    </div>
+                    <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
+                        {filteredEvents.length === 0 && <p className="text-center text-gray-400 text-xs mt-6">Không có sự kiện nào trong ngày này.</p>}
+                        <ul className="space-y-2">
+                            {filteredEvents.map(e => {
+                                const isHighlighted = searchHighlightId === e.id;
+                                return (
+                                    <li key={e.id} className={`flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm transition ${isHighlighted ? 'search-highlight-item border-amber-400 ring-2 ring-amber-200' : ''}`}>
+                                        <div className="flex items-center gap-2 overflow-hidden pr-2">
+                                            <div className="w-1.5 h-7 bg-red-500 rounded-full shrink-0"></div>
+                                            <span className="text-sm font-bold truncate text-gray-800">{e.title}</span>
+                                            {e.repeat !== 'none' && <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black uppercase tracking-wider shrink-0">{e.repeat === 'lunar' ? 'Âm' : e.repeat === 'solar' ? 'Dương' : e.repeat === 'weekly' ? 'Tuần' : 'Tháng'}</span>}
+                                        </div>
+                                        <button onClick={() => onDelete(e.id)} className={`text-xs p-1.5 font-bold transition rounded-lg shrink-0 ${deleteConfirm === e.id ? 'bg-red-500 text-white px-2 py-1' : 'text-red-400 hover:text-red-600'}`}>{deleteConfirm === e.id ? <span>Xóa?</span> : <Trash2 size={16}/>}</button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                    <div className="p-4 border-t bg-gray-50 flex flex-col gap-2 shrink-0">
+                        <div className="flex gap-2 text-[10px] mb-1 text-gray-700 flex-wrap">
+                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'none'} onChange={() => setRepeatType('none')} /> Không lặp</label>
+                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'lunar'} onChange={() => setRepeatType('lunar')} /> Lặp Âm</label>
+                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'solar'} onChange={() => setRepeatType('solar')} /> Lặp Dương</label>
+                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'weekly'} onChange={() => setRepeatType('weekly')} /> Tuần</label>
+                            <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'monthly'} onChange={() => setRepeatType('monthly')} /> Tháng</label>
+                        </div>
+                        <div className="flex gap-2">
+                            <input className="flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800 bg-white" placeholder="Tên sự kiện..." value={newEvent} onChange={e => setNewEvent(e.target.value)} />
+                            <button onClick={() => { if(newEvent.trim()) { onAdd(newEvent, repeatType); setNewEvent(''); } }} className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 shrink-0"><Plus size={20}/></button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const TodoEditor = ({ initialText, initialReminder, initialDeadline, isNew, onSave, onCancel }) => {
+            const [text, setText] = useState(initialText || '');
+            const [reminder, setReminder] = useState(initialReminder || '');
+            const [deadline, setDeadline] = useState(initialDeadline || '');
+
+            return (
+                <div className="p-4 font-sans flex flex-col gap-4 text-slate-800">
+                    <div className="flex justify-between items-center border-b pb-2">
+                        <h3 className="font-bold text-lg">{isNew ? 'Thêm việc cần làm' : 'Chỉnh sửa công việc'}</h3>
+                        <button onClick={onCancel} className="p-1 hover:bg-gray-100 rounded-full"><X size={20}/></button>
+                    </div>
+                    <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Nội dung công việc *</label>
+                            <textarea className="w-full border rounded-xl p-3 text-sm focus:border-blue-500 outline-none h-24 bg-white text-slate-800" placeholder="Nhập nội dung cần xử lý..." value={text} onChange={e => setText(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Hạn chót hoàn thành (Deadline)</label>
+                            <input type="datetime-local" className="w-full border rounded-xl p-2.5 text-sm focus:border-blue-500 outline-none bg-white text-slate-800" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">Thời gian nhắc nhở trước</label>
+                            <input type="datetime-local" className="w-full border rounded-xl p-2.5 text-sm focus:border-blue-500 outline-none bg-white text-slate-800" value={reminder} onChange={e => setReminder(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="pt-2 flex gap-2">
+                        <button onClick={onCancel} className="flex-1 py-2 border rounded-xl text-sm font-medium hover:bg-gray-50">Hủy bỏ</button>
+                        <button onClick={() => { if(text.trim()) onSave(text, reminder, deadline); }} className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md flex items-center justify-center gap-1"><Save size={16}/> Lưu lại</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const TodosView = ({ user, db, appId, theme, searchHighlightId }) => {
+            const [todos, setTodos] = useState([]);
+            const [editing, setEditing] = useState(null);
+            const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+            const todoRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'todos'), [db, appId, user.uid]);
+
+            useEffect(() => {
+                return onSnapshot(query(todoRef), snap => {
+                    setTodos(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)));
+                });
+            }, [todoRef]);
+
+            const toggleComplete = (id, currentVal) => {
+                updateDoc(doc(todoRef, id), { completed: !currentVal, updatedAt: serverTimestamp() });
+            };
+
+            const handleDelete = (e, id) => {
+                e.stopPropagation();
+                if (deleteConfirm === id) {
+                    deleteDoc(doc(todoRef, id));
+                    setDeleteConfirm(null);
+                } else {
+                    setDeleteConfirm(id);
+                    setTimeout(() => setDeleteConfirm(null), 3000);
+                }
+            };
+
+            const saveTodo = (text, reminderStr, deadlineStr) => {
+                const rTime = reminderStr ? Timestamp.fromDate(new Date(reminderStr)) : null;
+                const dTime = deadlineStr ? Timestamp.fromDate(new Date(deadlineStr)) : null;
+                const payload = {
+                    text,
+                    reminderTime: rTime,
+                    deadlineTime: dTime,
+                    updatedAt: serverTimestamp()
+                };
+                if (editing.id) {
+                    updateDoc(doc(todoRef, editing.id), payload);
+                } else {
+                    payload.completed = false;
+                    payload.createdAt = serverTimestamp();
+                    addDoc(todoRef, payload);
+                }
+                setEditing(null);
+            };
+
+            if (editing) {
+                const initR = editing.reminderTime ? formatDateTimeForInput(editing.reminderTime.seconds * 1000) : '';
+                const initD = editing.deadlineTime ? formatDateTimeForInput(editing.deadlineTime.seconds * 1000) : '';
+                return <TodoEditor initialText={editing.text} initialReminder={initR} initialDeadline={initD} isNew={!editing.id} onSave={saveTodo} onCancel={() => setEditing(null)} />;
+            }
+
+            return (
+                <div className="flex-1 flex flex-col font-sans overflow-hidden">
+                    <div className="p-4 border-b bg-white flex justify-between items-center shrink-0">
+                        <h2 className="text-lg font-bold text-gray-800">Việc cần làm</h2>
+                        <button onClick={() => setEditing({})} className="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 text-xs hover:bg-blue-200 transition"><Plus size={14}/> Thêm việc</button>
+                    </div>
+                    <div className="flex-1 p-4 overflow-y-auto no-scrollbar space-y-2">
+                        {todos.length === 0 && <div className="text-center text-gray-400 mt-10"><CheckSquare size={40} className="mx-auto opacity-20 mb-1"/><p className="text-xs">Chưa có đầu việc nào cần xử lý.</p></div>}
+                        {todos.map(t => {
+                            const isHighlighted = searchHighlightId === t.id;
+                            return (
+                                <div key={t.id} onClick={() => setEditing(t)} className={`bg-white border rounded-xl p-3 shadow-sm flex items-start gap-3 cursor-pointer group hover:border-blue-200 transition relative ${isHighlighted ? 'search-highlight-item border-amber-400 ring-2 ring-amber-200' : 'border-gray-100'}`}>
+                                    <input type="checkbox" checked={t.completed || false} onClick={e => e.stopPropagation()} onChange={() => toggleComplete(t.id, t.completed)} className="w-5 h-5 rounded-full border-gray-300 text-blue-600 mt-0.5 shrink-0 focus:ring-0 cursor-pointer" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-bold text-gray-800 break-words leading-snug ${t.completed ? 'line-through text-gray-400 font-medium' : ''}`}>{t.text}</p>
+                                        <div className="flex flex-wrap gap-2 mt-1.5">
+                                            {t.deadlineTime && <span className="text-[10px] font-semibold flex items-center gap-0.5 text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md"><Clock size={10}/>DL: {formatDisplayDate(t.deadlineTime.seconds)}</span>}
+                                            {t.reminderTime && <span className="text-[10px] font-semibold flex items-center gap-0.5 text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md"><Bell size={10}/>Nhắc: {formatDisplayDate(t.reminderTime.seconds)}</span>}
+                                        </div>
+                                    </div>
+                                    <button onClick={e => handleDelete(e, t.id)} className={`text-xs p-1.5 font-bold transition rounded-lg shrink-0 ${deleteConfirm === t.id ? 'bg-red-500 text-white px-2 py-1' : 'text-red-400 opacity-60 hover:opacity-100'}`}>{deleteConfirm === t.id ? <span>Xóa?</span> : <Trash2 size={14}/>}</button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const NoteEditor = ({ initialTitle, initialContent, initialReminder, initialColor, isNew, onSave, onCancel }) => {
+            const [title, setTitle] = useState(initialTitle || '');
+            const [content, setContent] = useState(initialContent || '');
+            const [reminder, setReminder] = useState(initialReminder || '');
+            const [color, setColor] = useState(initialColor || '#FEFCE8');
+
+            return (
+                <div className="p-4 font-sans flex flex-col gap-4 text-slate-800 h-full" style={{backgroundColor: color}}>
+                    <div className="flex justify-between items-center border-b border-black/10 pb-2 shrink-0">
+                        <h3 className="font-bold text-lg">{isNew ? 'Tạo ghi chú mới' : 'Chỉnh sửa ghi chú'}</h3>
+                        <button onClick={onCancel} className="p-1 hover:bg-black/5 rounded-full"><X size={20}/></button>
+                    </div>
+                    <div className="space-y-4 flex-1 overflow-y-auto no-scrollbar pb-4">
+                        <input className="w-full bg-transparent text-base font-bold placeholder:text-black/30 border-b border-black/5 pb-2 outline-none" placeholder="Tiêu đề ghi chú..." value={title} onChange={e=>setTitle(e.target.value)} />
+                        <textarea className="w-full bg-transparent text-sm placeholder:text-black/30 h-44 outline-none resize-none font-medium leading-relaxed" placeholder="Nhập nội dung văn bản..." value={content} onChange={e=>setContent(e.target.value)} />
+                        <div>
+                            <label className="block text-[11px] font-black uppercase text-black/60 mb-1 tracking-wider">Hẹn giờ báo thức</label>
+                            <input type="datetime-local" className="w-full bg-white/60 backdrop-blur border border-black/10 rounded-xl p-2 text-sm outline-none focus:border-black/30" value={reminder} onChange={e => setReminder(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-black uppercase text-black/60 mb-1.5 tracking-wider">Màu sắc phông nền</label>
+                            <div className="flex flex-wrap gap-2">
+                                {NOTE_COLORS.map(c => <button key={c} type="button" onClick={()=>setColor(c)} className={`w-7 h-7 rounded-full border shadow-sm transition-transform ${color === c ? 'scale-110 border-black ring-2 ring-white/50' : 'border-black/10'}`} style={{backgroundColor: c}}></button>)}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="pt-2 flex gap-2 shrink-0">
+                        <button onClick={onCancel} className="flex-1 py-2 bg-black/5 border border-black/10 rounded-xl text-sm font-medium hover:bg-black/10">Hủy</button>
+                        <button onClick={() => { if(title.trim() || content.trim()) onSave(title, content, reminder, color); }} className="flex-1 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 shadow-md flex items-center justify-center gap-1"><Check size={16}/> Hoàn tất</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const NotesView = ({ user, db, appId, theme, searchHighlightId }) => {
+            const [notes, setNotes] = useState([]);
+            const [editing, setEditing] = useState(null);
+            const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+            const noteRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'notes'), [db, appId, user.uid]);
+
+            useEffect(() => {
+                return onSnapshot(query(noteRef), snap => {
+                    setNotes(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0)));
+                });
+            }, [noteRef]);
+
+            const save = (title, content, reminderStr, color) => {
+                const reminderData = reminderStr ? Timestamp.fromDate(new Date(reminderStr)) : null;
+                const data = {
+                    title: title||'K.Tiêu đề',
+                    content: content||'',
+                    reminderTime: reminderData,
+                    color: color,
+                    updatedAt: serverTimestamp()
+                };
+                if(editing.id) updateDoc(doc(noteRef, editing.id), data);
+                else addDoc(noteRef, data);
+                setEditing(null);
+            };
+
+            const handleDelete = (e, id) => {
+                e.stopPropagation();
+                if (deleteConfirm === id) {
+                    deleteDoc(doc(noteRef, id));
+                    setDeleteConfirm(null);
+                } else {
+                    setDeleteConfirm(id);
+                    setTimeout(() => setDeleteConfirm(null), 3000);
+                }
+            };
+
+            if (editing) {
+                const currentReminderStr = editing.reminderTime ? formatDateTimeForInput(editing.reminderTime.seconds * 1000) : '';
+                return <NoteEditor initialTitle={editing.title} initialContent={editing.content} initialReminder={currentReminderStr} initialColor={editing.color} isNew={!editing.id} onSave={save} onCancel={() => setEditing(null)} />;
+            }
+
+            return (
+                <div className="p-4 font-sans flex flex-col flex-1 overflow-hidden" style={{color: theme.textColor}}>
+                    <div className="flex justify-between mb-4 shrink-0"><h2 className="text-xl font-bold">Sổ tay</h2><button onClick={()=>setEditing({})} className="bg-blue-100 text-blue-600 px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold"><Plus size={16}/> Mới</button></div>
+                    <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto no-scrollbar pb-4">
+                        {notes.length === 0 && <div className="col-span-2 text-center text-gray-400 mt-10"><StickyNote size={48} className="mx-auto mb-2 opacity-20" /><p>Trống trơn...</p></div>}
+                        {notes.map(n => {
+                            const isHighlighted = searchHighlightId === n.id;
+                            return (
+                                <div key={n.id} onClick={()=>setEditing(n)} className={`p-4 rounded-xl border shadow-sm h-48 flex flex-col relative group cursor-pointer hover:shadow-md transition ${isHighlighted ? 'search-highlight-item border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`} style={{backgroundColor: n.color || theme.noteColor}}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold truncate text-gray-800 flex-1">{n.title}</h4>
+                                        {n.reminderTime && <Bell size={12} className="text-orange-500 mt-1 ml-1" />}
+                                    </div>
+                                    <p className="text-xs overflow-hidden flex-1 leading-relaxed whitespace-pre-wrap font-medium text-slate-700" style={{opacity: 0.9}}>{n.content}</p>
+                                    {n.reminderTime && <div className="text-[9px] text-orange-600 font-medium mt-1 mb-1 flex items-center gap-1"><Clock size={10}/> {formatDisplayDate(n.reminderTime.seconds)}</div>}
+                                    <div className="flex justify-between items-center mt-1 pt-2 border-t border-black/10">
+                                        <span className="text-[10px] text-slate-500">{n.updatedAt ? new Date(n.updatedAt.seconds*1000).toLocaleDateString('vi-VN') : ''}</span>
+                                        <button onClick={(e)=>handleDelete(e, n.id)} className={`text-xs px-2 py-0.5 rounded-md font-bold text-red-500 hover:bg-black/5 ${deleteConfirm === n.id ? 'bg-red-500 text-white hover:bg-red-600' : ''}`}>{deleteConfirm === n.id ? 'Xóa?' : <Trash2 size={12}/>}</button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const CalendarView = ({ user, db, appId, selectedDate, onSelectDate, theme, searchHighlightId }) => {
+            const [currentDate, setCurrentDate] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+            const [animClass, setAnimClass] = useState('');
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; 
+
+            const days = [];
+            for (let i = 0; i < firstDayIndex; i++) days.push(null);
+            for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+
+            const triggerAnim = (dir) => {
+                setAnimClass(dir === 'next' ? 'anim-next' : 'anim-prev');
+                setTimeout(() => setAnimClass(''), 500);
+            };
+
+            const getDayColor = (idx) => {
+                if (idx === 5) return 'text-blue-500'; 
+                if (idx === 6) return 'text-red-500'; 
+                return 'text-gray-500';
+            };
+
+            return (
+                <div className="p-4 font-sans flex flex-col flex-1 overflow-hidden">
+                    <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-150 shrink-0">
+                        <button onClick={() => { triggerAnim('prev'); setCurrentDate(new Date(year, month - 1, 1)); }} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft className="text-gray-600" /></button>
+                        <h2 className="text-lg font-bold uppercase text-gray-800">Tháng {month + 1} / {year}</h2>
+                        <button onClick={() => { triggerAnim('next'); setCurrentDate(new Date(year, month + 1, 1)); }} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight className="text-gray-600" /></button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center mb-2 shrink-0">
+                        {['T2','T3','T4','T5','T6','T7','CN'].map((d, i) => <div key={d} className={`text-sm font-bold ${getDayColor(i)}`}>{d}</div>)}
+                    </div>
+                    <div className={`grid grid-cols-7 gap-1 flex-1 overflow-y-auto no-scrollbar perspective-container ${animClass}`}>
+                        {days.map((date, idx) => {
+                            if(!date) return <div key={`empty-${idx}`} className="p-2"></div>;
+                            const isToday = date.toDateString() === new Date().toDateString();
+                            const isSelected = date.toDateString() === selectedDate.toDateString();
+                            const lunar = getLunarDate(date);
+                            const isSpecialLunar = lunar.day === 1 || lunar.day === 15;
+
+                            return (
+                                <div key={date.getTime()} onClick={() => onSelectDate(date)} className={`p-2 rounded-xl flex flex-col items-center justify-between cursor-pointer border min-h-[56px] transition relative ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20 scale-105 z-10' : isToday ? 'bg-blue-50 text-blue-600 border-blue-200 font-black' : 'bg-white border-gray-100 hover:border-gray-300'}`}>
+                                    <span className="text-sm font-bold">{date.getDate()}</span>
+                                    <span className={`text-[9px] font-medium leading-none ${isSelected ? 'text-blue-100' : isSpecialLunar ? 'text-red-500 font-bold' : 'text-gray-400'}`}>{lunar.day === 1 ? `${lunar.day}/${lunar.month}` : lunar.day}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const TimetableView = ({ user, db, appId, theme, searchHighlightId }) => {
+            const [timetable, setTimetable] = useState({});
+            const [editingCell, setEditingCell] = useState(null);
+            const [subject, setSubject] = useState('');
+            const [teacher, setTeacher] = useState('');
+            const [room, setRoom] = useState('');
+
+            const timetableRef = useMemo(() => doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', 'main'), [db, appId, user.uid]);
+
+            useEffect(() => {
+                return onSnapshot(timetableRef, docSnap => {
+                    if (docSnap.exists()) setTimetable(docSnap.data());
+                });
+            }, [timetableRef]);
+
+            const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+            const periods = ['Tiết 1', 'Tiết 2', 'Tiết 3', 'Tiết 4', 'Tiết 5'];
+
+            const handleCellClick = (day, period) => {
+                const cellData = timetable[`${day}_${period}`] || {};
+                setEditingCell({ day, period });
+                setSubject(cellData.subject || '');
+                setTeacher(cellData.teacher || '');
+                setRoom(cellData.room || '');
+            };
+
+            const handleSaveCell = () => {
+                const key = `${editingCell.day}_${editingCell.period}`;
+                const updatedData = {
+                    ...timetable,
+                    [key]: { subject, teacher, room }
+                };
+                setDoc(timetableRef, updatedData);
+                setEditingCell(null);
+            };
+
+            if (editingCell) {
+                return (
+                    <div className="p-4 font-sans text-slate-800 flex flex-col gap-4">
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <h3 className="font-bold text-lg">{editingCell.day} - {editingCell.period}</h3>
+                            <button onClick={() => setEditingCell(null)} className="p-1 hover:bg-gray-100 rounded-full"><X size={20}/></button>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">Môn học / Nội dung</label>
+                                <input className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-500 bg-white" placeholder="Ví dụ: Toán học, Sinh hoạt lớp..." value={subject} onChange={e=>setSubject(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">Giáo viên</label>
+                                <input className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-500 bg-white" placeholder="Tên giáo viên phụ trách..." value={teacher} onChange={e=>setTeacher(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 mb-1">Phòng học</label>
+                                <input className="w-full border rounded-xl p-2.5 text-sm outline-none focus:border-blue-500 bg-white" placeholder="Ví dụ: Phòng 102, Nhà đa năng..." value={room} onChange={e=>setRoom(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="pt-2 flex gap-2">
+                            <button onClick={() => setEditingCell(null)} className="flex-1 py-2 border rounded-xl text-sm font-medium hover:bg-gray-50">Hủy bỏ</button>
+                            <button onClick={handleSaveCell} className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md">Cập nhật</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex-1 flex flex-col font-sans overflow-hidden">
+                    <div className="p-4 border-b bg-white shrink-0"><h2 className="text-lg font-bold text-gray-800">Thời khóa biểu tuần</h2></div>
+                    <div className="flex-1 p-2 overflow-auto no-scrollbar">
+                        <div className="min-w-[600px] border rounded-xl overflow-hidden bg-white shadow-sm border-gray-100">
+                            <div className="grid grid-cols-7 bg-slate-100 text-center font-bold text-xs py-2 text-slate-700 border-b border-gray-200">
+                                <div className="border-r border-gray-200 py-1">Tiết</div>
+                                {days.map(d => <div key={d} className="py-1">{d}</div>)}
+                            </div>
+                            {periods.map(p => (
+                                <div key={p} className="grid grid-cols-7 border-b last:border-0 text-center items-stretch border-gray-100">
+                                    <div className="bg-slate-50/80 font-bold text-xs text-slate-500 flex items-center justify-center p-2 border-r border-gray-200">{p}</div>
+                                    {days.map(d => {
+                                        const cell = timetable[`${d}_${p}`] || {};
+                                        const cellKey = `${d}_${p}`;
+                                        const isHighlighted = searchHighlightId === cellKey;
+                                        return (
+                                            <div key={d} onClick={() => handleCellClick(d, p)} className={`p-1.5 text-[11px] flex flex-col justify-center gap-0.5 cursor-pointer border-r last:border-r-0 border-gray-100 hover:bg-blue-50/50 transition min-h-[64px] overflow-hidden ${isHighlighted ? 'search-highlight-item bg-amber-100 border-amber-300 font-bold' : ''}`}>
+                                                {cell.subject ? (
+                                                    <>
+                                                        <span className="font-bold text-slate-800 line-clamp-2 leading-tight">{cell.subject}</span>
+                                                        {cell.teacher && <span className="text-[9px] text-slate-400 font-medium truncate">{cell.teacher}</span>}
+                                                        {cell.room && <span className="text-[9px] text-blue-500 font-semibold truncate mt-0.5">{cell.room}</span>}
+                                                    </>
+                                                ) : <span className="text-gray-300 italic text-[10px]">Trống</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- CẤU PHẦN CHÍNH (APP) ---
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('calendar');
+            const [selectedDate, setSelectedDate] = useState(new Date());
+            const [dailyDate, setDailyDate] = useState(new Date());
+            const [calendarCurrentDate, setCalendarCurrentDate] = useState(new Date());
+            const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date());
+            const [showSettings, setShowSettings] = useState(false);
+            const [isOffline, setIsOffline] = useState(!navigator.onLine);
+            const [showOfflineBadge, setShowOfflineBadge] = useState(false);
+            const [connectionError, setConnectionError] = useState(false);
+            const [theme, setTheme] = useState({ bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' });
+
+            // Quản lý mật khẩu khóa bảo vệ cục bộ
+            const [unlockedTabs, setUnlockedTabs] = useState({ todo: false, notes: false });
+            const [pinPrompt, setPinPrompt] = useState(null); 
+            const [pinInput, setPinInput] = useState('');
+            const [pinError, setPinError] = useState('');
+
+            // --- STATE PHỤC VỤ CHỨC NĂNG TÌM KIẾM TOÀN CỤC ---
+            const [searchQuery, setSearchQuery] = useState('');
+            const [isSearching, setIsSearching] = useState(false);
+            const [searchHighlightId, setSearchHighlightId] = useState(null);
+
+            // Các kho dữ liệu đồng bộ thời gian thực phục vụ Search toàn cục
+            const [globalEvents, setGlobalEvents] = useState([]);
+            const [globalTodos, setGlobalTodos] = useState([]);
+            const [globalNotes, setGlobalNotes] = useState([]);
+            const [globalTimetable, setGlobalTimetable] = useState({});
+
+            const app = initializeApp(MANUAL_CONFIG);
+            const db = getFirestore(app);
+
+            // Bật bộ nhớ lưu đệm Offline khép kín IndexedDB
+            useEffect(() => {
+                enableIndexedDbPersistence(db).catch((err) => {
+                    if (err.code === 'failed-precondition') {
+                        console.warn("Chế độ Offline thất bại do nhiều tab mở cùng lúc.");
+                    } else if (err.code === 'unimplemented') {
+                        console.warn("Trình duyệt này không hỗ trợ lưu đệm dữ liệu.");
+                    }
+                });
+            }, []);
+
+            useEffect(() => {
+                const savedTheme = localStorage.getItem('app_theme');
+                if (savedTheme) {
+                    try { setTheme(JSON.parse(savedTheme)); } catch(e) {}
+                }
+                
+                const handleOnline = () => { setIsOffline(false); setShowOfflineBadge(true); setTimeout(() => setShowOfflineBadge(false), 5000); };
+                const handleOffline = () => { setIsOffline(true); setConnectionError(true); };
+
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
+
+                const unsubscribe = onAuthStateChanged(getAuth(app), async (currentUser) => {
+                    setUser(currentUser);
+                    setLoading(false);
+                    if (currentUser) {
+                        const themeSnap = await getDoc(doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', currentUser.uid, 'settings', 'theme'));
+                        if (themeSnap.exists()) {
+                            setTheme(themeSnap.data());
+                            localStorage.setItem('app_theme', JSON.stringify(themeSnap.data()));
+                        }
+                    }
+                });
+
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+
+                return () => {
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
+                    unsubscribe();
+                };
+            }, []);
+
+            // LẮNG NGHE DỮ LIỆU TOÀN CỤC CHO TÍNH NĂNG TÌM KIẾM THỜI GIAN THỰC
+            useEffect(() => {
+                if (!user) return;
+
+                const unsubEvents = onSnapshot(collection(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'events'), snap => {
+                    setGlobalEvents(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                const unsubTodos = onSnapshot(collection(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'todos'), snap => {
+                    setGlobalTodos(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                const unsubNotes = onSnapshot(collection(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'notes'), snap => {
+                    setGlobalNotes(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                const unsubTimetable = onSnapshot(doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'timetable', 'main'), docSnap => {
+                    if (docSnap.exists()) setGlobalTimetable(docSnap.data());
+                });
 
                 return () => {
                     unsubEvents();
@@ -381,271 +1067,365 @@
                     unsubNotes();
                     unsubTimetable();
                 };
+            }, [user]);
+
+            // LOGIC LỌC KẾT QUẢ TÌM KIẾM TOÀN CỤC
+            const searchResults = useMemo(() => {
+                if (!searchQuery.trim()) return [];
+                const q = searchQuery.toLowerCase();
+                const results = [];
+
+                // 1. Tìm trong Sự kiện (events)
+                globalEvents.forEach(e => {
+                    if (e.title && e.title.toLowerCase().includes(q)) {
+                        results.push({ type: 'Sự kiện', id: e.id, title: e.title, desc: `Ngày: ${e.dateStr || ''} (${e.repeat || 'không lặp'})`, targetTab: 'calendar', payload: e });
+                    }
+                });
+
+                // 2. Tìm trong Việc cần làm (todos)
+                globalTodos.forEach(t => {
+                    if (t.text && t.text.toLowerCase().includes(q)) {
+                        results.push({ type: 'Việc cần làm', id: t.id, title: t.text, desc: t.completed ? 'Đã hoàn thành' : 'Chưa hoàn thành', targetTab: 'todo', payload: t });
+                    }
+                });
+
+                // 3. Tìm trong Ghi chú (notes)
+                globalNotes.forEach(n => {
+                    const inTitle = n.title && n.title.toLowerCase().includes(q);
+                    const inContent = n.content && n.content.toLowerCase().includes(q);
+                    if (inTitle || inContent) {
+                        results.push({ type: 'Ghi chú', id: n.id, title: n.title, desc: n.content || '', targetTab: 'notes', payload: n });
+                    }
+                });
+
+                // 4. Tìm trong Thời khóa biểu (timetable)
+                Object.keys(globalTimetable).forEach(key => {
+                    const cell = globalTimetable[key];
+                    if (cell && typeof cell === 'object') {
+                        const inSubject = cell.subject && cell.subject.toLowerCase().includes(q);
+                        const inTeacher = cell.teacher && cell.teacher.toLowerCase().includes(q);
+                        const inRoom = cell.room && cell.room.toLowerCase().includes(q);
+                        if (inSubject || inTeacher || inRoom) {
+                            const [day, period] = key.split('_');
+                            results.push({ type: 'Thời khóa biểu', id: key, title: cell.subject, desc: `${day} - ${period} ${cell.teacher ? `| GV: ${cell.teacher}` : ''} ${cell.room ? `| Phòng: ${cell.room}` : ''}`, targetTab: 'timetable', payload: cell });
+                        }
+                    }
+                });
+
+                // Sắp xếp kết quả gần từ khóa nhất (Ưu tiên từ khóa ở đầu chuỗi)
+                return results.sort((a, b) => {
+                    const idxA = a.title.toLowerCase().indexOf(q);
+                    const idxB = b.title.toLowerCase().indexOf(q);
+                    return idxA - idxB;
+                });
+            }, [searchQuery, globalEvents, globalTodos, globalNotes, globalTimetable]);
+
+            // HÀM XỬ LÝ ĐIỀU HƯỚNG VÀ HIGHLIGHT KHI NGƯỜI DÙNG BẤM CHỌN KẾT QUẢ TÌM KIẾM
+            const handleSelectSearchResult = async (result) => {
+                setSearchQuery('');
+                setIsSearching(false);
+
+                // Khai báo bỏ qua kiểm tra mật khẩu tạm thời nếu tab đích bị khóa để người dùng xem được ngay
+                setUnlockedTabs(prev => ({ ...prev, [result.targetTab]: true }));
+                
+                // Chuyển Tab phù hợp
+                setActiveTab(result.targetTab);
+
+                // Nếu là sự kiện, chuyển đổi ngày của lịch xem về đúng ngày diễn ra sự kiện
+                if (result.type === 'Sự kiện' && result.payload.dateStr) {
+                    setSelectedDate(new Date(result.payload.dateStr));
+                }
+
+                // Thiết lập ID nhấp nháy làm nổi bật phần tử tìm kiếm
+                setSearchHighlightId(result.id);
+                
+                // Tự động tắt highlight sau 4 giây để hoàn tất chu trình trải nghiệm trực quan
+                setTimeout(() => {
+                    setSearchHighlightId(null);
+                }, 4000);
+            };
+
+            const checkTabAccess = async (tabName) => {
+                const savedEnable = localStorage.getItem('vt_enable_lock') === 'true';
+                const savedPassword = localStorage.getItem('vt_app_password') || '';
+
+                if (user && savedEnable && savedPassword) {
+                    try {
+                        const settingsRef = doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'settings', 'lock');
+                        const docSnap = await getDoc(settingsRef);
+                        let firebaseEnable = savedEnable;
+                        let firebasePassword = savedPassword;
+                        if (docSnap.exists()) {
+                            firebaseEnable = docSnap.data().enableLock;
+                            firebasePassword = docSnap.data().appPassword;
+                        }
+                        if (!firebaseEnable || !firebasePassword) {
+                            setUnlockedTabs(prev => ({ ...prev, [tabName]: true }));
+                            setActiveTab(tabName);
+                            return;
+                        }
+                        if (unlockedTabs[tabName]) {
+                            setActiveTab(tabName);
+                        } else {
+                            setPinPrompt(tabName);
+                            setPinInput('');
+                            setPinError('');
+                        }
+                    } catch (e) {
+                        if (unlockedTabs[tabName]) {
+                            setActiveTab(tabName);
+                        } else {
+                            setPinPrompt(tabName);
+                            setPinInput('');
+                            setPinError('');
+                        }
+                    }
+                } else {
+                    setActiveTab(tabName);
+                }
+            };
+
+            const handleVerifyPin = async (e) => {
+                e.preventDefault();
+                setPinError('');
+                const savedPassword = localStorage.getItem('vt_app_password') || '';
+                let correctPassword = savedPassword;
+
+                if (user) {
+                    try {
+                        const settingsRef = doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'settings', 'lock');
+                        const docSnap = await getDoc(settingsRef);
+                        if (docSnap.exists()) {
+                            correctPassword = docSnap.data().appPassword || savedPassword;
+                        }
+                    } catch (err) {}
+                }
+
+                if (pinInput === correctPassword) {
+                    setUnlockedTabs(prev => ({ ...prev, [pinPrompt]: true }));
+                    setActiveTab(pinPrompt);
+                    setPinPrompt(null);
+                } else {
+                    setPinError("Mã bảo vệ (PIN) không chính xác. Vui lòng thử lại!");
+                }
+            };
+
+            const handleSaveTheme = async (newTheme) => {
+                setTheme(newTheme);
+                setShowSettings(false);
+                try { localStorage.setItem('app_theme', JSON.stringify(newTheme)); } catch (e) {}
+                if (user) await setDoc(doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'settings', 'theme'), newTheme);
+            };
+
+            const handleTabChange = (tab) => {
+                if (tab === 'todo' || tab === 'notes') {
+                    checkTabAccess(tab);
+                } else {
+                    if (tab === 'day') { setDailyDate(new Date()); }
+                    else if (tab === 'calendar') { setCalendarCurrentDate(new Date()); setCalendarSelectedDate(new Date()); }
+                    setActiveTab(tab);
+                }
+            };
+
+            // START: Thêm đoạn code đăng ký Service Worker chạy ngầm (Yêu cầu 3)
+            useEffect(() => {
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        navigator.serviceWorker.register('./sw.js')
+                            .then(reg => console.log('Đăng ký Service Worker thành công:', reg.scope))
+                            .catch(err => console.log('Lỗi đăng ký Service Worker:', err));
+                    });
+                }
+            }, []);
+            // END: Thêm đoạn code đăng ký Service Worker chạy ngầm
+
+            const currentQuote = useMemo(() => {
+                const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                return DEFAULT_VERSES[dayOfYear % DEFAULT_VERSES.length];
             }, []);
 
-            // Hàm lưu dữ liệu lên Firebase Firestore phát triển đồng bộ (BẢO TOÀN NGUYÊN BẢN)
-            const saveToCloud = async (key, dataPayload) => {
-                if (!db) return;
-                try {
-                    await setDoc(doc(db, "data", key), dataPayload);
-                } catch (err) {
-                    toast.error("Không thể đồng bộ dữ liệu đám mây!");
-                }
-            };
-
-            // Hàm điều hướng thông minh khi nhấp chọn kết quả tìm kiếm thích hợp
-            const handleSearchNavigation = (type, item) => {
-                setIsSearchOpen(false); // Đóng ngay giao diện Modal kiếm tìm
-                
-                if (type === 'events') {
-                    setActiveTab('calendar');
-                    if (item.date) {
-                        const [d, m, y] = item.date.split('/').map(Number);
-                        const targetDate = new Date(y, m - 1, d);
-                        setCurrentDate(targetDate);
-                        setSelectedDate(targetDate);
-                        toast.info(`Đã di chuyển tới ngày diễn ra sự kiện: ${item.title}`);
-                    }
-                } else if (type === 'todos') {
-                    setActiveTab('todos');
-                    setTimeout(() => {
-                        const element = document.getElementById(`todo-item-${item.id || ''}`);
-                        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 100);
-                } else if (type === 'notes') {
-                    setActiveTab('notes');
-                    setTimeout(() => {
-                        const element = document.getElementById(`note-item-${item.id || ''}`);
-                        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 100);
-                } else if (type === 'timetable') {
-                    setActiveTab('timetable');
-                    toast.info(`Lịch biểu tìm thấy tại: ${item.day} - Tiết học thứ ${item.lessonNum}`);
-                }
-            };
-
-            // Các hàm bổ sung/sửa đổi/xóa tác vụ cũ (GIỮ NGUYÊN HOÀN TOÀN CẤU TRÚC LOGIC)
-            const handleAddTodo = (text) => {
-                if (!text.trim()) return;
-                const newTodos = [...todos, { id: Date.now().toString(), text, completed: false }];
-                setTodos(newTodos);
-                saveToCloud("todos", { list: newTodos });
-            };
-
-            const toggleTodo = (id) => {
-                const newTodos = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-                setTodos(newTodos);
-                saveToCloud("todos", { list: newTodos });
-            };
-
-            // Tính toán ma trận hiển thị ngày trên lịch vạn niên (GIỮ NGUYÊN 100% THUẬT TOÁN)
-            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-            const firstDayIndex = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
-            
-            const calendarCells = [];
-            const prevMonthDays = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-            
-            // Điền bù ngày của tháng trước
-            const startDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-            for (let i = startDay; i > 0; i--) {
-                calendarCells.push({ day: prevMonthDays - i + 1, isCurrentMonth: false });
-            }
-            // Điền ngày tháng hiện tại
-            for (let i = 1; i <= daysInMonth; i++) {
-                calendarCells.push({ day: i, isCurrentMonth: true });
-            }
+            if (loading) return <div className="h-screen flex items-center justify-center text-blue-500 font-sans font-bold">Đang tải ứng dụng...</div>;
+            if (!user) return <AuthScreen auth={getAuth(app)} appId={MANUAL_CONFIG.projectId} />;
 
             return (
-                <div class="min-h-screen flex flex-col max-w-md mx-auto bg-white shadow-xl relative pb-20">
+                <div className="flex flex-col h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative transition-colors duration-300 animate-fade-in" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
                     
-                    {/* FIXED HEADER: Tích hợp thanh tìm kiếm toàn cục thanh lịch, mượt mà */}
-                    <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3.5 sticky top-0 z-40 shadow-md flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <div class="p-1.5 bg-white/10 rounded-xl">
-                                <Lucide.Calendar class="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <h1 class="font-bold text-sm tracking-wide leading-tight">Lịch Văn Trung</h1>
-                                <p class="text-[10px] text-blue-100 font-medium">Hệ thống quản lý cá nhân</p>
-                            </div>
+                    {/* KHU VỰC CHỈ BÁO OFFLINE MINI TẠI HEADER */}
+                    {isOffline && (
+                        <div className="bg-amber-500 text-white text-[10px] font-black uppercase text-center py-1 flex items-center justify-center gap-1.5 shrink-0 select-none animate-pulse z-30">
+                            <WifiOff size={10} /> Đang chạy ngoại tuyến (Offline Mode)
+                        </div>
+                    )}
+                    {showOfflineBadge && !isOffline && (
+                        <div className="bg-emerald-600 text-white text-[10px] font-black uppercase text-center py-1 flex items-center justify-center gap-1.5 shrink-0 select-none z-30">
+                            <Wifi size={10} /> Đã khôi phục kết nối trực tuyến (Online)
+                        </div>
+                    )}
+
+                    {/* BANNER HEADER CHỨA THANH TÌM KIẾM TOÀN CỤC */}
+                    <header className="bg-blue-600 text-white p-2 flex justify-between items-center shadow-md z-20 shrink-0 relative">
+                        <div className="flex flex-col overflow-hidden w-2/5">
+                            <h1 className="text-sm font-bold whitespace-nowrap truncate font-sans">Lịch Văn Trung</h1>
+                            <p className="text-[9px] text-blue-100 font-bold truncate">Chào, {user.email?.split('@')[0]}</p>
                         </div>
 
-                        {/* THANH TÌM KIẾM TOÀN CỤC MỚI KHỞI CHẠY KHÔNG GÂY TRANH CHẤP GIAO DIỆN */}
-                        <div 
-                            onClick={() => setIsSearchOpen(true)}
-                            class="flex items-center gap-1.5 bg-white/15 hover:bg-white/20 px-2.5 py-1.5 rounded-xl cursor-pointer transition-all duration-200 border border-white/5 w-1/3 max-w-[140px] md:max-w-[180px] shrink-0 justify-end sm:justify-start"
-                        >
-                            <Lucide.Search class="w-3.5 h-3.5 text-blue-100" />
-                            <span class="text-xs text-blue-100/80 font-medium select-none hidden sm:inline truncate">Tìm kiếm...</span>
+                        {/* INPUT THANH TÌM KIẾM TOÀN CỤC - RESPONSIVE */}
+                        <div className="w-1/3 relative flex items-center">
+                            <input 
+                                type="text"
+                                placeholder="Tìm kiếm..."
+                                value={searchQuery}
+                                onFocus={() => setIsSearching(true)}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full bg-blue-700/60 text-white text-xs px-2.5 py-1 pl-7 rounded-xl outline-none border border-blue-500/30 focus:border-white/50 focus:bg-blue-700 transition placeholder:text-blue-200/70 font-sans"
+                            />
+                            <Search size={12} className="absolute left-2.5 text-blue-200/80 pointer-events-none" />
+                            {searchQuery && (
+                                <button onClick={() => setSearchQuery('')} className="absolute right-2 text-blue-200 hover:text-white">
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => setShowSettings(true)} className="p-1.5 hover:bg-blue-700 rounded-xl transition" title="Cài đặt giao diện"><Settings size={16}/></button>
+                            <button onClick={() => signOut(getAuth(app))} className="p-1.5 hover:bg-red-600 rounded-xl transition" title="Đăng xuất"><LogOut size={16}/></button>
                         </div>
                     </header>
 
-                    {/* BANNER DANH NGÔN NGUYÊN BẢN */}
-                    <div class="bg-gradient-to-b from-slate-50 to-slate-100/50 px-4 py-3 border-b border-slate-100 text-center">
-                        <p class="text-xs italic text-slate-600 font-medium leading-relaxed">"{danhNgon.text}"</p>
-                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">— {danhNgon.author}</p>
-                    </div>
-
-                    {/* MAIN CONTENTS CONTAINER ACCORDING TO ACTIVE TAB */}
-                    <main class="flex-1 p-4 overflow-y-auto">
-                        
-                        {/* TAB 1: LỊCH VẠN NIÊN CHI TIẾT */}
-                        {activeTab === 'calendar' && (
-                            <div class="space-y-4 animate-in fade-in duration-200">
-                                {/* Bộ chuyển tháng năm */}
-                                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-2xl border border-slate-100">
-                                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} class="p-1.5 hover:bg-white rounded-xl shadow-sm transition">
-                                        <Lucide.ChevronLeft class="w-4 h-4 text-slate-600" />
-                                    </button>
-                                    <span class="font-bold text-slate-700 text-sm">Tháng {currentDate.getMonth() + 1} / {currentDate.getFullYear()}</span>
-                                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} class="p-1.5 hover:bg-white rounded-xl shadow-sm transition">
-                                        <Lucide.ChevronRight class="w-4 h-4 text-slate-600" />
-                                    </button>
+                    {/* POPUP MODAL HIỂN THỊ KẾT QUẢ TÌM KIẾM TOÀN CỤC PHÂN LOẠI */}
+                    {isSearching && (
+                        <div className="absolute inset-0 bg-black/40 z-40 top-[44px] flex flex-col font-sans">
+                            <div className="bg-white m-3 rounded-2xl shadow-xl border border-gray-100 max-h-[75vh] flex flex-col overflow-hidden text-slate-800 animate-in fade-in">
+                                <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center shrink-0">
+                                    <span className="text-xs font-black uppercase text-slate-500 tracking-wider">Kết quả tìm kiếm toàn cục</span>
+                                    <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="text-gray-400 hover:text-gray-600 p-1"><X size={16}/></button>
                                 </div>
-
-                                {/* Ma trận hiển thị ô lịch tuần và ngày âm dương */}
-                                <div class="grid grid-cols-7 gap-1 text-center">
-                                    {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d, i) => (
-                                        <span key={i} class={`text-[11px] font-bold py-1 text-slate-400 ${i === 6 ? 'text-rose-500' : ''}`}>{d}</span>
-                                    ))}
-                                    {calendarCells.map((cell, idx) => {
-                                        const amLichObj = getAmLich(cell.day, currentDate.getMonth() + 1, currentDate.getFullYear());
-                                        return (
-                                            <div 
-                                                key={idx}
-                                                onClick={() => cell.isCurrentMonth && setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), cell.day))}
-                                                class={`p-1.5 rounded-xl border flex flex-col justify-between items-center min-h-[52px] cursor-pointer transition ${
-                                                    !cell.isCurrentMonth ? 'bg-slate-50/50 border-transparent text-slate-300 pointer-events-none' : 
-                                                    selectedDate.getDate() === cell.day && selectedDate.getMonth() === currentDate.getMonth() ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20' : 
-                                                    'bg-white border-slate-100 hover:border-blue-200 text-slate-700'
-                                                }`}
-                                            >
-                                                <span class="text-xs font-bold">{cell.day}</span>
-                                                {cell.isCurrentMonth && (
-                                                    <span class={`text-[9px] font-medium ${selectedDate.getDate() === cell.day && selectedDate.getMonth() === currentDate.getMonth() ? 'text-blue-100' : 'text-slate-400'}`}>
-                                                        {amLichObj.ngay === 1 ? `${amLichObj.ngay}/${amLichObj.thang}` : amLichObj.ngay}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* TAB 2: VIỆC CẦN LÀM (TODOS) */}
-                        {activeTab === 'todos' && (
-                            <div class="space-y-4 animate-in fade-in duration-200">
-                                <div class="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Thêm việc cần làm mới..." 
-                                        onKeyDown={e => { if(e.key === 'Enter') { handleAddTodo(e.target.value); e.target.value = ''; } }}
-                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-medium outline-none focus:border-blue-500 transition"
-                                    />
-                                </div>
-                                <div class="space-y-1.5">
-                                    {todos.map((todo) => (
-                                        <div 
-                                            key={todo.id} 
-                                            id={`todo-item-${todo.id}`}
-                                            onClick={() => toggleTodo(todo.id)}
-                                            class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl shadow-sm cursor-pointer hover:border-slate-200 transition"
-                                        >
-                                            <div class={`w-4 h-4 rounded-md border flex items-center justify-center transition ${todo.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
-                                                {todo.completed && <Lucide.Check class="w-3 h-3 stroke-[3]" />}
-                                            </div>
-                                            <span class={`text-xs font-medium text-slate-700 flex-1 ${todo.completed ? 'line-through text-slate-400' : ''}`}>{todo.text}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* TAB 3: GHI CHÚ CÁ NHÂN (NOTES) */}
-                        {activeTab === 'notes' && (
-                            <div class="space-y-3 animate-in fade-in duration-200">
-                                {notes.map((note) => (
-                                    <div key={note.id} id={`note-item-${note.id}`} class="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm space-y-1">
-                                        <h3 class="font-bold text-slate-800 text-xs">{note.title || "Không có tiêu đề"}</h3>
-                                        <p class="text-[11px] text-slate-500 font-medium leading-relaxed">{note.text}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* TAB 4: THỜI KHÓA BIỂU PHÁT TRIỂN (TIMETABLE) */}
-                        {activeTab === 'timetable' && (
-                            <div class="space-y-3 animate-in fade-in duration-200">
-                                <div class="grid grid-cols-1 gap-2.5">
-                                    {Object.keys(timetable).map((day) => (
-                                        <div key={day} class="bg-slate-50/70 border border-slate-100 p-3 rounded-2xl space-y-1.5">
-                                            <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                                                <Lucide.Clock class="w-3.5 h-3.5" />
-                                                {day}
-                                            </div>
-                                            <div class="grid grid-cols-5 gap-1">
-                                                {timetable[day].map((lesson, idx) => (
-                                                    <div key={idx} class="bg-white border border-slate-100 p-1.5 rounded-lg text-center min-h-[36px] flex flex-col justify-center items-center shadow-xs">
-                                                        <span class="text-[8px] font-bold text-slate-400 block mb-0.5">T{idx+1}</span>
-                                                        <span class="text-[10px] font-bold text-slate-700 truncate w-full">{typeof lesson === 'string' ? lesson : lesson?.subject}</span>
+                                
+                                <div className="p-2 overflow-y-auto no-scrollbar flex-1 space-y-3 bg-slate-50">
+                                    {!searchQuery.trim() ? (
+                                        <div className="text-center py-8 text-gray-400 text-xs font-medium">Nhập từ khóa để quét nhanh Sự kiện, Việc cần làm, Ghi chú và Thời khóa biểu...</div>
+                                    ) : searchResults.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-400 text-xs font-medium">Không tìm thấy kết quả phù hợp với từ khóa tìm kiếm.</div>
+                                    ) : (
+                                        <div>
+                                            {/* Phân nhóm hiển thị theo Thể loại */}
+                                            {['Sự kiện', 'Việc cần làm', 'Ghi chú', 'Thời khóa biểu'].map(category => {
+                                                const group = searchResults.filter(r => r.type === category);
+                                                if (group.length === 0) return null;
+                                                return (
+                                                    <div key={category} className="mb-3 last:mb-0">
+                                                        <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest px-2 mb-1">{category} ({group.length})</div>
+                                                        <div className="bg-white rounded-xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
+                                                            {group.map(item => (
+                                                                <div 
+                                                                    key={item.id} 
+                                                                    onClick={() => handleSelectSearchResult(item)}
+                                                                    className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex flex-col gap-0.5"
+                                                                >
+                                                                    <div className="text-xs font-bold text-slate-800 truncate">{item.title}</div>
+                                                                    <div className="text-[10px] text-slate-400 line-clamp-1 font-medium">{item.desc}</div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                );
+                                            })}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
-                        )}
+                            <div className="flex-1" onClick={() => { setIsSearching(false); setSearchQuery(''); }}></div>
+                        </div>
+                    )}
 
-                    </main>
-
-                    {/* BOTTOM NAVIGATION TAB BAR SYSTEM (BẢO TOÀN NGUYÊN BẢN) */}
-                    <nav class="fixed bottom-0 max-w-md w-full bg-white/90 backdrop-blur-md border-t border-slate-100 px-2 py-1.5 flex justify-around items-center z-40">
-                        {[
-                            { id: 'calendar', label: 'Lịch năm', icon: Lucide.CalendarDays },
-                            { id: 'todos', label: 'Việc cần làm', icon: Lucide.CheckSquare },
-                            { id: 'notes', label: 'Ghi chú', icon: Lucide.FileText },
-                            { id: 'timetable', label: 'Thời khóa biểu', icon: Lucide.Clock }
-                        ].map((tab) => {
-                            const IconCmp = tab.icon;
-                            return (
-                                <button 
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    class={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl transition ${activeTab === tab.id ? 'text-blue-600 font-bold' : 'text-slate-400 font-medium'}`}
-                                >
-                                    <IconCmp class={`w-4 h-4 ${activeTab === tab.id ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
-                                    <span class="text-[10px] tracking-tight">{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </nav>
-
-                    {/* MODAL CỔNG HIỂN THỊ ĐỘNG KẾT QUẢ TÌM KIẾM TOÀN CỤC */}
-                    <GlobalSearchModal 
-                        isOpen={isSearchOpen}
-                        onClose={() => setIsSearchOpen(false)}
-                        searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
-                        allData={aggregatedSearchData}
-                        onNavigate={handleSearchNavigation}
-                    />
-
-                    {/* OFFLINE MODE TOAST WARNING BANNER */}
-                    {connectionError && (
-                        <div class="fixed inset-x-0 bottom-16 px-4 z-40 pointer-events-none animate-bounce">
-                            <div class="bg-slate-900/95 text-white p-3 rounded-xl shadow-xl flex flex-col gap-2 pointer-events-auto max-w-xs mx-auto">
-                                <p class="text-[11px] font-sans">Chúng tôi tạm thời không kết nối được với dữ liệu đám mây. Bạn vẫn có thể tiếp tục sử dụng ứng dụng ở chế độ Offline.</p>
-                                <div class="flex gap-2">
-                                    <button onClick={() => setConnectionError(false)} class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl text-xs font-bold transition font-sans">Bỏ qua (Chạy Offline)</button>
-                                    <button onClick={() => window.location.reload()} class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-xs font-bold transition font-sans">Thử lại</button>
+                    {/* GIAO DIỆN MODAL NHẬP MÃ PIN KHÓA BẢO VỆ CÁ NHÂN */}
+                    {pinPrompt && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs font-sans">
+                            <div className="bg-white w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden text-slate-800 animate-in fade-in">
+                                <div className="bg-slate-800 text-white p-3 flex justify-between items-center">
+                                    <h3 className="font-bold text-sm flex items-center gap-1.5"><Lock size={14}/> Xác thực mã bảo vệ</h3>
+                                    <button onClick={() => setPinPrompt(null)}><X size={18}/></button>
                                 </div>
+                                <form onSubmit={handleVerifyPin} className="p-4 space-y-3">
+                                    <p className="text-xs text-slate-500 leading-relaxed font-medium">Vui lòng nhập Mã PIN bảo mật để mở khóa truy cập dữ liệu của thẻ này.</p>
+                                    <input 
+                                        type="password"
+                                        maxLength={12}
+                                        placeholder="Nhập mã bảo vệ..."
+                                        value={pinInput}
+                                        onChange={e => setPinInput(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-xl text-center text-sm tracking-widest font-black outline-none focus:border-blue-500 bg-slate-50 text-slate-800"
+                                        autoFocus
+                                    />
+                                    {pinError && <p className="text-red-500 text-[11px] font-medium text-center">{pinError}</p>}
+                                    <div className="flex gap-2 pt-1">
+                                        <button type="button" onClick={() => setPinPrompt(null)} className="flex-1 py-1.5 border rounded-xl text-xs font-medium hover:bg-gray-50">Hủy bỏ</button>
+                                        <button type="submit" className="flex-1 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition">Xác nhận</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
-                    
-                    {/* TOAST CONTAINER FOR NOTIFICATIONS */}
+
+                    {/* KHU VỰC NỘI DUNG HIỂN THỊ ĐỘNG THEO TAB */}
+                    <main className="flex-1 flex flex-col overflow-hidden bg-white/40 backdrop-blur-sm relative z-10">
+                        {activeTab === 'calendar' && <CalendarView user={user} db={db} appId={MANUAL_CONFIG.projectId} selectedDate={selectedDate} onSelectDate={setSelectedDate} theme={theme} searchHighlightId={searchHighlightId} />}
+                        {activeTab === 'events' && <EventsView user={user} db={db} appId={MANUAL_CONFIG.projectId} selectedDate={selectedDate} theme={theme} searchHighlightId={searchHighlightId} />}
+                        {activeTab === 'todo' && <TodosView user={user} db={db} appId={MANUAL_CONFIG.projectId} theme={theme} searchHighlightId={searchHighlightId} />}
+                        {activeTab === 'notes' && <NotesView user={user} db={db} appId={MANUAL_CONFIG.projectId} theme={theme} searchHighlightId={searchHighlightId} />}
+                        {activeTab === 'timetable' && <TimetableView user={user} db={db} appId={MANUAL_CONFIG.projectId} theme={theme} searchHighlightId={searchHighlightId} />}
+                        
+                        {activeTab === 'day' && (
+                            <div className="p-5 font-sans overflow-y-auto no-scrollbar flex-1 flex flex-col justify-between text-center select-none">
+                                <div className="space-y-4 my-auto">
+                                    <div className="text-sm font-black text-blue-600 uppercase tracking-widest">{getDayOfWeek(dailyDate)}</div>
+                                    <div className="text-6xl font-black text-slate-800 my-2 tracking-tighter">{dailyDate.getDate()}</div>
+                                    <div className="text-sm font-bold text-slate-500">Tháng {dailyDate.getMonth() + 1} năm {dailyDate.getFullYear()}</div>
+                                    <div className="inline-block bg-orange-50 text-orange-600 px-4 py-1.5 rounded-full text-xs font-black border border-orange-100 shadow-xs">
+                                        LỊCH ÂM: NGÀY {getLunarDate(dailyDate).day} THÁNG {getLunarDate(dailyDate).month}
+                                    </div>
+                                </div>
+                                <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-2xl shadow-inner relative">
+                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Lời vàng hôm nay (Kinh Pháp Cú)</div>
+                                    <p className="text-xs italic text-slate-700 font-medium whitespace-pre-line leading-relaxed">"{currentQuote}"</p>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* KHU VỰC ĐIỀU HƯỚNG THANH CHÂN TRANG (FOOTER TABS) */}
+                    <footer className="bg-white border-t border-gray-200 flex justify-around p-2 shadow-inner z-20 shrink-0 select-none">
+                        <button onClick={() => handleTabChange('day')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'day' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <Sun size={18} />
+                            <span className="text-[10px] font-bold">Ngày</span>
+                        </button>
+                        <button onClick={() => handleTabChange('calendar')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'calendar' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <Calendar size={18} />
+                            <span className="text-[10px] font-bold">Tháng</span>
+                        </button>
+                        <button onClick={() => handleTabChange('events')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'events' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <CalendarDays size={18} />
+                            <span className="text-[10px] font-bold">Sự kiện</span>
+                        </button>
+                        <button onClick={() => handleTabChange('todo')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'todo' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <CheckSquare size={18} />
+                            <span className="text-[10px] font-bold">Việc làm</span>
+                        </button>
+                        <button onClick={() => handleTabChange('notes')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'notes' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <StickyNote size={18} />
+                            <span className="text-[10px] font-bold">Sổ tay</span>
+                        </button>
+                        <button onClick={() => handleTabChange('timetable')} className={`flex flex-col items-center gap-0.5 p-1 transition ${activeTab === 'timetable' ? 'text-blue-600 scale-105 font-black' : 'text-gray-400'}`}>
+                            <Table size={18} />
+                            <span className="text-[10px] font-bold">TKB</span>
+                        </button>
+                    </footer>
+
+                    {/* POPUP MODAL CÀI ĐẶT GIAO DIỆN & BẢO MẬT */}
+                    {showSettings && <SettingsModal theme={theme} onSave={handleSaveTheme} onClose={() => setShowSettings(false)} auth={getAuth(app)} db={db} appId={MANUAL_CONFIG.projectId} />}
+
+                    {/* HIỂN THỊ THÔNG BÁO POPUP TOAST SYSTEM */}
                     <ToastContainer 
                         position="top-center"
                         autoClose={3000}
@@ -654,6 +1434,21 @@
                         closeOnClick
                         rtl={false}
                     />
+                    
+                    {/* THÔNG BÁO LỖI KẾT NỐI CHẾ ĐỘ OFFLINE */}
+                    {connectionError && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs font-sans">
+                            <div className="bg-white w-full max-w-xs rounded-2xl p-4 shadow-2xl text-center text-slate-800">
+                                <WifiOff size={40} className="mx-auto text-amber-500 mb-2 animate-bounce" />
+                                <h4 className="font-bold text-sm mb-1">Mất kết nối mạng</h4>
+                                <p className="text-xs text-slate-500 mb-4 leading-relaxed font-medium">Chúng tôi tạm thời không kết nối được với dữ liệu đám mây. Bạn vẫn có thể tiếp tục sử dụng ứng dụng ở chế độ Offline.</p>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setConnectionError(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl text-xs font-bold transition font-sans">Bỏ qua (Chạy Offline)</button>
+                                    <button onClick={() => window.location.reload()} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl text-xs font-bold transition font-sans">Thử lại</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
