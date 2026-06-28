@@ -459,10 +459,28 @@
         // Alias để tránh xung đột tên với biến state query nội bộ trong GlobalSearchModal
         const query_q = (ref) => query(ref);
 
+        // --- HÀM PARSE NGÀY TỪ CHUỖI TÌM KIẾM ---
+        // Hỗ trợ: d/m/yy, d/m/yyyy, dd/mm/yy, dd/mm/yyyy
+        const parseSearchDate = (str) => {
+            const s = str.trim();
+            const match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+            if (!match) return null;
+            let [, d, m, y] = match;
+            d = parseInt(d, 10);
+            m = parseInt(m, 10);
+            y = parseInt(y, 10);
+            if (y < 100) y += 2000; // yy → yyyy
+            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+            const date = new Date(y, m - 1, d);
+            // Kiểm tra ngày hợp lệ (vd: 31/2 sẽ bị reject)
+            if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+            return date;
+        };
+
         // --- GLOBAL SEARCH MODAL ---
         const GlobalSearchModal = ({ onClose, db, user, appId, onNavigate }) => {
             const [query, setQuery] = React.useState('');
-            const [results, setResults] = React.useState({ events: [], todos: [], notes: [], timetable: [] });
+            const [results, setResults] = React.useState({ dateEvents: [], dateTarget: null, events: [], todos: [], notes: [], timetable: [] });
             const [loading, setLoading] = React.useState(false);
             const inputRef = React.useRef(null);
 
@@ -472,11 +490,14 @@
 
             React.useEffect(() => {
                 if (!query.trim()) {
-                    setResults({ events: [], todos: [], notes: [], timetable: [] });
+                    setResults({ dateEvents: [], dateTarget: null, events: [], todos: [], notes: [], timetable: [] });
                     return;
                 }
                 const q = query.toLowerCase().trim();
                 setLoading(true);
+
+                // Kiểm tra xem người dùng có nhập ngày không
+                const parsedDate = parseSearchDate(query.trim());
 
                 const eventsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'events');
                 const todosRef = collection(db, 'artifacts', appId, 'users', user.uid, 'todos');
@@ -490,7 +511,20 @@
                             getDocs(query_q(notesRef))
                         ]);
 
-                        const evs = evSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                        const allEvents = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                        // --- Tìm theo ngày cụ thể ---
+                        let dateEvents = [];
+                        if (parsedDate) {
+                            const ds = parsedDate.toDateString();
+                            dateEvents = allEvents.filter(e => {
+                                if (!e.date) return false;
+                                const evDate = new Date(e.date.seconds * 1000);
+                                return evDate.toDateString() === ds;
+                            });
+                        }
+
+                        const evs = allEvents
                             .filter(e => e.title && e.title.toLowerCase().includes(q))
                             .sort((a, b) => {
                                 const ai = a.title.toLowerCase().indexOf(q);
@@ -544,7 +578,7 @@
                             });
                         } catch(e) { console.warn("Tìm TKB lỗi:", e); }
 
-                        setResults({ events: evs, todos: tds, notes: nts, timetable: tkbResults });
+                        setResults({ dateEvents, dateTarget: parsedDate, events: evs, todos: tds, notes: nts, timetable: tkbResults });
                     } catch(e) {
                         console.error("Lỗi tìm kiếm:", e);
                     } finally {
@@ -568,10 +602,16 @@
                 );
             };
 
-            const totalCount = results.events.length + results.todos.length + results.notes.length + results.timetable.length;
+            const totalCount = results.events.length + results.todos.length + results.notes.length + results.timetable.length + results.dateEvents.length;
 
             const handleResultClick = (type, item) => {
                 onNavigate(type, item);
+                onClose();
+            };
+
+            // Nút chuyển nhanh đến ngày trên lịch (khi tìm ngày không có sự kiện)
+            const handleGoToDate = (date) => {
+                onNavigate('calendar', { date: { seconds: Math.floor(date.getTime() / 1000) } });
                 onClose();
             };
 
@@ -586,7 +626,7 @@
                                 type="text"
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
-                                placeholder="Tìm sự kiện, việc làm, ghi chú, TKB..."
+                                placeholder="Tìm sự kiện, việc làm, ghi chú, ngày..."
                                 className="flex-1 bg-transparent text-white placeholder-blue-200 outline-none text-sm font-medium"
                             />
                             {query && (
@@ -605,7 +645,7 @@
                                 <div className="text-center text-gray-400 py-12 px-4">
                                     <Search size={40} className="mx-auto mb-3 opacity-20" />
                                     <p className="text-sm">Nhập từ khóa để tìm kiếm toàn bộ dữ liệu của bạn</p>
-                                    <p className="text-xs mt-1 text-gray-300">Sự kiện · Việc làm · Ghi chú · Thời khóa biểu</p>
+                                    <p className="text-xs mt-1 text-gray-300">Sự kiện · Việc làm · Ghi chú · Thời khóa biểu · Ngày</p>
                                 </div>
                             )}
 
@@ -613,16 +653,61 @@
                                 <div className="text-center text-gray-400 py-10 text-sm animate-pulse">Đang tìm kiếm...</div>
                             )}
 
-                            {query.trim() && !loading && totalCount === 0 && (
+                            {query.trim() && !loading && totalCount === 0 && !results.dateTarget && (
                                 <div className="text-center text-gray-400 py-12 px-4">
                                     <p className="text-sm">Không tìm thấy kết quả nào cho</p>
                                     <p className="font-bold text-gray-600 mt-1">"{query}"</p>
                                 </div>
                             )}
 
-                            {query.trim() && !loading && totalCount > 0 && (
+                            {query.trim() && !loading && results.dateTarget && totalCount === 0 && (
+                                <div className="p-4">
+                                    <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 text-center">
+                                        <CalendarDays size={28} className="mx-auto mb-2 text-teal-400" />
+                                        <p className="text-sm font-bold text-teal-700">
+                                            {results.dateTarget.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </p>
+                                        <p className="text-xs text-teal-500 mt-1">Không có sự kiện nào vào ngày này</p>
+                                        <button onClick={() => handleGoToDate(results.dateTarget)} className="mt-3 text-xs bg-teal-600 text-white px-4 py-1.5 rounded-full hover:bg-teal-700 transition font-bold">
+                                            → Mở ngày này trên lịch
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {query.trim() && !loading && (results.dateTarget || totalCount > 0) && (
                                 <div className="p-4 space-y-5">
-                                    {/* Sự kiện */}
+
+                                    {/* Kết quả ngày cụ thể */}
+                                    {results.dateTarget && (
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <CalendarDays size={14} className="text-teal-500" />
+                                                <span className="text-xs font-black uppercase tracking-wider text-teal-500">
+                                                    Ngày {results.dateTarget.toLocaleDateString('vi-VN')}
+                                                </span>
+                                                <button onClick={() => handleGoToDate(results.dateTarget)} className="ml-auto text-[9px] text-teal-500 hover:text-teal-700 border border-teal-300 rounded-full px-2 py-0.5 transition">
+                                                    Mở lịch →
+                                                </button>
+                                            </div>
+                                            {results.dateEvents.length > 0 ? (
+                                                <div className="space-y-1.5">
+                                                    {results.dateEvents.map(ev => (
+                                                        <button key={ev.id} onClick={() => handleResultClick('calendar', ev)} className="w-full text-left p-3 bg-teal-50 hover:bg-teal-100 rounded-xl border border-teal-200 transition">
+                                                            <div className="font-semibold text-sm text-slate-800">{ev.title}</div>
+                                                            {ev.repeat && ev.repeat !== 'none' && (
+                                                                <div className="text-[10px] text-teal-400 mt-0.5">Sự kiện lặp · {ev.repeat}</div>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 italic pl-1">Không có sự kiện nào vào ngày này</p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Sự kiện theo từ khóa */}
                                     {results.events.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
