@@ -1441,7 +1441,12 @@
                     }
                     if (e.repeat === 'weekly' && e.date) {
                         const d = new Date(e.date.seconds * 1000);
-                        return d.getDay() === date.getDay();
+                        const dayMatches = d.getDay() === date.getDay();
+                        if (!dayMatches) return false;
+                        if (e.weeklyMonths && e.weeklyMonths.length > 0) {
+                            return e.weeklyMonths.includes(date.getMonth() + 1);
+                        }
+                        return true;
                     }
                     if (e.repeat === 'monthly' && e.date) {
                         const d = new Date(e.date.seconds * 1000);
@@ -1463,16 +1468,25 @@
                     if (!e.repeat || e.repeat === 'none') return e.date && new Date(e.date.seconds * 1000).toDateString() === dateStr;
                     if (e.repeat === 'lunar') return e.lunarDay === lunar.day && e.lunarMonth === lunar.month;
                     if (e.repeat === 'solar' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
-                    if (e.repeat === 'weekly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDay() === date.getDay(); }
+                    if (e.repeat === 'weekly' && e.date) { 
+                        const d = new Date(e.date.seconds * 1000); 
+                        const dayMatches = d.getDay() === date.getDay();
+                        if (!dayMatches) return false;
+                        if (e.weeklyMonths && e.weeklyMonths.length > 0) {
+                            return e.weeklyMonths.includes(date.getMonth() + 1);
+                        }
+                        return true;
+                    }
                     if (e.repeat === 'monthly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate(); }
                     if (e.repeat === 'yearly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
                     return false;
                 });
             };
 
-            const handleAddEvent = async (title, repeatType) => {
+            const handleAddEvent = async (title, repeatType, weeklyMonths) => {
                 const data = { title, date: Timestamp.fromDate(selectedDate), repeat: repeatType };
                 if (repeatType === 'lunar') { const lunar = getLunarDetails(selectedDate); data.lunarDay = lunar.day; data.lunarMonth = lunar.month; }
+                if (repeatType === 'weekly' && weeklyMonths && weeklyMonths.length > 0) { data.weeklyMonths = weeklyMonths; }
                 await addDoc(eventsRef, data);
             };
             const getDayColor = (index) => {
@@ -1520,9 +1534,14 @@
                         onClose={() => setShowEventModal(false)} 
                         onAdd={handleAddEvent} 
                         onDelete={async (id) => { await deleteDoc(doc(eventsRef, id)); }} 
-                        onUpdate={async (id, newTitle, newDateStr, newRepeat) => {
+                        onUpdate={async (id, newTitle, newDateStr, newRepeat, newWeeklyMonths) => {
                             const newDate = newDateStr ? Timestamp.fromDate(new Date(newDateStr)) : null;
                             const updatePayload = { title: newTitle, repeat: newRepeat };
+                            if (newRepeat === 'weekly') {
+                                updatePayload.weeklyMonths = (newWeeklyMonths && newWeeklyMonths.length > 0) ? newWeeklyMonths : [];
+                            } else {
+                                updatePayload.weeklyMonths = [];
+                            }
                             if (newDate) {
                                 updatePayload.date = newDate;
                                 if (newRepeat === 'lunar') {
@@ -1542,6 +1561,7 @@
         const EventModal = ({ date, events, onClose, onAdd, onDelete, onUpdate }) => {
             const [newEvent, setNewEvent] = useState('');
             const [repeatType, setRepeatType] = useState('none'); 
+            const [weeklyMonths, setWeeklyMonths] = useState([]); // [] = mọi tháng; [1,3,5,...] = tháng cụ thể
             const [deleteConfirm, setDeleteConfirm] = useState(null);
 
             // Các State phục vụ việc Chỉnh sửa Sự kiện
@@ -1549,6 +1569,13 @@
             const [editTitle, setEditTitle] = useState('');
             const [editDate, setEditDate] = useState('');
             const [editRepeat, setEditRepeat] = useState('none');
+            const [editWeeklyMonths, setEditWeeklyMonths] = useState([]);
+
+            const toggleMonth = (m, arr, setArr) => {
+                setArr(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m].sort((a,b) => a-b));
+            };
+
+            const MONTH_LABELS = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
             const handleStartEdit = (eItem) => {
                 setEditingId(eItem.id);
@@ -1559,11 +1586,12 @@
                 const dd = String(d.getDate()).padStart(2, '0');
                 setEditDate(`${yyyy}-${mm}-${dd}`);
                 setEditRepeat(eItem.repeat || 'none');
+                setEditWeeklyMonths(eItem.weeklyMonths || []);
             };
 
             const handleSaveEdit = async (id) => {
                 if (!editTitle.trim()) return;
-                await onUpdate(id, editTitle, editDate, editRepeat);
+                await onUpdate(id, editTitle, editDate, editRepeat, editWeeklyMonths);
                 setEditingId(null);
             };
 
@@ -1613,6 +1641,37 @@
                                                             <option value="yearly">Năm</option>
                                                         </select>
                                                     </div>
+                                                    {editRepeat === 'weekly' && (
+                                                        <div className="mt-2 bg-indigo-50 border border-indigo-200 rounded-xl p-2.5">
+                                                            <div className="flex items-center justify-between mb-1.5">
+                                                                <p className="text-[10px] text-indigo-700 font-black">📅 Tháng áp dụng</p>
+                                                                <div className="flex gap-1">
+                                                                    <button type="button" onClick={() => setEditWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])}
+                                                                        className="text-[8px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
+                                                                    <button type="button" onClick={() => setEditWeeklyMonths([])}
+                                                                        className="text-[8px] px-1.5 py-0.5 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-[8px] text-indigo-400 mb-1.5">Bỏ chọn tất cả = lặp mọi tháng</p>
+                                                            <div className="grid grid-cols-6 gap-1">
+                                                                {MONTH_LABELS.map((lb, i) => {
+                                                                    const m = i + 1;
+                                                                    const active = editWeeklyMonths.includes(m);
+                                                                    return (
+                                                                        <button key={m} type="button" onClick={() => toggleMonth(m, editWeeklyMonths, setEditWeeklyMonths)}
+                                                                            className={`text-[9px] py-1 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400'}`}>
+                                                                            {lb}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            {editWeeklyMonths.length > 0 && (
+                                                                <p className="text-[8px] text-indigo-500 mt-1.5 font-semibold text-center">
+                                                                    ✓ {editWeeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex justify-end gap-2 mt-1">
                                                     <button onClick={() => setEditingId(null)} className="p-1 rounded text-gray-400 hover:text-gray-600" title="Hủy"><X size={16} /></button>
@@ -1649,9 +1708,42 @@
                                 <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'monthly'} onChange={() => setRepeatType('monthly')} /> Tháng</label>
                                 <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'yearly'} onChange={() => setRepeatType('yearly')} /> Năm</label>
                             </div>
+                            {repeatType === 'weekly' && (
+                                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-1 shadow-sm">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div>
+                                            <p className="text-[11px] text-indigo-700 font-black">📅 Chọn tháng áp dụng</p>
+                                            <p className="text-[9px] text-indigo-400 mt-0.5">Bỏ chọn tất cả = lặp mọi tháng trong năm</p>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button type="button" onClick={() => setWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])}
+                                                className="text-[9px] px-2 py-1 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
+                                            <button type="button" onClick={() => setWeeklyMonths([])}
+                                                className="text-[9px] px-2 py-1 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-6 gap-1">
+                                        {MONTH_LABELS.map((lb, i) => {
+                                            const m = i + 1;
+                                            const active = weeklyMonths.includes(m);
+                                            return (
+                                                <button key={m} type="button" onClick={() => toggleMonth(m, weeklyMonths, setWeeklyMonths)}
+                                                    className={`text-[10px] py-1.5 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'}`}>
+                                                    {lb}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {weeklyMonths.length > 0 && (
+                                        <p className="text-[9px] text-indigo-500 mt-2 font-semibold text-center">
+                                            ✓ Lặp trong: {weeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                             <div className="flex gap-2">
                                 <input className="flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800" placeholder="Tên sự kiện..." value={newEvent} onChange={e => setNewEvent(e.target.value)} />
-                                <button onClick={() => { if(newEvent.trim()) { onAdd(newEvent, repeatType); setNewEvent(''); } }} className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"><Plus size={20}/></button>
+                                <button onClick={() => { if(newEvent.trim()) { onAdd(newEvent, repeatType, weeklyMonths); setNewEvent(''); setWeeklyMonths([]); } }} className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"><Plus size={20}/></button>
                             </div>
                         </div>
                     </div>
