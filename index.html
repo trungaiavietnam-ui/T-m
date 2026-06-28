@@ -1925,6 +1925,24 @@
 
             const [showSearch, setShowSearch] = useState(false);
 
+            const [avatarUrl, setAvatarUrl] = useState(() => {
+                try { return localStorage.getItem('vt_avatar_url') || null; } catch(e) { return null; }
+            });
+
+            const avatarInputRef = React.useRef(null);
+
+            const handleAvatarChange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    setAvatarUrl(dataUrl);
+                    try { localStorage.setItem('vt_avatar_url', dataUrl); } catch(err) { console.warn("Lưu avatar thất bại:", err); }
+                };
+                reader.readAsDataURL(file);
+            };
+
             const [lockPassword, setLockPassword] = useState('');
             const [lockEnabled, setLockEnabled] = useState(false);
             const [unlockedTabs, setUnlockedTabs] = useState({ todo: false, notes: false });
@@ -2315,9 +2333,35 @@
                     )}
 
                     <header className="bg-blue-600 text-white p-2 flex justify-between items-center shadow-md z-20 shrink-0">
-                        <div className="flex flex-col overflow-hidden shrink-0">
-                            <h1 className="text-base font-bold whitespace-nowrap truncate font-sans leading-tight">Lịch đa năng</h1>
-                            <span className="text-[10px] text-blue-100 opacity-80 font-sans">Thiết kế bởi Văn Trung</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {/* Avatar người dùng */}
+                            <button
+                                onClick={() => avatarInputRef.current && avatarInputRef.current.click()}
+                                className="relative shrink-0 w-9 h-9 rounded-full overflow-hidden border-2 border-blue-300 hover:border-white transition group"
+                                title="Bấm để đổi ảnh đại diện"
+                            >
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                                        <User size={18} className="text-blue-200 group-hover:text-white transition" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                    <span className="text-[8px] text-white font-bold leading-tight text-center">Đổi<br/>ảnh</span>
+                                </div>
+                            </button>
+                            <input
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAvatarChange}
+                            />
+                            <div className="flex flex-col overflow-hidden">
+                                <h1 className="text-base font-bold whitespace-nowrap truncate font-sans leading-tight">Lịch đa năng</h1>
+                                <span className="text-[10px] text-blue-100 opacity-80 font-sans">Thiết kế bởi Văn Trung</span>
+                            </div>
                         </div>
                         {/* Thanh tìm kiếm toàn cục mini */}
                         <button
