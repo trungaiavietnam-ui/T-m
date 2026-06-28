@@ -1700,8 +1700,7 @@
                         </div>
                         <div className="p-4 border-t bg-gray-50 flex flex-col gap-2">
                             <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Lặp lại</span>
+                                <div className="flex items-center justify-end">
                                     {repeatType !== 'none' && (
                                         <button type="button" onClick={() => { setRepeatType('none'); setWeeklyMonths([]); }} className="text-[9px] text-red-400 hover:text-red-600 transition">✕ Bỏ lặp</button>
                                     )}
@@ -1712,7 +1711,6 @@
                                     <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'weekly'} onChange={() => setRepeatType('weekly')} /> Tuần</label>
                                     <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name="repeat" checked={repeatType === 'monthly'} onChange={() => setRepeatType('monthly')} /> Tháng</label>
                                 </div>
-                                {repeatType === 'none' && <p className="text-[9px] text-gray-400 italic">Không chọn = sự kiện một lần duy nhất</p>}
                             </div>
                             {repeatType === 'weekly' && (
                                 <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-1 shadow-sm">
