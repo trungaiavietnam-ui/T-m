@@ -1072,38 +1072,81 @@
         const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [schedule, setSchedule] = useState({});
             const [headers, setHeaders] = useState({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
-            const [highlightKey, setHighlightKey] = useState(null); // vd: "t3_2_col1"
+            const [highlightKey, setHighlightKey] = useState(null);
             const [highlightKw, setHighlightKw] = useState('');
-            
-            // Thiết lập State lưu ngày thứ 2 đầu tuần đang hiển thị (mặc định là thứ 2 tuần hiện tại)
-            const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
-                const now = new Date();
-                const day = now.getDay();
-                const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Tính toán để về thứ 2 của tuần này
-                const monday = new Date(now.setDate(diff));
-                monday.setHours(0, 0, 0, 0);
-                return monday;
+            const [editingTitle, setEditingTitle] = useState(false);
+
+            // 2. Tên mặc định đổi thành "Lịch biểu", lưu/tải từ localStorage
+            const [titleLabel, setTitleLabel] = useState(() => {
+                try { return localStorage.getItem('vt_tkb_title') || 'Lịch biểu'; } catch(e) { return 'Lịch biểu'; }
             });
 
+            // 1. Luôn mở tuần hiện tại
+            const getCurrentMonday = () => {
+                const now = new Date();
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(now);
+                monday.setDate(diff);
+                monday.setHours(0, 0, 0, 0);
+                return monday;
+            };
+
+            const [startOfWeekDate, setStartOfWeekDate] = useState(getCurrentMonday);
             const periods = [1, 2, 3, 4, 5];
 
-            // Tạo mã nhận diện riêng cho từng tuần của TKB (tránh ghi đè dữ liệu giữa các tuần)
-            const weekKey = useMemo(() => {
-                const yyyy = startOfWeekDate.getFullYear();
-                // Tính tuần số mấy trong năm
-                const target = new Date(startOfWeekDate.valueOf());
-                const dayNr = (startOfWeekDate.getDay() + 6) % 7;
+            // Tính ISO weekKey
+            const getWeekKey = (date) => {
+                const target = new Date(date.valueOf());
+                const dayNr = (date.getDay() + 6) % 7;
                 target.setDate(target.getDate() - dayNr + 3);
                 const firstThursday = target.valueOf();
                 target.setMonth(0, 1);
-                if (target.getDay() !== 4) {
-                    target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-                }
+                if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
                 const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
-                return `${yyyy}_w${weekNum}`;
-            }, [startOfWeekDate]);
+                const yyyy = new Date(date.valueOf());
+                yyyy.setDate(date.getDate() - dayNr + 3);
+                return { yyyy: yyyy.getFullYear(), weekNum, key: `${yyyy.getFullYear()}_w${weekNum}` };
+            };
 
-            // Tham chiếu chuẩn xác đến tài liệu TKB của tuần này
+            const weekKey = useMemo(() => getWeekKey(startOfWeekDate).key, [startOfWeekDate]);
+            const { yyyy: currentYear, weekNum: currentWeekNum } = useMemo(() => getWeekKey(startOfWeekDate), [startOfWeekDate]);
+
+            const getMondayFromWeek = (year, weekNum) => {
+                const jan4 = new Date(year, 0, 4);
+                const jan4Day = (jan4.getDay() + 6) % 7;
+                const week1Mon = new Date(jan4);
+                week1Mon.setDate(jan4.getDate() - jan4Day);
+                const targetMon = new Date(week1Mon);
+                targetMon.setDate(week1Mon.getDate() + (weekNum - 1) * 7);
+                targetMon.setHours(0, 0, 0, 0);
+                return targetMon;
+            };
+
+            const weeksInYear = (year) => {
+                const dec28 = new Date(year, 11, 28);
+                return getWeekKey(dec28).weekNum;
+            };
+
+            const yearOptions = useMemo(() => {
+                const y = new Date().getFullYear();
+                return Array.from({ length: 9 }, (_, i) => y - 4 + i);
+            }, []);
+
+            const weekOptions = useMemo(() => {
+                const total = weeksInYear(currentYear);
+                const now = getCurrentMonday();
+                const { weekNum: nowW, yyyy: nowY } = getWeekKey(now);
+                return Array.from({ length: total }, (_, i) => {
+                    const w = i + 1;
+                    const mon = getMondayFromWeek(currentYear, w);
+                    const sat = new Date(mon); sat.setDate(mon.getDate() + 5);
+                    const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+                    const isCurrent = (currentYear === nowY && w === nowW);
+                    return { w, label: `Tuần ${w}  (${fmt(mon)} - ${fmt(sat)})${isCurrent ? ' ✦' : ''}` };
+                });
+            }, [currentYear]);
+
             const tkbRef = useMemo(() => doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', `main_${weekKey}`), [db, appId, user.uid, weekKey]);
 
             useEffect(() => {
@@ -1111,98 +1154,74 @@
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         setSchedule(data.schedule || {});
-                        if(data.headers) setHeaders(data.headers);
+                        if (data.headers) setHeaders(data.headers);
+                        if (data.titleLabel) {
+                            setTitleLabel(data.titleLabel);
+                            try { localStorage.setItem('vt_tkb_title', data.titleLabel); } catch(e) {}
+                        }
                     } else {
-                        // Reset bảng trống nếu tuần mới chưa có dữ liệu
                         setSchedule({});
                         setHeaders({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
                     }
-                }, err => {
-                    console.warn("Tải thời khóa biểu offline warning (Sử dụng dữ liệu cached):", err);
-                });
+                }, err => console.warn("TKB offline:", err));
                 return unsub;
             }, [tkbRef]);
 
-            // Tính ngày tháng chi tiết của 6 thứ trong tuần học tập (Thứ 2 -> Thứ 7)
             const weekDaysInfo = useMemo(() => {
-                const list = [];
                 const daysName = ['t2', 't3', 't4', 't5', 't6', 't7'];
-                for (let i = 0; i < 6; i++) {
+                return daysName.map((id, i) => {
                     const temp = new Date(startOfWeekDate);
                     temp.setDate(startOfWeekDate.getDate() + i);
-                    const formattedDate = `${String(temp.getDate()).padStart(2, '0')}/${String(temp.getMonth() + 1).padStart(2, '0')}`;
-                    list.push({
-                        id: daysName[i],
+                    return {
+                        id,
                         label: `Thứ ${i + 2}`,
-                        dateStr: formattedDate
-                    });
-                }
-                return list;
+                        dateStr: `${String(temp.getDate()).padStart(2,'0')}/${String(temp.getMonth()+1).padStart(2,'0')}`
+                    };
+                });
             }, [startOfWeekDate]);
 
-            // Chuỗi hiển thị khoảng ngày của tuần (Từ thứ 2 đến Chủ nhật)
-            const weekRangeLabel = useMemo(() => {
-                const monday = new Date(startOfWeekDate);
-                const sunday = new Date(startOfWeekDate);
-                sunday.setDate(startOfWeekDate.getDate() + 6);
-                const fMonday = `${String(monday.getDate()).padStart(2, '0')}/${String(monday.getMonth() + 1).padStart(2, '0')}/${monday.getFullYear()}`;
-                const fSunday = `${String(sunday.getDate()).padStart(2, '0')}/${String(sunday.getMonth() + 1).padStart(2, '0')}/${sunday.getFullYear()}`;
-                return `Tuần: ${fMonday} - ${fSunday}`;
-            }, [startOfWeekDate]);
-
-            const changeWeek = (offsetWeeks) => {
-                const newMonday = new Date(startOfWeekDate);
-                newMonday.setDate(startOfWeekDate.getDate() + (offsetWeeks * 7));
-                setStartOfWeekDate(newMonday);
+            const changeWeek = (offset) => {
+                const d = new Date(startOfWeekDate);
+                d.setDate(d.getDate() + offset * 7);
+                setStartOfWeekDate(d);
             };
 
-            // Xử lý scroll + highlight khi có searchTarget từ tìm kiếm
+            // Xử lý searchTarget
             useEffect(() => {
                 if (!searchTarget || searchTarget.tab !== 'timetable' || !searchTarget.itemId) return;
-
-                // Parse weekDocId dạng "main_2025_w24" → tính ngày thứ 2 của tuần đó
                 if (searchTarget.weekDocId) {
-                    const wdParts = searchTarget.weekDocId.split('_'); // ["main","2025","w24"]
+                    const wdParts = searchTarget.weekDocId.split('_');
                     const year = parseInt(wdParts[1], 10);
                     const weekNum = parseInt(wdParts[2].replace('w', ''), 10);
-                    if (!isNaN(year) && !isNaN(weekNum)) {
-                        // Tính ngày thứ 2 từ year + weekNum (ISO week)
-                        const jan4 = new Date(year, 0, 4); // 4/1 luôn thuộc tuần 1
-                        const jan4Day = (jan4.getDay() + 6) % 7; // 0=Mon
-                        const week1Mon = new Date(jan4);
-                        week1Mon.setDate(jan4.getDate() - jan4Day);
-                        const targetMon = new Date(week1Mon);
-                        targetMon.setDate(week1Mon.getDate() + (weekNum - 1) * 7);
-                        targetMon.setHours(0, 0, 0, 0);
-                        setStartOfWeekDate(targetMon);
-                    }
+                    if (!isNaN(year) && !isNaN(weekNum)) setStartOfWeekDate(getMondayFromWeek(year, weekNum));
                 }
-
-                // Tách schedKey từ itemId: "main_2025_w24_t3_2_col1" → "t3_2_col1"
                 const parts = searchTarget.itemId.split('_');
-                const schedKey = parts.slice(3).join('_'); // t3_2_col1
+                const schedKey = parts.slice(3).join('_');
                 setHighlightKey(schedKey);
                 setHighlightKw(searchTarget.keyword || '');
-
-                // Chờ tuần mới render xong (Firebase + setState) rồi mới scroll
                 setTimeout(() => {
                     const el = document.getElementById(`tkb-cell-${schedKey}`);
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 600);
-
                 const timer = setTimeout(() => {
-                    setHighlightKey(null);
-                    setHighlightKw('');
+                    setHighlightKey(null); setHighlightKw('');
                     if (onSearchTargetClear) onSearchTargetClear();
                 }, 4000);
                 return () => clearTimeout(timer);
             }, [searchTarget]);
 
+            // 4. Chỉ lưu khi có dữ liệu
             const saveData = async (path, value) => {
-                // SỬA LỖI TRẮNG TINH: Lưu lồng cấu trúc map { schedule: { ... } } thay vì Flat Field key (Yêu cầu quan trọng của Firebase merge)
-                await setDoc(tkbRef, { schedule: { [path]: value } }, { merge: true });
-                // Cập nhật State cục bộ đồng bộ lập tức để giao diện hiển thị ngay không bị trắng
-                setSchedule(prev => ({ ...prev, [path]: value }));
+                const newSched = { ...schedule, [path]: value };
+                setSchedule(newSched);
+                const hasData = Object.values(newSched).some(v => v && v.trim() !== '');
+                if (hasData) {
+                    await setDoc(tkbRef, { schedule: newSched }, { merge: true });
+                }
+                // Nếu xóa hết dữ liệu, xóa luôn doc
+                else {
+                    try { await deleteDoc(tkbRef); } catch(e) {}
+                }
             };
 
             const saveHeader = async (key, value) => {
@@ -1211,85 +1230,144 @@
                 await setDoc(tkbRef, { headers: newHeaders }, { merge: true });
             };
 
+            const saveTitleLabel = async (val) => {
+                const v = val.trim() || 'Lịch biểu';
+                setTitleLabel(v);
+                setEditingTitle(false);
+                try { localStorage.setItem('vt_tkb_title', v); } catch(e) {}
+                // Lưu lên doc tuần hiện tại (đồng bộ tiêu đề)
+                await setDoc(tkbRef, { titleLabel: v }, { merge: true });
+            };
+
+            // 5. Màu nền xen kẽ cho từng thứ
+            const dayBgColors = ['bg-white', 'bg-slate-50', 'bg-blue-50/40', 'bg-slate-50', 'bg-indigo-50/40', 'bg-white'];
+
+            // Ngày hiện tại để đánh dấu
+            const todayStr = (() => {
+                const now = new Date();
+                return `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+            })();
+
             return (
                 <div className="h-full flex flex-col px-4 pb-4 pt-2" style={{ color: theme.textColor }}>
-                    <h2 className="text-xl font-bold mb-1 text-center shrink-0">Thời Khoá Biểu</h2>
-                    
-                    {/* BỘ ĐIỀU HƯỚNG TUẦN */}
-                    <div className="flex items-center justify-between mb-3 bg-white p-3 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800">
-                        <button 
-                            onClick={() => changeWeek(-1)} 
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
-                        >
-                            <ChevronLeft size={16} /> Tuần trước
+
+                    {/* 2. TIÊU ĐỀ CÓ THỂ SỬA */}
+                    <div className="flex items-center justify-center gap-2 mb-2 shrink-0">
+                        {editingTitle ? (
+                            <input
+                                autoFocus
+                                className="text-xl font-bold text-center border-b-2 border-blue-400 outline-none bg-transparent w-48"
+                                value={titleLabel}
+                                onChange={e => setTitleLabel(e.target.value)}
+                                onBlur={() => saveTitleLabel(titleLabel)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveTitleLabel(titleLabel); if (e.key === 'Escape') setEditingTitle(false); }}
+                            />
+                        ) : (
+                            <button onClick={() => setEditingTitle(true)} className="flex items-center gap-1.5 group" title="Bấm để đổi tên">
+                                <h2 className="text-xl font-bold group-hover:text-blue-600 transition">{titleLabel}</h2>
+                                <Pencil size={13} className="text-gray-300 group-hover:text-blue-500 transition" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* 3. BỘ ĐIỀU HƯỚNG: Trước | [Năm] [Tuần] | Sau */}
+                    <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-2">
+                        <button onClick={() => changeWeek(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-0.5 text-xs font-bold shrink-0">
+                            <ChevronLeft size={16} /> Trước
                         </button>
-                        <span className="text-xs font-bold text-slate-700 text-center tracking-tight">{weekRangeLabel}</span>
-                        <button 
-                            onClick={() => changeWeek(1)} 
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
-                        >
-                            Tuần sau <ChevronRight size={16} />
+
+                        <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0">
+                            {/* Dropdown Năm */}
+                            <select
+                                value={currentYear}
+                                onChange={e => {
+                                    const y = parseInt(e.target.value, 10);
+                                    const w = Math.min(currentWeekNum, weeksInYear(y));
+                                    setStartOfWeekDate(getMondayFromWeek(y, w));
+                                }}
+                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none bg-white cursor-pointer hover:border-blue-400 transition shrink-0"
+                            >
+                                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+
+                            {/* Dropdown Tuần — có ngày tháng và đánh dấu tuần hiện tại */}
+                            <select
+                                value={currentWeekNum}
+                                onChange={e => setStartOfWeekDate(getMondayFromWeek(currentYear, parseInt(e.target.value, 10)))}
+                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none bg-white cursor-pointer hover:border-blue-400 transition min-w-0 flex-1"
+                            >
+                                {weekOptions.map(({ w, label }) => <option key={w} value={w}>{label}</option>)}
+                            </select>
+                        </div>
+
+                        <button onClick={() => changeWeek(1)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-0.5 text-xs font-bold shrink-0">
+                            Sau <ChevronRight size={16} />
                         </button>
                     </div>
 
+                    {/* BẢNG THỜI KHÓA BIỂU */}
                     <div className="flex-1 overflow-y-auto rounded-xl shadow-sm border border-slate-200 mb-4 bg-white">
                         <table className="w-full text-sm border-collapse table-fixed">
                             <thead className="sticky top-0 bg-gray-100 z-10 shadow-sm">
                                 <tr className="text-gray-700">
                                     <th className="border p-2 w-14 bg-gray-100 text-center align-middle text-xs font-bold">Thứ</th>
-                                    <th className="border p-2 w-10 bg-gray-100 text-center text-xs font-bold">Tiết</th>
+                                    <th className="border p-2 w-8 bg-gray-100 text-center text-xs font-bold">Tiết</th>
                                     <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col1} onChange={e=>saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" />
+                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col1} onChange={e => saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" />
                                     </th>
                                     <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col2} onChange={e=>saveHeader('col2', e.target.value)} placeholder="Ghi chú" />
+                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col2} onChange={e => saveHeader('col2', e.target.value)} placeholder="Ghi chú" />
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {weekDaysInfo.map(day => (
-                                    <React.Fragment key={day.id}>
-                                        {periods.map((period, index) => (
-                                            <tr key={`${day.id}_${period}`} className="border-b hover:bg-gray-50">
-                                                {index === 0 && (
-                                                    <td className="border p-1 align-middle bg-gray-50 text-gray-600 text-center" rowSpan={5}>
-                                                        <div className="flex flex-col h-full justify-center items-center gap-0.5">
-                                                            {/* HIỂN THỊ THỨ VÀ NGÀY THÁNG ĐƯỢC TỰ ĐỘNG TÍNH TOÁN */}
-                                                            <div className="font-extrabold text-xs text-slate-800">{day.label}</div>
-                                                            <div className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-1.5 py-0.5 rounded-full">{day.dateStr}</div>
-                                                        </div>
+                                {/* 5. Màu nền xen kẽ theo thứ */}
+                                {weekDaysInfo.map((day, dayIndex) => {
+                                    const isToday = day.dateStr === todayStr;
+                                    const rowBg = dayBgColors[dayIndex] || 'bg-white';
+                                    return (
+                                        <React.Fragment key={day.id}>
+                                            {periods.map((period, pIdx) => (
+                                                <tr key={`${day.id}_${period}`} className={`border-b ${rowBg}`}>
+                                                    {pIdx === 0 && (
+                                                        <td className={`border p-1 align-middle text-center ${isToday ? 'bg-blue-100' : rowBg}`} rowSpan={5}>
+                                                            <div className="flex flex-col items-center justify-center gap-0.5">
+                                                                <div className={`font-extrabold text-xs ${isToday ? 'text-blue-700' : 'text-slate-700'}`}>{day.label}</div>
+                                                                <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-500 text-white' : 'bg-slate-200/60 text-slate-400'}`}>{day.dateStr}</div>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                    <td className={`border p-2 text-center text-gray-400 font-bold text-xs align-middle ${isToday ? 'bg-blue-50' : ''}`}>{period}</td>
+                                                    <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
+                                                        <textarea
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight"
+                                                            rows={1}
+                                                            value={schedule[`${day.id}_${period}_col1`] || ''}
+                                                            onChange={e => setSchedule({ ...schedule, [`${day.id}_${period}_col1`]: e.target.value })}
+                                                            onBlur={e => saveData(`${day.id}_${period}_col1`, e.target.value)}
+                                                        />
                                                     </td>
-                                                )}
-                                                <td className="border p-2 text-center text-gray-400 font-bold text-xs align-middle">{period}</td>
-                                                <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                    <textarea 
-                                                        className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
-                                                        rows={1}
-                                                        value={schedule[`${day.id}_${period}_col1`] || ''}
-                                                        onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})}
-                                                        onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)}
-                                                    />
-                                                </td>
-                                                <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                    <textarea 
-                                                        className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
-                                                        rows={1}
-                                                        value={schedule[`${day.id}_${period}_col2`] || ''}
-                                                        onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})}
-                                                        onBlur={(e) => saveData(`${day.id}_${period}_col2`, e.target.value)}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </React.Fragment>
-                                ))}
+                                                    <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
+                                                        <textarea
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight"
+                                                            rows={1}
+                                                            value={schedule[`${day.id}_${period}_col2`] || ''}
+                                                            onChange={e => setSchedule({ ...schedule, [`${day.id}_${period}_col2`]: e.target.value })}
+                                                            onBlur={e => saveData(`${day.id}_${period}_col2`, e.target.value)}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </React.Fragment>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
                 </div>
             );
         };
-        // END: Thêm điều hướng tuần và ngày tự động vào TKB
+        // END: TimeTableView
 
         // --- MÀN HÌNH LỊCH NGÀY (DAILY VIEW) ---
         const DailyView = ({ user, db, appId, today, setToday }) => {
