@@ -1159,23 +1159,42 @@
             // Xử lý scroll + highlight khi có searchTarget từ tìm kiếm
             useEffect(() => {
                 if (!searchTarget || searchTarget.tab !== 'timetable' || !searchTarget.itemId) return;
-                // itemId dạng: "main_2025_w24_t3_2_col1" hoặc "main_2025_w24_t3_2_col1"
-                // Tách lấy phần key: vd "t3_2_col1"
+
+                // Parse weekDocId dạng "main_2025_w24" → tính ngày thứ 2 của tuần đó
+                if (searchTarget.weekDocId) {
+                    const wdParts = searchTarget.weekDocId.split('_'); // ["main","2025","w24"]
+                    const year = parseInt(wdParts[1], 10);
+                    const weekNum = parseInt(wdParts[2].replace('w', ''), 10);
+                    if (!isNaN(year) && !isNaN(weekNum)) {
+                        // Tính ngày thứ 2 từ year + weekNum (ISO week)
+                        const jan4 = new Date(year, 0, 4); // 4/1 luôn thuộc tuần 1
+                        const jan4Day = (jan4.getDay() + 6) % 7; // 0=Mon
+                        const week1Mon = new Date(jan4);
+                        week1Mon.setDate(jan4.getDate() - jan4Day);
+                        const targetMon = new Date(week1Mon);
+                        targetMon.setDate(week1Mon.getDate() + (weekNum - 1) * 7);
+                        targetMon.setHours(0, 0, 0, 0);
+                        setStartOfWeekDate(targetMon);
+                    }
+                }
+
+                // Tách schedKey từ itemId: "main_2025_w24_t3_2_col1" → "t3_2_col1"
                 const parts = searchTarget.itemId.split('_');
-                // weekDocId dạng "main_2025_w24", itemId dạng "main_2025_w24_t3_2_col1"
-                // key = phần sau weekDocId
                 const schedKey = parts.slice(3).join('_'); // t3_2_col1
                 setHighlightKey(schedKey);
                 setHighlightKw(searchTarget.keyword || '');
+
+                // Chờ tuần mới render xong (Firebase + setState) rồi mới scroll
                 setTimeout(() => {
                     const el = document.getElementById(`tkb-cell-${schedKey}`);
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 200);
+                }, 600);
+
                 const timer = setTimeout(() => {
                     setHighlightKey(null);
                     setHighlightKw('');
                     if (onSearchTargetClear) onSearchTargetClear();
-                }, 3000);
+                }, 4000);
                 return () => clearTimeout(timer);
             }, [searchTarget]);
 
@@ -2575,7 +2594,7 @@
                     }
                     setActiveTab('notes');
                 } else if (type === 'timetable') {
-                    setSearchTarget({ tab: 'timetable', itemId: item.id, keyword });
+                    setSearchTarget({ tab: 'timetable', itemId: item.id, weekDocId: item.weekDocId, keyword });
                     setActiveTab('timetable');
                 } else {
                     setActiveTab(type);
