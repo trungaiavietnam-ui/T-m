@@ -709,7 +709,7 @@
         };
 
         // --- CÁC COMPONENT CON ---
-        const SettingsModal = ({ theme, onSave, onClose, auth, db, appId }) => {
+        const SettingsModal = ({ theme, onSave, onClose, auth, db, appId, onSignOut }) => {
             const [localTheme, setLocalTheme] = useState(theme);
             const [newPassword, setNewPassword] = useState('');
             const [passwordMessage, setPasswordMessage] = useState('');
@@ -877,6 +877,16 @@
                                         <button type="submit" className="w-full bg-slate-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-700 transition">Xác nhận đổi mật khẩu</button>
                                     </form>
                                 )}
+                            </div>
+
+                            {/* Nút Đăng xuất */}
+                            <div className="border-t pt-4 mt-4">
+                                <button
+                                    onClick={onSignOut}
+                                    className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 py-2.5 rounded-lg text-sm font-bold transition"
+                                >
+                                    <LogOut size={16} /> Đăng xuất tài khoản
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2320,7 +2330,6 @@
                         </button>
                         <div className="flex gap-2 items-center shrink-0">
                             <button onClick={() => setShowSettings(true)} className="p-1.5 hover:bg-blue-700 rounded-full transition"><Settings size={18} /></button>
-                            <button onClick={() => signOut(getAuth(app))} className="text-xs bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-full flex items-center gap-1 transition font-sans"><LogOut size={12} /> Thoát</button>
                         </div>
                     </header>
 
@@ -2401,7 +2410,7 @@
                         </div>
                     </nav>
 
-                    {showSettings && <SettingsModal theme={theme} onSave={handleSaveTheme} onClose={()=>setShowSettings(false)} auth={getAuth(app)} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} />}
+                    {showSettings && <SettingsModal theme={theme} onSave={handleSaveTheme} onClose={()=>setShowSettings(false)} auth={getAuth(app)} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} onSignOut={() => { setShowSettings(false); signOut(getAuth(app)); }} />}
                     
                     {showSearch && app && user && (
                         <GlobalSearchModal
