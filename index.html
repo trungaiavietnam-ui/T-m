@@ -605,7 +605,7 @@
             const totalCount = results.events.length + results.todos.length + results.notes.length + results.timetable.length + results.dateEvents.length;
 
             const handleResultClick = (type, item) => {
-                onNavigate(type, item);
+                onNavigate(type, item, query.trim());
                 onClose();
             };
 
@@ -1069,9 +1069,11 @@
 
         // --- MÀN HÌNH THỜI KHÓA BIỂU (TKB VIEW) ---
         // START: Thêm điều hướng tuần và ngày tự động vào TKB
-        const TimeTableView = ({ user, db, appId, theme }) => {
+        const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [schedule, setSchedule] = useState({});
             const [headers, setHeaders] = useState({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
+            const [highlightKey, setHighlightKey] = useState(null); // vd: "t3_2_col1"
+            const [highlightKw, setHighlightKw] = useState('');
             
             // Thiết lập State lưu ngày thứ 2 đầu tuần đang hiển thị (mặc định là thứ 2 tuần hiện tại)
             const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
@@ -1154,6 +1156,29 @@
                 setStartOfWeekDate(newMonday);
             };
 
+            // Xử lý scroll + highlight khi có searchTarget từ tìm kiếm
+            useEffect(() => {
+                if (!searchTarget || searchTarget.tab !== 'timetable' || !searchTarget.itemId) return;
+                // itemId dạng: "main_2025_w24_t3_2_col1" hoặc "main_2025_w24_t3_2_col1"
+                // Tách lấy phần key: vd "t3_2_col1"
+                const parts = searchTarget.itemId.split('_');
+                // weekDocId dạng "main_2025_w24", itemId dạng "main_2025_w24_t3_2_col1"
+                // key = phần sau weekDocId
+                const schedKey = parts.slice(3).join('_'); // t3_2_col1
+                setHighlightKey(schedKey);
+                setHighlightKw(searchTarget.keyword || '');
+                setTimeout(() => {
+                    const el = document.getElementById(`tkb-cell-${schedKey}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+                const timer = setTimeout(() => {
+                    setHighlightKey(null);
+                    setHighlightKw('');
+                    if (onSearchTargetClear) onSearchTargetClear();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }, [searchTarget]);
+
             const saveData = async (path, value) => {
                 // SỬA LỖI TRẮNG TINH: Lưu lồng cấu trúc map { schedule: { ... } } thay vì Flat Field key (Yêu cầu quan trọng của Firebase merge)
                 await setDoc(tkbRef, { schedule: { [path]: value } }, { merge: true });
@@ -1217,7 +1242,7 @@
                                                     </td>
                                                 )}
                                                 <td className="border p-2 text-center text-gray-400 font-bold text-xs align-middle">{period}</td>
-                                                <td className="border p-0 align-middle">
+                                                <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
                                                     <textarea 
                                                         className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
                                                         rows={1}
@@ -1226,7 +1251,7 @@
                                                         onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)}
                                                     />
                                                 </td>
-                                                <td className="border p-0 align-middle">
+                                                <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
                                                     <textarea 
                                                         className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
                                                         rows={1}
@@ -1860,11 +1885,29 @@
             );
         };
 
-        const TodoView = ({ user, db, appId, theme }) => {
+        const TodoView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [todos, setTodos] = useState([]);
             const [editing, setEditing] = useState(null);
             const [deleteConfirm, setDeleteConfirm] = useState(null);
+            const [highlightId, setHighlightId] = useState(null);
             const todoRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'todos'), [db, appId, user.uid]);
+            
+            // Scroll và highlight khi có searchTarget
+            useEffect(() => {
+                if (!searchTarget || searchTarget.tab !== 'todo' || !searchTarget.itemId) return;
+                setHighlightId(searchTarget.itemId);
+                // Scroll đến item sau khi render
+                setTimeout(() => {
+                    const el = document.getElementById(`todo-item-${searchTarget.itemId}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+                // Tắt highlight sau 3 giây
+                const timer = setTimeout(() => {
+                    setHighlightId(null);
+                    if (onSearchTargetClear) onSearchTargetClear();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }, [searchTarget]);
             
             // Logic tự động sắp xếp danh sách công việc (todos)
             useEffect(() => {
@@ -1927,8 +1970,10 @@
                     <div className="space-y-2">
                         {todos.map((t, idx) => {
                             const timeStatus = t.deadlineTime ? getRemainingTime(t.deadlineTime) : null;
+                            const isHighlighted = highlightId === t.id;
+                            const kw = searchTarget?.keyword?.toLowerCase();
                             return (
-                                <div key={t.id} onClick={() => setEditing(t)} className="group flex items-center p-3 bg-white rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
+                                <div key={t.id} id={`todo-item-${t.id}`} onClick={() => setEditing(t)} className={`group flex items-center p-3 rounded-lg shadow-sm border cursor-pointer transition-all duration-500 ${isHighlighted ? 'bg-yellow-50 border-yellow-400 ring-2 ring-yellow-300 scale-[1.01]' : 'bg-white border-gray-100 hover:bg-gray-50'}`}>
                                     <div className="flex flex-col mr-2 text-gray-300" onClick={e => e.stopPropagation()}>
                                         <button onClick={(e)=>moveItem(e, idx, -1)} className="hover:text-blue-500 p-0.5"><ArrowUp size={14}/></button>
                                         <button onClick={(e)=>moveItem(e, idx, 1)} className="hover:text-blue-500 p-0.5"><ArrowDown size={14}/></button>
@@ -1937,21 +1982,19 @@
                                         {t.completed ? <CheckSquare className="text-green-500"/> : <div className="w-5 h-5 border-2 rounded"></div>}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className={`font-semibold truncate ${t.completed ? 'line-through text-gray-400' : ''}`} style={{ color: t.completed ? '#9ca3af' : theme.textColor }}>{t.text}</div>
+                                        <div className={`font-semibold truncate ${t.completed ? 'line-through text-gray-400' : ''}`} style={{ color: t.completed ? '#9ca3af' : theme.textColor }}>
+                                            {isHighlighted && kw && t.text?.toLowerCase().includes(kw) ? (() => {
+                                                const idx2 = t.text.toLowerCase().indexOf(kw);
+                                                return <span>{t.text.slice(0, idx2)}<mark className="bg-yellow-300 text-yellow-900 rounded px-0.5 not-italic">{t.text.slice(idx2, idx2 + kw.length)}</mark>{t.text.slice(idx2 + kw.length)}</span>;
+                                            })() : t.text}
+                                        </div>
                                         <div className="flex gap-3 mt-1 flex-wrap">
                                             {t.deadlineTime && <div className={`text-[10px] flex items-center gap-1 font-medium ${timeStatus?.isOverdue && !t.completed ? 'text-red-600 font-bold' : 'text-gray-500'}`}><AlertCircle size={10}/> {t.completed ? `Thời hạn: ${formatDisplayDate(t.deadlineTime.seconds)}` : timeStatus?.text}</div>}
                                             {t.reminderTime && !t.completed && <div className="text-[10px] text-orange-500 flex items-center gap-1 font-medium"><Bell size={10} /> Nhắc: {formatDisplayDate(t.reminderTime.seconds)}</div>}
                                         </div>
                                     </div>
-                                    {/* THÊM TÍNH NĂNG CHỈNH SỬA TODO */}
                                     <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setEditing(t); }} 
-                                            className="p-1 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                                            title="Sửa"
-                                        >
-                                            <Pencil size={16}/>
-                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); setEditing(t); }} className="p-1 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors" title="Sửa"><Pencil size={16}/></button>
                                         <button onClick={(e) => handleDelete(e, t.id)} className={`p-1 rounded transition-all ${deleteConfirm === t.id ? 'bg-red-100 text-red-600 w-16 text-xs font-bold' : 'text-gray-300 hover:text-red-500'}`}>{deleteConfirm === t.id ? <span>Xóa?</span> : <Trash2 size={16}/>}</button>
                                     </div>
                                 </div>
@@ -1992,12 +2035,28 @@
             );
         };
 
-        const NotesView = ({ user, db, appId, theme }) => {
+        const NotesView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [notes, setNotes] = useState([]);
             const [editing, setEditing] = useState(null);
             const [deleteConfirm, setDeleteConfirm] = useState(null);
+            const [highlightId, setHighlightId] = useState(null);
             const noteRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'notes'), [db, appId, user.uid]);
             useEffect(() => onSnapshot(query(noteRef), snap => setNotes(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0)))), [noteRef]);
+
+            // Scroll và highlight khi có searchTarget
+            useEffect(() => {
+                if (!searchTarget || searchTarget.tab !== 'notes' || !searchTarget.itemId) return;
+                setHighlightId(searchTarget.itemId);
+                setTimeout(() => {
+                    const el = document.getElementById(`note-item-${searchTarget.itemId}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+                const timer = setTimeout(() => {
+                    setHighlightId(null);
+                    if (onSearchTargetClear) onSearchTargetClear();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }, [searchTarget]);
             const save = (title, content, reminderStr, color) => {
                 const reminderData = reminderStr ? Timestamp.fromDate(new Date(reminderStr)) : null;
                 const data = { title: title||'K.Tiêu đề', content: content||'', reminderTime: reminderData, color: color, updatedAt: serverTimestamp() };
@@ -2019,20 +2078,32 @@
                     <div className="flex justify-between mb-4"><h2 className="text-xl font-bold">Sổ tay</h2><button onClick={()=>setEditing({})} className="bg-blue-100 text-blue-600 px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold"><Plus size={16}/> Mới</button></div>
                     <div className="grid grid-cols-2 gap-3">
                         {notes.length === 0 && <div className="col-span-2 text-center text-gray-400 mt-10"><StickyNote size={48} className="mx-auto mb-2 opacity-20" /><p>Trống trơn...</p></div>}
-                        {notes.map(n => (
-                            <div key={n.id} onClick={()=>setEditing(n)} className="p-4 rounded-xl border shadow-sm h-48 flex flex-col relative group cursor-pointer hover:shadow-md transition" style={{backgroundColor: n.color || theme.noteColor, borderColor: '#e5e7eb'}}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-bold truncate text-gray-800 flex-1">{n.title}</h4>
-                                    {n.reminderTime && <Bell size={12} className="text-orange-500 mt-1 ml-1" />}
+                        {notes.map(n => {
+                            const isHighlighted = highlightId === n.id;
+                            const kw = searchTarget?.keyword?.toLowerCase();
+                            const hlTitle = isHighlighted && kw && n.title?.toLowerCase().includes(kw);
+                            const hlContent = isHighlighted && kw && n.content?.toLowerCase().includes(kw);
+                            const mkHL = (text) => {
+                                if (!text || !kw) return text;
+                                const i = text.toLowerCase().indexOf(kw);
+                                if (i === -1) return text;
+                                return <span>{text.slice(0,i)}<mark className="bg-yellow-300 text-yellow-900 rounded px-0.5">{text.slice(i, i+kw.length)}</mark>{text.slice(i+kw.length)}</span>;
+                            };
+                            return (
+                                <div key={n.id} id={`note-item-${n.id}`} onClick={()=>setEditing(n)} className={`p-4 rounded-xl border shadow-sm h-48 flex flex-col relative group cursor-pointer transition-all duration-500 ${isHighlighted ? 'ring-2 ring-yellow-400 shadow-yellow-200 shadow-md scale-[1.02]' : 'hover:shadow-md'}`} style={{backgroundColor: n.color || theme.noteColor, borderColor: isHighlighted ? '#fbbf24' : '#e5e7eb'}}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold truncate text-gray-800 flex-1">{hlTitle ? mkHL(n.title) : n.title}</h4>
+                                        {n.reminderTime && <Bell size={12} className="text-orange-500 mt-1 ml-1" />}
+                                    </div>
+                                    <p className="text-xs overflow-hidden flex-1 leading-relaxed whitespace-pre-wrap font-medium" style={{color: theme.textColor, opacity: 0.8}}>{hlContent ? mkHL(n.content) : n.content}</p>
+                                    {n.reminderTime && <div className="text-[9px] text-orange-600 font-medium mt-1 mb-1 flex items-center gap-1"><Clock size={10}/> {formatDisplayDate(n.reminderTime.seconds)}</div>}
+                                    <div className="flex justify-between items-center mt-1 pt-2 border-t border-black/10">
+                                        <span className="text-[10px] text-slate-500">{n.updatedAt ? new Date(n.updatedAt.seconds*1000).toLocaleDateString('vi-VN') : ''}</span>
+                                        <button onClick={(e)=>handleDelete(e, n.id)} className={`text-slate-400 hover:text-red-500 transition-all ${deleteConfirm === n.id ? 'bg-white text-red-600 px-2 py-1 rounded shadow-sm text-xs font-bold' : ''}`}>{deleteConfirm === n.id ? <span>Xóa?</span> : <Trash2 size={16}/>}</button>
+                                    </div>
                                 </div>
-                                <p className="text-xs overflow-hidden flex-1 leading-relaxed whitespace-pre-wrap font-medium" style={{color: theme.textColor, opacity: 0.8}}>{n.content}</p>
-                                {n.reminderTime && <div className="text-[9px] text-orange-600 font-medium mt-1 mb-1 flex items-center gap-1"><Clock size={10}/> {formatDisplayDate(n.reminderTime.seconds)}</div>}
-                                <div className="flex justify-between items-center mt-1 pt-2 border-t border-black/10">
-                                    <span className="text-[10px] text-slate-500">{n.updatedAt ? new Date(n.updatedAt.seconds*1000).toLocaleDateString('vi-VN') : ''}</span>
-                                    <button onClick={(e)=>handleDelete(e, n.id)} className={`text-slate-400 hover:text-red-500 transition-all ${deleteConfirm === n.id ? 'bg-white text-red-600 px-2 py-1 rounded shadow-sm text-xs font-bold' : ''}`}>{deleteConfirm === n.id ? <span>Xóa?</span> : <Trash2 size={16}/>}</button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -2477,21 +2548,38 @@
                 setUnlockedTabs(prev => ({ ...prev, [tab]: true }));
             };
 
+            // State lưu mục tiêu điều hướng từ tìm kiếm: { tab, itemId, keyword }
+            const [searchTarget, setSearchTarget] = useState(null);
+
             // Điều hướng đến kết quả tìm kiếm
-            const handleSearchNavigate = (type, item) => {
+            const handleSearchNavigate = (type, item, keyword) => {
                 if (type === 'calendar' && item.date) {
                     const d = new Date(item.date.seconds * 1000);
                     setCalendarCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
                     setCalendarSelectedDate(d);
                     setActiveTab('calendar');
+                    setSearchTarget(null);
                 } else if (type === 'todo') {
+                    // Kiểm tra lock trước khi navigate
+                    if (lockEnabled && lockPassword && !unlockedTabs.todo) {
+                        setSearchTarget({ tab: 'todo', itemId: item.id, keyword, pendingLock: true });
+                    } else {
+                        setSearchTarget({ tab: 'todo', itemId: item.id, keyword });
+                    }
                     setActiveTab('todo');
                 } else if (type === 'notes') {
+                    if (lockEnabled && lockPassword && !unlockedTabs.notes) {
+                        setSearchTarget({ tab: 'notes', itemId: item.id, keyword, pendingLock: true });
+                    } else {
+                        setSearchTarget({ tab: 'notes', itemId: item.id, keyword });
+                    }
                     setActiveTab('notes');
                 } else if (type === 'timetable') {
+                    setSearchTarget({ tab: 'timetable', itemId: item.id, keyword });
                     setActiveTab('timetable');
                 } else {
                     setActiveTab(type);
+                    setSearchTarget(null);
                 }
             };
 
@@ -2599,24 +2687,35 @@
                         {/* Tab Việc cần làm */}
                         <div style={{ display: activeTab === 'todo' ? 'block' : 'none', height: '100%' }}>
                             {lockEnabled && lockPassword && !unlockedTabs.todo ? (
-                                <LockScreen correctPassword={lockPassword} onUnlock={() => handleUnlockTab('todo')} />
+                                <LockScreen correctPassword={lockPassword} onUnlock={() => {
+                                    handleUnlockTab('todo');
+                                    // Sau khi mở khóa, nếu có searchTarget đang chờ thì kích hoạt
+                                    if (searchTarget?.pendingLock && searchTarget?.tab === 'todo') {
+                                        setSearchTarget(prev => ({ ...prev, pendingLock: false }));
+                                    }
+                                }} />
                             ) : (
-                                <TodoView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} />
+                                <TodoView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                             )}
                         </div>
 
                         {/* Tab Ghi chú */}
                         <div style={{ display: activeTab === 'notes' ? 'block' : 'none', height: '100%' }}>
                             {lockEnabled && lockPassword && !unlockedTabs.notes ? (
-                                <LockScreen correctPassword={lockPassword} onUnlock={() => handleUnlockTab('notes')} />
+                                <LockScreen correctPassword={lockPassword} onUnlock={() => {
+                                    handleUnlockTab('notes');
+                                    if (searchTarget?.pendingLock && searchTarget?.tab === 'notes') {
+                                        setSearchTarget(prev => ({ ...prev, pendingLock: false }));
+                                    }
+                                }} />
                             ) : (
-                                <NotesView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} />
+                                <NotesView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                             )}
                         </div>
 
                         {/* Tab Thời khóa biểu */}
                         <div style={{ display: activeTab === 'timetable' ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
-                            <TimeTableView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} />
+                            <TimeTableView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                         </div>
                     </main>
 
