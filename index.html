@@ -1304,7 +1304,7 @@
                             onClick={() => changeWeek(-1)} 
                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
                         >
-                            <ChevronLeft size={16} /> Tuần trước
+                            <ChevronLeft size={16} /> Trước
                         </button>
                         
                         <div className="flex items-center gap-1 flex-1 justify-center min-w-[140px]">
@@ -1340,7 +1340,7 @@
                             onClick={() => changeWeek(1)} 
                             className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
                         >
-                            Tuần sau <ChevronRight size={16} />
+                            Sau <ChevronRight size={16} />
                         </button>
                     </div>
 
@@ -1362,7 +1362,7 @@
                                 {weekDaysInfo.map((day, dayIndex) => (
                                     <React.Fragment key={day.id}>
                                         {periods.map((period, index) => (
-                                            <tr key={`${day.id}_${period}`} className={`border-b hover:bg-gray-50 ${dayIndex % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'}`}>
+                                            <tr key={`${day.id}_${period}`} className={`border-b hover:bg-gray-50 ${dayIndex % 2 === 0 ? 'bg-slate-100' : 'bg-white'}`}>
                                                 {index === 0 && (
                                                     <td className="border p-1 align-middle bg-gray-50 text-gray-600 text-center" rowSpan={5}>
                                                         <div className="flex flex-col h-full justify-center items-center gap-0.5">
