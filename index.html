@@ -1255,7 +1255,7 @@
                 setStartOfWeekDate(newMonday);
             };
 
-            // Tạo datalist cho năm và tuần
+            // Tạo datalist cho năm và tuần (mở rộng từ 2000 đến 2100)
             const yearOptions = Array.from({ length: 101 }, (_, i) => 2000 + i);
             const weekOptions = Array.from({ length: 53 }, (_, i) => i + 1);
 
@@ -1298,13 +1298,14 @@
                         )}
                     </div>
                     
-                    {/* BỘ ĐIỀU HƯỚNG TUẦN với hai ô nhập năm và tuần */}
-                    <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-1 flex-wrap">
+                    {/* BỘ ĐIỀU HƯỚNG TUẦN - chỉ giữ icon, bỏ chữ */}
+                    <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-1">
                         <button 
                             onClick={() => changeWeek(-1)} 
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition"
+                            title="Tuần trước"
                         >
-                            <ChevronLeft size={16} /> Trước
+                            <ChevronLeft size={20} />
                         </button>
                         
                         <div className="flex items-center gap-1 flex-1 justify-center min-w-[140px]">
@@ -1338,9 +1339,10 @@
 
                         <button 
                             onClick={() => changeWeek(1)} 
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-1 text-xs font-bold"
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition"
+                            title="Tuần sau"
                         >
-                            Sau <ChevronRight size={16} />
+                            <ChevronRight size={20} />
                         </button>
                     </div>
 
@@ -1361,37 +1363,41 @@
                             <tbody>
                                 {weekDaysInfo.map((day, dayIndex) => (
                                     <React.Fragment key={day.id}>
-                                        {periods.map((period, index) => (
-                                            <tr key={`${day.id}_${period}`} className={`border-b hover:bg-gray-50 ${dayIndex % 2 === 0 ? 'bg-slate-100' : 'bg-white'}`}>
-                                                {index === 0 && (
-                                                    <td className="border p-1 align-middle bg-gray-50 text-gray-600 text-center" rowSpan={5}>
-                                                        <div className="flex flex-col h-full justify-center items-center gap-0.5">
-                                                            <div className="font-extrabold text-xs text-slate-800">{day.label}</div>
-                                                            <div className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-1.5 py-0.5 rounded-full">{day.dateStr}</div>
-                                                        </div>
+                                        {periods.map((period, index) => {
+                                            // Màu nền xen kẽ rõ hơn: dùng bg-slate-100 cho ngày chẵn, bg-white cho ngày lẻ
+                                            const rowBg = dayIndex % 2 === 0 ? 'bg-slate-100' : 'bg-white';
+                                            return (
+                                                <tr key={`${day.id}_${period}`} className={`border-b hover:bg-gray-50 ${rowBg}`}>
+                                                    {index === 0 && (
+                                                        <td className={`border p-1 align-middle text-gray-600 text-center ${rowBg}`} rowSpan={5}>
+                                                            <div className="flex flex-col h-full justify-center items-center gap-0.5">
+                                                                <div className="font-extrabold text-xs text-slate-800">{day.label}</div>
+                                                                <div className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-1.5 py-0.5 rounded-full">{day.dateStr}</div>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                    <td className={`border p-2 text-center text-gray-400 font-bold text-xs align-middle ${rowBg}`}>{period}</td>
+                                                    <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
+                                                        <textarea 
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
+                                                            rows={1}
+                                                            value={schedule[`${day.id}_${period}_col1`] || ''}
+                                                            onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})}
+                                                            onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)}
+                                                        />
                                                     </td>
-                                                )}
-                                                <td className="border p-2 text-center text-gray-400 font-bold text-xs align-middle">{period}</td>
-                                                <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                    <textarea 
-                                                        className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
-                                                        rows={1}
-                                                        value={schedule[`${day.id}_${period}_col1`] || ''}
-                                                        onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})}
-                                                        onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)}
-                                                    />
-                                                </td>
-                                                <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                    <textarea 
-                                                        className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
-                                                        rows={1}
-                                                        value={schedule[`${day.id}_${period}_col2`] || ''}
-                                                        onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})}
-                                                        onBlur={(e) => saveData(`${day.id}_${period}_col2`, e.target.value)}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                    <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
+                                                        <textarea 
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
+                                                            rows={1}
+                                                            value={schedule[`${day.id}_${period}_col2`] || ''}
+                                                            onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})}
+                                                            onBlur={(e) => saveData(`${day.id}_${period}_col2`, e.target.value)}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </React.Fragment>
                                 ))}
                             </tbody>
