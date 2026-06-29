@@ -1076,12 +1076,10 @@
             const [highlightKw, setHighlightKw] = useState('');
             const [editingTitle, setEditingTitle] = useState(false);
 
-            // 2. Tên mặc định đổi thành "Lịch biểu", lưu/tải từ localStorage
             const [titleLabel, setTitleLabel] = useState(() => {
                 try { return localStorage.getItem('vt_tkb_title') || 'Lịch biểu'; } catch(e) { return 'Lịch biểu'; }
             });
 
-            // 1. Luôn mở tuần hiện tại
             const getCurrentMonday = () => {
                 const now = new Date();
                 const day = now.getDay();
@@ -1128,24 +1126,11 @@
                 return getWeekKey(dec28).weekNum;
             };
 
-            const yearOptions = useMemo(() => {
-                const y = new Date().getFullYear();
-                return Array.from({ length: 9 }, (_, i) => y - 4 + i);
-            }, []);
-
-            const weekOptions = useMemo(() => {
-                const total = weeksInYear(currentYear);
-                const now = getCurrentMonday();
-                const { weekNum: nowW, yyyy: nowY } = getWeekKey(now);
-                return Array.from({ length: total }, (_, i) => {
-                    const w = i + 1;
-                    const mon = getMondayFromWeek(currentYear, w);
-                    const sat = new Date(mon); sat.setDate(mon.getDate() + 5);
-                    const fmt = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-                    const isCurrent = (currentYear === nowY && w === nowW);
-                    return { w, label: `Tuần ${w}  (${fmt(mon)} - ${fmt(sat)})${isCurrent ? ' ✦' : ''}` };
-                });
-            }, [currentYear]);
+            // State tên tùy chỉnh cho năm và tuần (người dùng tự đặt, lưu theo weekKey)
+            const [yearLabel, setYearLabel] = useState('');
+            const [weekLabel, setWeekLabel] = useState('');
+            const [editingYearLabel, setEditingYearLabel] = useState(false);
+            const [editingWeekLabel, setEditingWeekLabel] = useState(false);
 
             const tkbRef = useMemo(() => doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', `main_${weekKey}`), [db, appId, user.uid, weekKey]);
 
@@ -1159,9 +1144,14 @@
                             setTitleLabel(data.titleLabel);
                             try { localStorage.setItem('vt_tkb_title', data.titleLabel); } catch(e) {}
                         }
+                        // Tải tên tùy chỉnh năm/tuần
+                        setYearLabel(data.yearLabel || '');
+                        setWeekLabel(data.weekLabel || '');
                     } else {
                         setSchedule({});
                         setHeaders({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
+                        setYearLabel('');
+                        setWeekLabel('');
                     }
                 }, err => console.warn("TKB offline:", err));
                 return unsub;
@@ -1217,9 +1207,7 @@
                 const hasData = Object.values(newSched).some(v => v && v.trim() !== '');
                 if (hasData) {
                     await setDoc(tkbRef, { schedule: newSched }, { merge: true });
-                }
-                // Nếu xóa hết dữ liệu, xóa luôn doc
-                else {
+                } else {
                     try { await deleteDoc(tkbRef); } catch(e) {}
                 }
             };
@@ -1235,12 +1223,30 @@
                 setTitleLabel(v);
                 setEditingTitle(false);
                 try { localStorage.setItem('vt_tkb_title', v); } catch(e) {}
-                // Lưu lên doc tuần hiện tại (đồng bộ tiêu đề)
                 await setDoc(tkbRef, { titleLabel: v }, { merge: true });
             };
 
-            // 5. Màu nền xen kẽ cho từng thứ
-            const dayBgColors = ['bg-white', 'bg-slate-50', 'bg-blue-50/40', 'bg-slate-50', 'bg-indigo-50/40', 'bg-white'];
+            const saveYearLabel = async (val) => {
+                setYearLabel(val);
+                setEditingYearLabel(false);
+                await setDoc(tkbRef, { yearLabel: val }, { merge: true });
+            };
+
+            const saveWeekLabel = async (val) => {
+                setWeekLabel(val);
+                setEditingWeekLabel(false);
+                await setDoc(tkbRef, { weekLabel: val }, { merge: true });
+            };
+
+            // 5. Màu nền xen kẽ cho từng thứ — rõ ràng hơn
+            const dayBgColors = [
+                'bg-white',
+                'bg-sky-50',
+                'bg-emerald-50',
+                'bg-violet-50',
+                'bg-amber-50',
+                'bg-rose-50',
+            ];
 
             // Ngày hiện tại để đánh dấu
             const todayStr = (() => {
@@ -1248,10 +1254,16 @@
                 return `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
             })();
 
+            const changeWeek = (offset) => {
+                const d = new Date(startOfWeekDate);
+                d.setDate(d.getDate() + offset * 7);
+                setStartOfWeekDate(d);
+            };
+
             return (
                 <div className="h-full flex flex-col px-4 pb-4 pt-2" style={{ color: theme.textColor }}>
 
-                    {/* 2. TIÊU ĐỀ CÓ THỂ SỬA */}
+                    {/* TIÊU ĐỀ CÓ THỂ SỬA */}
                     <div className="flex items-center justify-center gap-2 mb-2 shrink-0">
                         {editingTitle ? (
                             <input
@@ -1270,34 +1282,62 @@
                         )}
                     </div>
 
-                    {/* 3. BỘ ĐIỀU HƯỚNG: Trước | [Năm] [Tuần] | Sau */}
+                    {/* BỘ ĐIỀU HƯỚNG: Trước | [Năm] [Tuần] | Sau */}
                     <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-2">
                         <button onClick={() => changeWeek(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-0.5 text-xs font-bold shrink-0">
                             <ChevronLeft size={16} /> Trước
                         </button>
 
                         <div className="flex items-center gap-1.5 flex-1 justify-center min-w-0">
-                            {/* Dropdown Năm */}
-                            <select
-                                value={currentYear}
-                                onChange={e => {
-                                    const y = parseInt(e.target.value, 10);
-                                    const w = Math.min(currentWeekNum, weeksInYear(y));
-                                    setStartOfWeekDate(getMondayFromWeek(y, w));
-                                }}
-                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none bg-white cursor-pointer hover:border-blue-400 transition shrink-0"
-                            >
-                                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
+                            {/* Ô Năm — tự đặt tên */}
+                            <div className="flex flex-col items-center shrink-0">
+                                <span className="text-[8px] text-slate-400 mb-0.5">Năm</span>
+                                {editingYearLabel ? (
+                                    <input
+                                        autoFocus
+                                        className="border border-blue-400 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none w-20 text-center bg-blue-50"
+                                        value={yearLabel}
+                                        placeholder={String(currentYear)}
+                                        onChange={e => setYearLabel(e.target.value)}
+                                        onBlur={() => saveYearLabel(yearLabel)}
+                                        onKeyDown={e => { if (e.key === 'Enter') saveYearLabel(yearLabel); if (e.key === 'Escape') setEditingYearLabel(false); }}
+                                    />
+                                ) : (
+                                    <button
+                                        onClick={() => setEditingYearLabel(true)}
+                                        className="border border-slate-200 hover:border-blue-400 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 bg-white transition w-20 text-center group"
+                                        title="Bấm để đặt tên năm"
+                                    >
+                                        {yearLabel || <span className="text-slate-400">{currentYear}</span>}
+                                        <Pencil size={9} className="inline ml-1 text-gray-300 group-hover:text-blue-400" />
+                                    </button>
+                                )}
+                            </div>
 
-                            {/* Dropdown Tuần — có ngày tháng và đánh dấu tuần hiện tại */}
-                            <select
-                                value={currentWeekNum}
-                                onChange={e => setStartOfWeekDate(getMondayFromWeek(currentYear, parseInt(e.target.value, 10)))}
-                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none bg-white cursor-pointer hover:border-blue-400 transition min-w-0 flex-1"
-                            >
-                                {weekOptions.map(({ w, label }) => <option key={w} value={w}>{label}</option>)}
-                            </select>
+                            {/* Ô Tuần — tự đặt tên */}
+                            <div className="flex flex-col items-center flex-1 min-w-0">
+                                <span className="text-[8px] text-slate-400 mb-0.5">Tuần {currentWeekNum}</span>
+                                {editingWeekLabel ? (
+                                    <input
+                                        autoFocus
+                                        className="border border-blue-400 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 outline-none w-full text-center bg-blue-50"
+                                        value={weekLabel}
+                                        placeholder={`Tuần ${currentWeekNum}`}
+                                        onChange={e => setWeekLabel(e.target.value)}
+                                        onBlur={() => saveWeekLabel(weekLabel)}
+                                        onKeyDown={e => { if (e.key === 'Enter') saveWeekLabel(weekLabel); if (e.key === 'Escape') setEditingWeekLabel(false); }}
+                                    />
+                                ) : (
+                                    <button
+                                        onClick={() => setEditingWeekLabel(true)}
+                                        className="border border-slate-200 hover:border-blue-400 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 bg-white transition w-full text-center group truncate"
+                                        title="Bấm để đặt tên tuần"
+                                    >
+                                        {weekLabel || <span className="text-slate-400">Đặt tên tuần...</span>}
+                                        <Pencil size={9} className="inline ml-1 text-gray-300 group-hover:text-blue-400" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <button onClick={() => changeWeek(1)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition flex items-center gap-0.5 text-xs font-bold shrink-0">
@@ -1305,7 +1345,7 @@
                         </button>
                     </div>
 
-                    {/* BẢNG THỜI KHÓA BIỂU */}
+                    {/* BẢNG LỊCH BIỂU */}
                     <div className="flex-1 overflow-y-auto rounded-xl shadow-sm border border-slate-200 mb-4 bg-white">
                         <table className="w-full text-sm border-collapse table-fixed">
                             <thead className="sticky top-0 bg-gray-100 z-10 shadow-sm">
@@ -1321,23 +1361,22 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* 5. Màu nền xen kẽ theo thứ */}
                                 {weekDaysInfo.map((day, dayIndex) => {
                                     const isToday = day.dateStr === todayStr;
-                                    const rowBg = dayBgColors[dayIndex] || 'bg-white';
+                                    const rowBg = isToday ? 'bg-blue-50' : (dayBgColors[dayIndex] || 'bg-white');
                                     return (
                                         <React.Fragment key={day.id}>
                                             {periods.map((period, pIdx) => (
                                                 <tr key={`${day.id}_${period}`} className={`border-b ${rowBg}`}>
                                                     {pIdx === 0 && (
-                                                        <td className={`border p-1 align-middle text-center ${isToday ? 'bg-blue-100' : rowBg}`} rowSpan={5}>
+                                                        <td className={`border p-1 align-middle text-center ${rowBg}`} rowSpan={5}>
                                                             <div className="flex flex-col items-center justify-center gap-0.5">
                                                                 <div className={`font-extrabold text-xs ${isToday ? 'text-blue-700' : 'text-slate-700'}`}>{day.label}</div>
                                                                 <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-500 text-white' : 'bg-slate-200/60 text-slate-400'}`}>{day.dateStr}</div>
                                                             </div>
                                                         </td>
                                                     )}
-                                                    <td className={`border p-2 text-center text-gray-400 font-bold text-xs align-middle ${isToday ? 'bg-blue-50' : ''}`}>{period}</td>
+                                                    <td className={`border p-2 text-center font-bold text-xs align-middle ${isToday ? 'text-blue-600' : 'text-gray-400'}`}>{period}</td>
                                                     <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
                                                         <textarea
                                                             className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight"
@@ -2629,12 +2668,17 @@
                 if (user) await setDoc(doc(getFirestore(app), 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'settings', 'theme'), newTheme);
             };
 
+            const [tkbResetKey, setTkbResetKey] = useState(0);
+
             const handleTabChange = (tab) => {
                 if (tab === 'day') {
                     setDailyDate(new Date()); 
                 } else if (tab === 'calendar') {
                     setCalendarCurrentDate(new Date()); 
                     setCalendarSelectedDate(new Date()); 
+                } else if (tab === 'timetable') {
+                    // Luôn reset về tuần hôm nay khi bấm tab
+                    setTkbResetKey(k => k + 1);
                 }
                 
                 setUnlockedTabs({ todo: false, notes: false });
@@ -2812,7 +2856,7 @@
 
                         {/* Tab Thời khóa biểu */}
                         <div style={{ display: activeTab === 'timetable' ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
-                            <TimeTableView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
+                            <TimeTableView key={tkbResetKey} user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                         </div>
                     </main>
 
@@ -2835,7 +2879,7 @@
                             {showMenu && (
                                 <div className="absolute bottom-12 right-0 bg-white shadow-xl rounded-lg border w-40 overflow-hidden fade-in z-50">
                                     <button onClick={()=>{handleTabChange('timetable'); setShowMenu(false);}} className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 text-left font-sans">
-                                        <Table size={16}/> Thời Khóa Biểu
+                                        <Table size={16}/> Lịch biểu
                                     </button>
                                 </div>
                             )}
