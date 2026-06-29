@@ -1077,7 +1077,7 @@
             );
         };
 
-        // --- COMPONENT DROPDOWN TÙY CHỈNH ---
+        // --- COMPONENT DROPDOWN TÙY CHỈNH (sắp xếp mới nhất lên đầu) ---
         const CustomDropdown = ({ value, onChange, onAdd, onDelete, placeholder, label, items, onSelect }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [inputValue, setInputValue] = useState('');
@@ -1092,6 +1092,12 @@
                 document.addEventListener('mousedown', handleClickOutside);
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, []);
+
+            // Sắp xếp items: mới nhất lên đầu (dựa trên thứ tự trong mảng hiện tại - đảo ngược)
+            const sortedItems = useMemo(() => {
+                // Giả sử items được truyền vào theo thứ tự cũ (cũ nhất trước). Ta đảo ngược.
+                return [...items].reverse();
+            }, [items]);
 
             const handleAdd = (e) => {
                 e.preventDefault();
@@ -1120,7 +1126,6 @@
                             value={value}
                             onChange={(e) => {
                                 onChange(e.target.value);
-                                // Nếu người dùng nhập, đóng dropdown? Không, vẫn giữ mở
                             }}
                             onFocus={() => setIsOpen(true)}
                             placeholder={placeholder}
@@ -1137,7 +1142,7 @@
                     {isOpen && (
                         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                             {/* Dòng nhập mới */}
-                            <div className="p-2 border-b border-slate-100 flex items-center gap-1">
+                            <div className="p-2 border-b border-slate-100 flex items-center gap-1 sticky top-0 bg-white z-10">
                                 <input
                                     type="text"
                                     value={inputValue}
@@ -1153,11 +1158,11 @@
                                     <Plus size={14} />
                                 </button>
                             </div>
-                            {/* Danh sách các mục */}
-                            {items.length === 0 && (
+                            {/* Danh sách các mục (sắp xếp mới nhất lên đầu) */}
+                            {sortedItems.length === 0 && (
                                 <div className="px-3 py-2 text-xs text-slate-400 italic">Chưa có {label} nào</div>
                             )}
-                            {items.map((item, index) => (
+                            {sortedItems.map((item, index) => (
                                 <div
                                     key={index}
                                     className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0"
@@ -1179,7 +1184,7 @@
         };
 
         // --- MÀN HÌNH LỊCH BIỂU (TKB VIEW) ---
-        const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear, activeTab, tableName, onTableNameChange }) => {
+        const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear, activeTab }) => {
             const [schedule, setSchedule] = useState({});
             const [headers, setHeaders] = useState({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
             const [highlightKey, setHighlightKey] = useState(null);
@@ -1195,25 +1200,26 @@
             });
             const [selectedIndex, setSelectedIndex] = useState(-1);
             
-            // Lấy danh sách năm học và tuần duy nhất từ entries
+            // Lấy danh sách năm học duy nhất (theo thứ tự thêm mới)
             const yearList = useMemo(() => {
                 const years = entries.map(e => e.year).filter(y => y && y.trim());
                 return [...new Set(years)];
             }, [entries]);
-            
-            const weekList = useMemo(() => {
-                const weeks = entries.map(e => e.week).filter(w => w && w.trim());
-                return [...new Set(weeks)];
-            }, [entries]);
 
-            // Lưu entries vào localStorage khi thay đổi
-            useEffect(() => {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-            }, [entries]);
-
-            // State cho năm và tuần hiện tại (đồng bộ với selectedEntry)
+            // Lấy danh sách tuần thuộc năm học hiện tại (yearInput)
             const [yearInput, setYearInput] = useState('');
             const [weekInput, setWeekInput] = useState('');
+
+            // Khi yearInput thay đổi, cập nhật danh sách tuần và chọn tuần đầu tiên (nếu có)
+            const weekListForYear = useMemo(() => {
+                if (!yearInput) return [];
+                const weeks = entries
+                    .filter(e => e.year === yearInput && e.week && e.week.trim())
+                    .map(e => e.week);
+                return [...new Set(weeks)];
+            }, [entries, yearInput]);
+
+            // Nếu yearInput thay đổi và chưa có tuần nào, có thể tự động tạo một tuần mặc định? Không, để người dùng tự tạo.
 
             // State lưu ngày thứ 2 đầu tuần đang hiển thị
             const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
@@ -1236,20 +1242,15 @@
                         d.setHours(0, 0, 0, 0);
                         setStartOfWeekDate(d);
                     }
-                } else {
-                    // Nếu không có entry nào được chọn, giữ nguyên startOfWeekDate (mặc định là tuần hiện tại)
-                    // Nhưng không thay đổi yearInput/weekInput? Có thể để trống hoặc giữ nguyên.
-                    // Ta sẽ giữ nguyên yearInput/weekInput hiện tại, nhưng nếu không có entry, có thể đặt lại rỗng.
-                    // Tuy nhiên, để tránh mất dữ liệu, ta sẽ không đặt lại.
                 }
             }, [selectedIndex, entries]);
 
-            // Hàm tìm entry theo year và week
-            const findEntry = (year, week) => {
-                return entries.find(e => e.year === year && e.week === week);
-            };
+            // Lưu entries vào localStorage khi thay đổi
+            useEffect(() => {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            }, [entries]);
 
-            // Hàm thêm entry mới
+            // Hàm thêm entry mới (thêm vào cuối mảng, nhưng hiển thị sẽ đảo ngược)
             const addEntry = (year, week, startDate) => {
                 const newEntry = { year, week, startDate: startDate.toISOString() };
                 const newEntries = [...entries, newEntry];
@@ -1259,7 +1260,7 @@
                 return newIndex;
             };
 
-            // Hàm xóa entry
+            // Hàm xóa entry (nếu xóa cả year và week, nên xóa toàn bộ entry)
             const deleteEntry = (year, week) => {
                 const newEntries = entries.filter(e => !(e.year === year && e.week === week));
                 setEntries(newEntries);
@@ -1275,41 +1276,47 @@
                 if (selectedIndex >= newEntries.length) {
                     setSelectedIndex(newEntries.length - 1);
                 }
+                if (yearInput === year) {
+                    setYearInput('');
+                    setWeekInput('');
+                }
             };
 
-            // Hàm xóa tuần (xóa tất cả entries có week đó)
+            // Hàm xóa tuần (xóa tất cả entries có week đó và year trùng)
             const deleteWeek = (week) => {
-                const newEntries = entries.filter(e => e.week !== week);
+                const newEntries = entries.filter(e => !(e.week === week && e.year === yearInput));
                 setEntries(newEntries);
                 if (selectedIndex >= newEntries.length) {
                     setSelectedIndex(newEntries.length - 1);
                 }
-            };
-
-            // Chọn entry từ dropdown
-            const selectYear = (year) => {
-                // Tìm entry đầu tiên có year đó và week hiện tại (nếu có) hoặc week rỗng
-                const existing = entries.find(e => e.year === year && (e.week === weekInput || (weekInput === '' && e.week === '')));
-                if (existing) {
-                    const idx = entries.indexOf(existing);
-                    setSelectedIndex(idx);
-                } else {
-                    // Nếu chưa có, tạo mới với week hiện tại (nếu có)
-                    const newWeek = weekInput || '';
-                    const newDate = new Date(startOfWeekDate);
-                    addEntry(year, newWeek, newDate);
+                if (weekInput === week) {
+                    setWeekInput('');
                 }
             };
 
-            const selectWeek = (week) => {
-                const existing = entries.find(e => e.week === week && (e.year === yearInput || (yearInput === '' && e.year === '')));
+            // Chọn năm từ dropdown
+            const selectYear = (year) => {
+                setYearInput(year);
+                // Tìm entry đầu tiên có year đó và week (ưu tiên week hiện tại nếu có)
+                const existing = entries.find(e => e.year === year && e.week === weekInput);
                 if (existing) {
                     const idx = entries.indexOf(existing);
                     setSelectedIndex(idx);
                 } else {
-                    const newYear = yearInput || '';
-                    const newDate = new Date(startOfWeekDate);
-                    addEntry(newYear, week, newDate);
+                    // Nếu chưa có, tạo mới với week rỗng? Thay vào đó, chỉ set year, không chọn entry cụ thể.
+                    // Người dùng sẽ thêm tuần sau.
+                    setSelectedIndex(-1);
+                    // Đặt startOfWeekDate về tuần hiện tại? Giữ nguyên.
+                }
+            };
+
+            // Chọn tuần từ dropdown
+            const selectWeek = (week) => {
+                setWeekInput(week);
+                const existing = entries.find(e => e.week === week && e.year === yearInput);
+                if (existing) {
+                    const idx = entries.indexOf(existing);
+                    setSelectedIndex(idx);
                 }
             };
 
@@ -1318,13 +1325,13 @@
                 if (e.key === 'Enter') {
                     const year = yearInput.trim();
                     if (year) {
-                        // Tìm entry có năm này và tuần hiện tại
-                        const existing = entries.find(e => e.year === year && e.week === weekInput);
-                        if (existing) {
-                            setSelectedIndex(entries.indexOf(existing));
-                        } else {
+                        // Kiểm tra xem năm đã tồn tại chưa, nếu chưa thì tạo entry với week rỗng
+                        const existing = entries.find(e => e.year === year && e.week === '');
+                        if (!existing) {
                             const newDate = new Date(startOfWeekDate);
-                            addEntry(year, weekInput || '', newDate);
+                            addEntry(year, '', newDate);
+                        } else {
+                            setSelectedIndex(entries.indexOf(existing));
                         }
                     }
                 }
@@ -1333,24 +1340,16 @@
             const handleWeekKeyDown = (e) => {
                 if (e.key === 'Enter') {
                     const week = weekInput.trim();
-                    if (week) {
+                    if (week && yearInput) {
                         const existing = entries.find(e => e.week === week && e.year === yearInput);
-                        if (existing) {
-                            setSelectedIndex(entries.indexOf(existing));
-                        } else {
+                        if (!existing) {
                             const newDate = new Date(startOfWeekDate);
-                            addEntry(yearInput || '', week, newDate);
+                            addEntry(yearInput, week, newDate);
+                        } else {
+                            setSelectedIndex(entries.indexOf(existing));
                         }
                     }
                 }
-            };
-
-            // Xử lý khi thay đổi input (đồng bộ state)
-            const handleYearChange = (val) => {
-                setYearInput(val);
-            };
-            const handleWeekChange = (val) => {
-                setWeekInput(val);
             };
 
             // Reset về tuần hiện tại khi activeTab được bật
@@ -1364,28 +1363,45 @@
                     setStartOfWeekDate(monday);
                     // Không tự động chọn entry nào
                     setSelectedIndex(-1);
+                    setYearInput('');
+                    setWeekInput('');
                 }
             }, [activeTab]);
 
-            // Khi startOfWeekDate thay đổi (do mũi tên), ta cập nhật entry hiện tại nếu có
-            // Nhưng mũi tên sẽ thay đổi selectedIndex, từ đó thay đổi startOfWeekDate
-
-            // Hàm chuyển đến entry tiếp theo/trước đó
+            // Hàm chuyển đến entry tiếp theo/trước đó (dựa trên danh sách entries đã sắp xếp)
             const goToPrevEntry = () => {
                 if (entries.length === 0) return;
-                let newIndex = selectedIndex - 1;
-                if (newIndex < 0) newIndex = entries.length - 1;
-                setSelectedIndex(newIndex);
+                // Lấy danh sách entry hợp lệ có year và week khác rỗng (bỏ qua các entry trống)
+                const validEntries = entries.filter(e => e.year && e.week);
+                if (validEntries.length === 0) return;
+                // Tìm index của entry hiện tại trong validEntries
+                let currentIdx = validEntries.findIndex(e => e.year === yearInput && e.week === weekInput);
+                if (currentIdx === -1) currentIdx = 0;
+                let newIdx = currentIdx - 1;
+                if (newIdx < 0) newIdx = validEntries.length - 1;
+                const entry = validEntries[newIdx];
+                setYearInput(entry.year);
+                setWeekInput(entry.week);
+                const idx = entries.indexOf(entry);
+                setSelectedIndex(idx);
             };
 
             const goToNextEntry = () => {
                 if (entries.length === 0) return;
-                let newIndex = selectedIndex + 1;
-                if (newIndex >= entries.length) newIndex = 0;
-                setSelectedIndex(newIndex);
+                const validEntries = entries.filter(e => e.year && e.week);
+                if (validEntries.length === 0) return;
+                let currentIdx = validEntries.findIndex(e => e.year === yearInput && e.week === weekInput);
+                if (currentIdx === -1) currentIdx = 0;
+                let newIdx = currentIdx + 1;
+                if (newIdx >= validEntries.length) newIdx = 0;
+                const entry = validEntries[newIdx];
+                setYearInput(entry.year);
+                setWeekInput(entry.week);
+                const idx = entries.indexOf(entry);
+                setSelectedIndex(idx);
             };
 
-            // Rest of the component (periods, weekKey, tkbRef, etc.) - unchanged
+            // Rest of the component (periods, weekKey, tkbRef, etc.)
             const periods = [1, 2, 3, 4, 5];
             const weekKey = useMemo(() => {
                 const yyyy = startOfWeekDate.getFullYear();
@@ -1480,43 +1496,9 @@
                 await setDoc(tkbRef, { headers: newHeaders }, { merge: true });
             };
 
-            // State cho việc chỉnh sửa tên bảng
-            const [isEditingName, setIsEditingName] = useState(false);
-            const [tempName, setTempName] = useState(tableName);
-
-            const handleNameSubmit = () => {
-                if (tempName.trim()) {
-                    onTableNameChange(tempName.trim());
-                } else {
-                    onTableNameChange('Lịch biểu');
-                }
-                setIsEditingName(false);
-            };
-
             return (
                 <div className="h-full flex flex-col px-4 pb-4 pt-2" style={{ color: theme.textColor }}>
-                    <div className="flex justify-center items-center mb-2 shrink-0">
-                        {isEditingName ? (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={tempName}
-                                    onChange={(e) => setTempName(e.target.value)}
-                                    className="text-xl font-bold text-center border-b-2 border-blue-500 bg-transparent outline-none px-2 py-0.5 min-w-[120px]"
-                                    autoFocus
-                                    onBlur={handleNameSubmit}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleNameSubmit(); if (e.key === 'Escape') { setTempName(tableName); setIsEditingName(false); } }}
-                                />
-                                <button onClick={handleNameSubmit} className="text-blue-600 hover:text-blue-800 p-1"><Check size={18} /></button>
-                                <button onClick={() => { setTempName(tableName); setIsEditingName(false); }} className="text-gray-400 hover:text-gray-600 p-1"><X size={18} /></button>
-                            </div>
-                        ) : (
-                            <h2 className="text-xl font-bold cursor-pointer hover:text-blue-600 flex items-center gap-2" onClick={() => { setIsEditingName(true); setTempName(tableName); }}>
-                                {tableName}
-                                <Edit3 size={16} className="opacity-40 hover:opacity-100" />
-                            </h2>
-                        )}
-                    </div>
+                    {/* Không hiển thị tiêu đề "Lịch biểu" nữa */}
 
                     {/* BỘ ĐIỀU HƯỚNG - Năm học & Tuần với dropdown */}
                     <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-1">
@@ -1530,14 +1512,17 @@
                         </button>
                         
                         <div className="flex items-center gap-1 flex-1 justify-center min-w-[140px]">
-                            <span className="text-[10px] font-bold text-slate-400">Năm học</span>
+                            <span className="text-[10px] font-bold text-blue-600">Năm học</span>
                             <CustomDropdown
                                 value={yearInput}
-                                onChange={handleYearChange}
+                                onChange={setYearInput}
                                 onAdd={(val) => {
-                                    // Thêm năm mới, tạo entry với tuần hiện tại
-                                    const newDate = new Date(startOfWeekDate);
-                                    addEntry(val, weekInput || '', newDate);
+                                    // Thêm năm mới (chưa có tuần)
+                                    const existing = entries.find(e => e.year === val && e.week === '');
+                                    if (!existing) {
+                                        const newDate = new Date(startOfWeekDate);
+                                        addEntry(val, '', newDate);
+                                    }
                                 }}
                                 onDelete={deleteYear}
                                 placeholder="Năm học"
@@ -1545,18 +1530,25 @@
                                 items={yearList}
                                 onSelect={selectYear}
                             />
-                            <span className="text-[10px] font-bold text-slate-400">Tuần</span>
+                            <span className="text-[10px] font-bold text-blue-600">Tuần</span>
                             <CustomDropdown
                                 value={weekInput}
-                                onChange={handleWeekChange}
+                                onChange={setWeekInput}
                                 onAdd={(val) => {
-                                    const newDate = new Date(startOfWeekDate);
-                                    addEntry(yearInput || '', val, newDate);
+                                    if (yearInput) {
+                                        const existing = entries.find(e => e.year === yearInput && e.week === val);
+                                        if (!existing) {
+                                            const newDate = new Date(startOfWeekDate);
+                                            addEntry(yearInput, val, newDate);
+                                        }
+                                    } else {
+                                        toast.warning("Vui lòng chọn hoặc nhập năm học trước.", { position: "top-center" });
+                                    }
                                 }}
                                 onDelete={deleteWeek}
                                 placeholder="Tuần"
                                 label="tuần"
-                                items={weekList}
+                                items={weekListForYear}
                                 onSelect={selectWeek}
                             />
                         </div>
@@ -1575,14 +1567,14 @@
                     <div className="flex-1 overflow-y-auto rounded-xl shadow-sm border border-slate-200 mb-4 bg-white">
                         <table className="w-full text-sm border-collapse table-fixed">
                             <thead className="sticky top-0 bg-gray-100 z-10 shadow-sm">
-                                <tr className="text-gray-700">
-                                    <th className="border p-2 w-14 bg-gray-100 text-center align-middle text-xs font-bold">Thứ</th>
-                                    <th className="border p-2 w-10 bg-gray-100 text-center text-xs font-bold">Tiết</th>
+                                <tr className="text-blue-600 font-bold">
+                                    <th className="border p-2 w-14 bg-gray-100 text-center align-middle text-xs">Thứ</th>
+                                    <th className="border p-2 w-10 bg-gray-100 text-center text-xs">Tiết</th>
                                     <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col1} onChange={e=>saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" />
+                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col1} onChange={e=>saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" />
                                     </th>
                                     <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-gray-400 text-slate-800 text-xs" value={headers.col2} onChange={e=>saveHeader('col2', e.target.value)} placeholder="Ghi chú" />
+                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col2} onChange={e=>saveHeader('col2', e.target.value)} placeholder="Ghi chú" />
                                     </th>
                                 </tr>
                             </thead>
@@ -1594,17 +1586,17 @@
                                             return (
                                                 <tr key={`${day.id}_${period}`} className={`border-b hover:bg-gray-50 ${rowBg}`}>
                                                     {index === 0 && (
-                                                        <td className={`border p-1 align-middle text-gray-600 text-center ${rowBg}`} rowSpan={5}>
+                                                        <td className={`border p-1 align-middle text-blue-600 font-bold text-center ${rowBg}`} rowSpan={5}>
                                                             <div className="flex flex-col h-full justify-center items-center gap-0.5">
-                                                                <div className="font-extrabold text-xs text-slate-800">{day.label}</div>
-                                                                <div className="text-[10px] text-slate-400 font-bold bg-slate-200/50 px-1.5 py-0.5 rounded-full">{day.dateStr}</div>
+                                                                <div className="font-extrabold text-xs">{day.label}</div>
+                                                                <div className="text-[10px] text-blue-400 font-bold bg-blue-50/50 px-1.5 py-0.5 rounded-full">{day.dateStr}</div>
                                                             </div>
                                                         </td>
                                                     )}
-                                                    <td className={`border p-2 text-center text-gray-400 font-bold text-xs align-middle ${rowBg}`}>{period}</td>
+                                                    <td className={`border p-2 text-center text-blue-600 font-bold text-xs align-middle ${rowBg}`}>{period}</td>
                                                     <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
                                                         <textarea 
-                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" 
                                                             rows={1}
                                                             value={schedule[`${day.id}_${period}_col1`] || ''}
                                                             onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})}
@@ -1613,7 +1605,7 @@
                                                     </td>
                                                     <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
                                                         <textarea 
-                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-slate-800 text-xs leading-tight" 
+                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" 
                                                             rows={1}
                                                             value={schedule[`${day.id}_${period}_col2`] || ''}
                                                             onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})}
@@ -2582,16 +2574,6 @@
                 catch(e) { return { bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' }; }
             });
 
-            // State cho tên bảng lịch biểu
-            const [timetableLabel, setTimetableLabel] = useState(() => {
-                try { return localStorage.getItem('vt_timetable_label') || 'Lịch biểu'; } catch(e) { return 'Lịch biểu'; }
-            });
-
-            const handleTimetableLabelChange = (newLabel) => {
-                setTimetableLabel(newLabel);
-                try { localStorage.setItem('vt_timetable_label', newLabel); } catch(e) {}
-            };
-
             // Đồng bộ completedAlerts vào LocalStorage
             useEffect(() => {
                 localStorage.setItem('vt_completed_alerts', JSON.stringify(completedAlerts));
@@ -3093,8 +3075,6 @@
                                 searchTarget={searchTarget} 
                                 onSearchTargetClear={() => setSearchTarget(null)} 
                                 activeTab={activeTab}
-                                tableName={timetableLabel}
-                                onTableNameChange={handleTimetableLabelChange}
                             />
                         </div>
                     </main>
@@ -3118,7 +3098,7 @@
                             {showMenu && (
                                 <div className="absolute bottom-12 right-0 bg-white shadow-xl rounded-lg border w-40 overflow-hidden fade-in z-50">
                                     <button onClick={()=>{handleTabChange('timetable'); setShowMenu(false);}} className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 text-left font-sans">
-                                        <Table size={16}/> {timetableLabel}
+                                        <Table size={16}/> Lịch biểu
                                     </button>
                                 </div>
                             )}
