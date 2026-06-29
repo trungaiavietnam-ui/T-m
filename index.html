@@ -469,8 +469,30 @@
         // Alias để tránh xung đột tên với biến state query nội bộ trong GlobalSearchModal
         const query_q = (ref) => query(ref);
 
+        // --- HÀM TRÍCH XUẤT NĂM VÀ PHÂN BIỆT GIỖ/SINH NHẬT ---
+        const extractBirthYear = (text) => {
+            if (!text) return null;
+            const matches = text.match(/\b(19[0-9]{2}|20[0-9]{2})\b/g);
+            if (!matches) return null;
+            const year = parseInt(matches[0], 10);
+            if (year >= 1900 && year <= 2099) return year;
+            return null;
+        };
+
+        const calculateAge = (birthYear) => {
+            if (!birthYear) return null;
+            const currentYear = new Date().getFullYear();
+            const age = currentYear - birthYear;
+            if (age < 0 || age > 120) return null;
+            return age;
+        };
+
+        const isMemorialEvent = (title) => {
+            if (!title) return false;
+            return /giỗ|ngày giỗ|giổ|giỗ/i.test(title);
+        };
+
         // --- HÀM PARSE NGÀY TỪ CHUỖI TÌM KIẾM ---
-        // Hỗ trợ: d/m/yy, d/m/yyyy, dd/mm/yy, dd/mm/yyyy
         const parseSearchDate = (str) => {
             const s = str.trim();
             const match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
@@ -479,10 +501,9 @@
             d = parseInt(d, 10);
             m = parseInt(m, 10);
             y = parseInt(y, 10);
-            if (y < 100) y += 2000; // yy → yyyy
+            if (y < 100) y += 2000;
             if (m < 1 || m > 12 || d < 1 || d > 31) return null;
             const date = new Date(y, m - 1, d);
-            // Kiểm tra ngày hợp lệ (vd: 31/2 sẽ bị reject)
             if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
             return date;
         };
@@ -506,7 +527,6 @@
                 const q = query.toLowerCase().trim();
                 setLoading(true);
 
-                // Kiểm tra xem người dùng có nhập ngày không
                 const parsedDate = parseSearchDate(query.trim());
 
                 const eventsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'events');
@@ -523,7 +543,6 @@
 
                         const allEvents = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                        // --- Tìm theo ngày cụ thể ---
                         let dateEvents = [];
                         if (parsedDate) {
                             const ds = parsedDate.toDateString();
@@ -560,7 +579,6 @@
                                 return 0;
                             });
 
-                        // Tìm trong timetable: đọc tất cả document dưới collection timetable
                         let tkbResults = [];
                         try {
                             const tkbColRef = collection(db, 'artifacts', appId, 'users', user.uid, 'timetable');
@@ -619,7 +637,6 @@
                 onClose();
             };
 
-            // Nút chuyển nhanh đến ngày trên lịch (khi tìm ngày không có sự kiện)
             const handleGoToDate = (date) => {
                 onNavigate('calendar', { date: { seconds: Math.floor(date.getTime() / 1000) } });
                 onClose();
@@ -717,7 +734,7 @@
                                         </div>
                                     )}
 
-                                    {/* Sự kiện theo từ khóa */}
+                                    {/* Sự kiện theo từ khóa - hiển thị tuổi hoặc năm mất */}
                                     {results.events.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -725,12 +742,33 @@
                                                 <span className="text-xs font-black uppercase tracking-wider text-blue-500">Sự kiện ({results.events.length})</span>
                                             </div>
                                             <div className="space-y-1.5">
-                                                {results.events.map(ev => (
-                                                    <button key={ev.id} onClick={() => handleResultClick('calendar', ev)} className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition group">
-                                                        <div className="font-semibold text-sm text-slate-800">{highlightText(ev.title, query)}</div>
-                                                        {ev.date && <div className="text-[10px] text-blue-400 mt-0.5 flex items-center gap-1"><CalendarDays size={10}/>{new Date(ev.date.seconds * 1000).toLocaleDateString('vi-VN')}</div>}
-                                                    </button>
-                                                ))}
+                                                {results.events.map(ev => {
+                                                    const birthYear = extractBirthYear(ev.title);
+                                                    const isMemorial = birthYear && isMemorialEvent(ev.title);
+                                                    let badge = null;
+                                                    if (birthYear) {
+                                                        if (isMemorial) {
+                                                            const yearsSince = new Date().getFullYear() - birthYear;
+                                                            if (yearsSince > 0 && yearsSince < 120) {
+                                                                badge = <span className="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full font-bold text-[10px]">🙏 {yearsSince} năm</span>;
+                                                            }
+                                                        } else {
+                                                            const age = calculateAge(birthYear);
+                                                            if (age !== null) {
+                                                                badge = <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold text-[10px]">🎂 {age} tuổi</span>;
+                                                            }
+                                                        }
+                                                    }
+                                                    return (
+                                                        <button key={ev.id} onClick={() => handleResultClick('calendar', ev)} className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition group">
+                                                            <div className="font-semibold text-sm text-slate-800">{highlightText(ev.title, query)}</div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-blue-400 mt-0.5 flex-wrap">
+                                                                {ev.date && <span className="flex items-center gap-1"><CalendarDays size={10}/>{new Date(ev.date.seconds * 1000).toLocaleDateString('vi-VN')}</span>}
+                                                                {badge}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}
@@ -771,7 +809,7 @@
                                         </div>
                                     )}
 
-                                    {/* Lịch biểu (thời khóa biểu) */}
+                                    {/* Lịch biểu */}
                                     {results.timetable.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -1191,15 +1229,54 @@
             const [highlightKw, setHighlightKw] = useState('');
             
             // --- QUẢN LÝ ENTRY (Năm học + Tuần) ---
-            const STORAGE_KEY = 'vt_timetable_entries';
-            const [entries, setEntries] = useState(() => {
-                try {
-                    const data = localStorage.getItem(STORAGE_KEY);
-                    return data ? JSON.parse(data) : [];
-                } catch { return []; }
-            });
+            const [entries, setEntries] = useState([]);
             const [selectedIndex, setSelectedIndex] = useState(-1);
             
+            // Tham chiếu đến meta document trên Firebase
+            const metaRef = useMemo(() => {
+                if (!db || !user) return null;
+                return doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', 'meta');
+            }, [db, appId, user]);
+
+            // Lắng nghe entries từ Firebase
+            useEffect(() => {
+                if (!metaRef) return;
+                const unsub = onSnapshot(metaRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.entries && Array.isArray(data.entries)) {
+                            setEntries(data.entries);
+                        } else {
+                            setEntries([]);
+                        }
+                    } else {
+                        setEntries([]);
+                    }
+                }, (error) => {
+                    console.warn("Lỗi lắng nghe meta timetable:", error);
+                    // Khi lỗi, có thể thử tải từ localStorage? Nhưng ta sẽ bỏ qua.
+                });
+                return unsub;
+            }, [metaRef]);
+
+            // Khi entries thay đổi từ Firebase, tự động chọn entry mới nhất (cuối cùng) nếu chưa chọn
+            useEffect(() => {
+                if (entries.length > 0 && selectedIndex === -1) {
+                    setSelectedIndex(entries.length - 1);
+                }
+            }, [entries]);
+
+            // Hàm ghi entries lên Firebase
+            const saveEntriesToFirebase = async (newEntries) => {
+                if (!metaRef) return;
+                try {
+                    await setDoc(metaRef, { entries: newEntries }, { merge: true });
+                } catch (err) {
+                    console.error("Lỗi ghi meta timetable:", err);
+                    toast.error("Không thể đồng bộ dữ liệu lên đám mây.");
+                }
+            };
+
             // Lấy danh sách năm học duy nhất (theo thứ tự thêm mới)
             const yearList = useMemo(() => {
                 const years = entries.map(e => e.year).filter(y => y && y.trim());
@@ -1210,7 +1287,19 @@
             const [yearInput, setYearInput] = useState('');
             const [weekInput, setWeekInput] = useState('');
 
-            // Khi yearInput thay đổi, cập nhật danh sách tuần và chọn tuần đầu tiên (nếu có)
+            // Cập nhật yearInput và weekInput khi selectedIndex thay đổi
+            useEffect(() => {
+                if (selectedIndex >= 0 && selectedIndex < entries.length) {
+                    const entry = entries[selectedIndex];
+                    setYearInput(entry.year || '');
+                    setWeekInput(entry.week || '');
+                } else {
+                    // Nếu không có entry nào được chọn, để rỗng
+                    setYearInput('');
+                    setWeekInput('');
+                }
+            }, [selectedIndex, entries]);
+
             const weekListForYear = useMemo(() => {
                 if (!yearInput) return [];
                 const weeks = entries
@@ -1218,8 +1307,6 @@
                     .map(e => e.week);
                 return [...new Set(weeks)];
             }, [entries, yearInput]);
-
-            // Nếu yearInput thay đổi và chưa có tuần nào, có thể tự động tạo một tuần mặc định? Không, để người dùng tự tạo.
 
             // State lưu ngày thứ 2 đầu tuần đang hiển thị
             const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
@@ -1231,12 +1318,10 @@
                 return monday;
             });
 
-            // Khi selectedIndex thay đổi, cập nhật yearInput, weekInput, startOfWeekDate
+            // Khi selectedIndex thay đổi, cập nhật startOfWeekDate
             useEffect(() => {
                 if (selectedIndex >= 0 && selectedIndex < entries.length) {
                     const entry = entries[selectedIndex];
-                    setYearInput(entry.year || '');
-                    setWeekInput(entry.week || '');
                     if (entry.startDate) {
                         const d = new Date(entry.startDate);
                         d.setHours(0, 0, 0, 0);
@@ -1245,25 +1330,37 @@
                 }
             }, [selectedIndex, entries]);
 
-            // Lưu entries vào localStorage khi thay đổi
+            // Reset về tuần hiện tại khi activeTab được bật
             useEffect(() => {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-            }, [entries]);
+                if (activeTab === 'timetable') {
+                    const now = new Date();
+                    const day = now.getDay();
+                    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                    const monday = new Date(now.setDate(diff));
+                    monday.setHours(0, 0, 0, 0);
+                    setStartOfWeekDate(monday);
+                    // Không tự động chọn entry nào, để useEffect trên kia xử lý
+                    // Nếu entries có dữ liệu, nó sẽ tự chọn entry cuối cùng
+                }
+            }, [activeTab]);
 
-            // Hàm thêm entry mới (thêm vào cuối mảng, nhưng hiển thị sẽ đảo ngược)
+            // Hàm thêm entry mới (thêm vào cuối mảng)
             const addEntry = (year, week, startDate) => {
                 const newEntry = { year, week, startDate: startDate.toISOString() };
                 const newEntries = [...entries, newEntry];
                 setEntries(newEntries);
+                saveEntriesToFirebase(newEntries);
+                // Chọn entry vừa thêm
                 const newIndex = newEntries.length - 1;
                 setSelectedIndex(newIndex);
                 return newIndex;
             };
 
-            // Hàm xóa entry (nếu xóa cả year và week, nên xóa toàn bộ entry)
+            // Hàm xóa entry (nếu xóa cả year và week)
             const deleteEntry = (year, week) => {
                 const newEntries = entries.filter(e => !(e.year === year && e.week === week));
                 setEntries(newEntries);
+                saveEntriesToFirebase(newEntries);
                 if (selectedIndex >= newEntries.length) {
                     setSelectedIndex(newEntries.length - 1);
                 }
@@ -1273,6 +1370,7 @@
             const deleteYear = (year) => {
                 const newEntries = entries.filter(e => e.year !== year);
                 setEntries(newEntries);
+                saveEntriesToFirebase(newEntries);
                 if (selectedIndex >= newEntries.length) {
                     setSelectedIndex(newEntries.length - 1);
                 }
@@ -1286,6 +1384,7 @@
             const deleteWeek = (week) => {
                 const newEntries = entries.filter(e => !(e.week === week && e.year === yearInput));
                 setEntries(newEntries);
+                saveEntriesToFirebase(newEntries);
                 if (selectedIndex >= newEntries.length) {
                     setSelectedIndex(newEntries.length - 1);
                 }
@@ -1303,10 +1402,8 @@
                     const idx = entries.indexOf(existing);
                     setSelectedIndex(idx);
                 } else {
-                    // Nếu chưa có, tạo mới với week rỗng? Thay vào đó, chỉ set year, không chọn entry cụ thể.
-                    // Người dùng sẽ thêm tuần sau.
+                    // Nếu chưa có, chỉ set year, không chọn entry cụ thể.
                     setSelectedIndex(-1);
-                    // Đặt startOfWeekDate về tuần hiện tại? Giữ nguyên.
                 }
             };
 
@@ -1351,22 +1448,6 @@
                     }
                 }
             };
-
-            // Reset về tuần hiện tại khi activeTab được bật
-            useEffect(() => {
-                if (activeTab === 'timetable') {
-                    const now = new Date();
-                    const day = now.getDay();
-                    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-                    const monday = new Date(now.setDate(diff));
-                    monday.setHours(0, 0, 0, 0);
-                    setStartOfWeekDate(monday);
-                    // Không tự động chọn entry nào
-                    setSelectedIndex(-1);
-                    setYearInput('');
-                    setWeekInput('');
-                }
-            }, [activeTab]);
 
             // Hàm chuyển đến entry tiếp theo/trước đó (dựa trên danh sách entries đã sắp xếp)
             const goToPrevEntry = () => {
