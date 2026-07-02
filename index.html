@@ -81,13 +81,55 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+
+        /* Thêm style cho nút tia sét */
+        .smart-btn {
+            transition: all 0.15s;
+        }
+        .smart-btn:hover {
+            transform: scale(1.1);
+        }
+        .smart-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Dropdown full-width */
+        .search-dropdown-fixed {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+        }
+        .search-dropdown-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.1s;
+        }
+        .search-dropdown-item:hover,
+        .search-dropdown-item.active {
+            background: #f3f4f6;
+        }
+        .search-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .search-dropdown .no-result {
+            padding: 20px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
         import { createRoot } from 'react-dom/client';
         import { 
             Calendar, CheckSquare, StickyNote, Plus, Trash2, LogOut, 
@@ -95,7 +137,7 @@
             Clock, Bell, Palette, ArrowUp, ArrowDown, WifiOff, RefreshCw,
             Sun, Cloud, CloudRain, BookOpen, Coins, CalendarDays, Search, MapPin, 
             Eye, EyeOff, MoreVertical, MoreHorizontal, Table, Key, Lock, Unlock,
-            Pencil, Check, Wifi, Edit3, ChevronDown
+            Pencil, Check, Wifi, Edit3, ChevronDown, Sparkles
         } from 'lucide-react';
         
         // START: Import thư viện react-toastify
@@ -221,7 +263,7 @@
             "Người trí tuệ bản thân vững chải\nTự chủ mình, hoàn thiện, chánh chân\nXong rồi, giáo hóa tha nhân\nSống trong gương mẫu, thế gian nể vì.",
             "Người gương mẫu thực hành hoàn tất\nMới đem ra giáo dục thế nhân\nTự mình làm chủ thân tâm\nSoi gương nhân cách, hạnh lành truyền trao.",
             "Người sáng suốt tự nương mình vững\nKhông tìm cầu, dựa dẫm vào ai\nLành thay, điều phục tâm này\nBiết tự điều phục, không hai trên đời.",
-            "Các điều ác do mình tạo tác\nÁc do tâm, ai khác ngoài ta\nÁc nhân nghiền nát người tà\nNhư kim cương cứng nghiền qua đá thường.",
+            "Các điều ác do mình tự tạo\nÁc do tâm, ai khác ngoài ta\nÁc nhân nghiền nát người tà\nNhư kim cương cứng nghiền qua đá thường.",
             "Như tầm gửi bám cây Phật pháp\nNgười buông lung giới đức chẳng gìn\nHạnh tà chuốc họa vào thân,\nKẻ thù sung sướng thấy mình tiêu tan.",
             "Làm điều ác không cần trình độ\nHãm hại ta đạo khổ dễ hơn\nKhó thay, làm thiện chánh chơn\nMình người lợi lạc, bình an cõi đời.",
             "Kẻ ác kiến ngu si, phỉ báng\nGiáo pháp hàng La-hán nhiệm mầu\nHại mình như ngọn trúc lau\nNgay khi trổ quả nhuốm màu diệt vong.",
@@ -508,7 +550,452 @@
             return date;
         };
 
-        // --- GLOBAL SEARCH MODAL ---
+        // ============================================================
+        //  SMART ENGINE – XỬ LÝ NGÔN NGỮ TỰ NHIÊN (TIẾNG VIỆT)
+        // ============================================================
+        const SmartEngine = {
+            parse: (text) => {
+                if (!text || text.trim().length === 0) return null;
+                const raw = text.trim();
+                let type = 'event';
+                if (/\b(nhắc tôi|hẹn|đặt lịch|nhắc nhở)\b/i.test(raw)) {
+                    type = 'todo';
+                }
+                const dateInfo = SmartEngine.extractDateInfo(raw);
+                let title = SmartEngine.extractTitle(raw);
+                if (!title || title.length < 2) {
+                    title = raw.replace(/\b(nhắc tôi|hẹn|đặt lịch|nhắc nhở)\b/i, '').trim();
+                }
+                if (!title) title = 'Sự kiện mới';
+                let repeat = 'none';
+                let lunar = false;
+                if (/\b(hàng năm|năm nào cũng|mỗi năm|hằng năm)\b/i.test(raw)) {
+                    repeat = 'yearly';
+                } else if (/\b(âm lịch)\b/i.test(raw)) {
+                    lunar = true;
+                    repeat = 'lunar';
+                }
+                if (/\b(âm lịch)\b/i.test(raw) && repeat === 'yearly') {
+                    repeat = 'lunar';
+                }
+                if (lunar && repeat === 'none') {
+                    repeat = 'lunar';
+                }
+                let targetDate = dateInfo.date;
+                if (!targetDate) {
+                    targetDate = new Date();
+                }
+                return {
+                    type: type,
+                    title: title,
+                    date: targetDate,
+                    repeat: repeat,
+                    lunar: lunar,
+                    timeString: dateInfo.timeString || null,
+                    rawText: raw
+                };
+            },
+            
+            extractDateInfo: (text) => {
+                const lower = text.toLowerCase();
+                let date = null;
+                let timeString = null;
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const timeMap = {
+                    'sáng': 8,
+                    'trưa': 12,
+                    'chiều': 14,
+                    'tối': 19
+                };
+                for (const [key, hour] of Object.entries(timeMap)) {
+                    if (lower.includes(key)) {
+                        timeString = key;
+                        break;
+                    }
+                }
+                if (/(hôm nay|ngày hôm nay)/i.test(lower)) {
+                    date = new Date(today);
+                } else if (/ngày mai/i.test(lower)) {
+                    date = new Date(today);
+                    date.setDate(date.getDate() + 1);
+                } else if (/mốt|ngày kia/i.test(lower)) {
+                    date = new Date(today);
+                    date.setDate(date.getDate() + 2);
+                } else if (/hôm qua/i.test(lower)) {
+                    date = new Date(today);
+                    date.setDate(date.getDate() - 1);
+                } else if (/tuần sau/i.test(lower)) {
+                    date = new Date(today);
+                    date.setDate(date.getDate() + 7);
+                } else if (/tuần tới/i.test(lower)) {
+                    date = new Date(today);
+                    date.setDate(date.getDate() + 7);
+                } else if (/tháng sau/i.test(lower)) {
+                    date = new Date(today);
+                    date.setMonth(date.getMonth() + 1);
+                } else if (/năm sau/i.test(lower)) {
+                    date = new Date(today);
+                    date.setFullYear(date.getFullYear() + 1);
+                } else if (/đầu tháng/i.test(lower)) {
+                    date = new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (/cuối tháng/i.test(lower)) {
+                    date = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else if (/đầu năm sau/i.test(lower)) {
+                    date = new Date(today.getFullYear() + 1, 0, 1);
+                } else if (/cuối năm sau/i.test(lower)) {
+                    date = new Date(today.getFullYear() + 1, 11, 31);
+                } else if (/đầu năm/i.test(lower)) {
+                    date = new Date(today.getFullYear(), 0, 1);
+                } else if (/cuối năm/i.test(lower)) {
+                    date = new Date(today.getFullYear(), 11, 31);
+                }
+                if (!date) {
+                    const weekMatch = lower.match(/thứ\s*(hai|ba|tư|năm|sáu|bảy|chủ nhật)/i);
+                    if (weekMatch) {
+                        let dayNum;
+                        const dayMap = {
+                            'hai': 1, 'ba': 2, 'tư': 3, 'năm': 4, 'sáu': 5, 'bảy': 6, 'chủ nhật': 0
+                        };
+                        const dayKey = weekMatch[1].toLowerCase();
+                        dayNum = dayMap[dayKey];
+                        if (dayNum !== undefined) {
+                            let target = new Date(today);
+                            let currentDay = target.getDay();
+                            let diff = dayNum - currentDay;
+                            if (diff <= 0) diff += 7;
+                            target.setDate(target.getDate() + diff);
+                            date = target;
+                            if (/\btuần sau\b/i.test(lower)) {
+                                date.setDate(date.getDate() + 7);
+                            }
+                        }
+                    }
+                }
+                if (!date) {
+                    const weekNumMatch = lower.match(/(\d+)\s*tuần\s*(nữa|sau)/i);
+                    if (weekNumMatch) {
+                        const num = parseInt(weekNumMatch[1], 10);
+                        date = new Date(today);
+                        date.setDate(date.getDate() + num * 7);
+                    } else {
+                        const dayNumMatch = lower.match(/(\d+)\s*ngày\s*(nữa|sau)/i);
+                        if (dayNumMatch) {
+                            const num = parseInt(dayNumMatch[1], 10);
+                            date = new Date(today);
+                            date.setDate(date.getDate() + num);
+                        }
+                    }
+                }
+                if (!date) {
+                    const match = lower.match(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})(?:\s*năm\s*(\d{4}))?/i);
+                    if (match) {
+                        const d = parseInt(match[1], 10);
+                        const m = parseInt(match[2], 10) - 1;
+                        let y = match[3] ? parseInt(match[3], 10) : today.getFullYear();
+                        date = new Date(y, m, d);
+                        if (date.getMonth() !== m || date.getDate() !== d) date = null;
+                    }
+                }
+                if (!date) {
+                    const match = lower.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?/);
+                    if (match) {
+                        const d = parseInt(match[1], 10);
+                        const m = parseInt(match[2], 10) - 1;
+                        let y = match[3] ? parseInt(match[3], 10) : today.getFullYear();
+                        date = new Date(y, m, d);
+                        if (date.getMonth() !== m || date.getDate() !== d) date = null;
+                    }
+                }
+                if (date && timeString) {
+                    const hour = timeMap[timeString];
+                    if (hour !== undefined) {
+                        date.setHours(hour, 0, 0, 0);
+                    }
+                }
+                return { date, timeString };
+            },
+            
+            extractTitle: (text) => {
+                let title = text;
+                const timePatterns = [
+                    /(hôm nay|ngày mai|mốt|ngày kia|hôm qua)/gi,
+                    /(tuần sau|tuần tới|tháng sau|năm sau)/gi,
+                    /(đầu tháng|cuối tháng|đầu năm sau|cuối năm sau|đầu năm|cuối năm)/gi,
+                    /(thứ\s*(hai|ba|tư|năm|sáu|bảy|chủ nhật)(\s+tuần sau)?)/gi,
+                    /(\d+\s*(tuần|ngày)\s*(nữa|sau))/gi,
+                    /(ngày\s*\d{1,2}\s*tháng\s*\d{1,2}(\s*năm\s*\d{4})?)/gi,
+                    /(\d{1,2}\/\d{1,2}(\/\d{4})?)/g,
+                    /(sáng|trưa|chiều|tối)/gi,
+                    /(âm lịch)/gi,
+                    /(hàng năm|năm nào cũng|mỗi năm|hằng năm)/gi
+                ];
+                for (const pattern of timePatterns) {
+                    title = title.replace(pattern, '');
+                }
+                title = title.replace(/\b(nhắc tôi|hẹn|đặt lịch|nhắc nhở)\b/gi, '');
+                title = title.replace(/\s{2,}/g, ' ').trim();
+                title = title.replace(/^[,.\s]+/, '').replace(/[,.\s]+$/, '');
+                if (title.length > 0) {
+                    title = title.charAt(0).toUpperCase() + title.slice(1);
+                }
+                return title;
+            }
+        };
+
+        // --- COMPONENT SEARCH DROPDOWN (Tích hợp tìm kiếm và SmartEngine) ---
+        const SearchBox = ({ user, db, appId, onNavigate, onSmartCreate }) => {
+            const [query, setQuery] = useState('');
+            const [results, setResults] = useState({ events: [], todos: [], notes: [], timetable: [] });
+            const [showDropdown, setShowDropdown] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [selectedIndex, setSelectedIndex] = useState(-1);
+            const inputRef = useRef(null);
+            const dropdownRef = useRef(null);
+            const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+            // Đóng dropdown khi click ra ngoài
+            useEffect(() => {
+                const handler = (e) => {
+                    if (dropdownRef.current && !dropdownRef.current.contains(e.target) && inputRef.current !== e.target) {
+                        setShowDropdown(false);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, []);
+
+            // Debounce tìm kiếm
+            useEffect(() => {
+                if (!query.trim()) {
+                    setResults({ events: [], todos: [], notes: [], timetable: [] });
+                    setShowDropdown(false);
+                    setSelectedIndex(-1);
+                    return;
+                }
+
+                const timer = setTimeout(async () => {
+                    setLoading(true);
+                    try {
+                        const eventsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'events');
+                        const todosRef = collection(db, 'artifacts', appId, 'users', user.uid, 'todos');
+                        const notesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'notes');
+                        
+                        const [evSnap, tdSnap, ntSnap] = await Promise.all([
+                            getDocs(query_q(eventsRef)),
+                            getDocs(query_q(todosRef)),
+                            getDocs(query_q(notesRef))
+                        ]);
+
+                        const q = query.toLowerCase();
+
+                        const evs = evSnap.docs.map(d => ({ id: d.id, type: 'event', ...d.data() }))
+                            .filter(e => e.title && e.title.toLowerCase().includes(q))
+                            .slice(0, 5);
+
+                        const tds = tdSnap.docs.map(d => ({ id: d.id, type: 'todo', ...d.data() }))
+                            .filter(t => t.text && t.text.toLowerCase().includes(q))
+                            .slice(0, 5);
+
+                        const nts = ntSnap.docs.map(d => ({ id: d.id, type: 'note', ...d.data() }))
+                            .filter(n => (n.title && n.title.toLowerCase().includes(q)) || (n.content && n.content.toLowerCase().includes(q)))
+                            .slice(0, 5);
+
+                        let tkb = [];
+                        try {
+                            const tkbCol = collection(db, 'artifacts', appId, 'users', user.uid, 'timetable');
+                            const tkbSnap = await getDocs(tkbCol);
+                            tkbSnap.docs.forEach(d => {
+                                const data = d.data();
+                                const sched = data.schedule || {};
+                                Object.entries(sched).forEach(([key, val]) => {
+                                    if (val && val.toLowerCase().includes(q)) {
+                                        const parts = key.split('_');
+                                        const dayId = parts[0];
+                                        const period = parts[1];
+                                        const col = parts[2];
+                                        const dayLabels = { t2: 'Thứ 2', t3: 'Thứ 3', t4: 'Thứ 4', t5: 'Thứ 5', t6: 'Thứ 6', t7: 'Thứ 7' };
+                                        tkb.push({
+                                            id: `${d.id}_${key}`,
+                                            type: 'timetable',
+                                            text: val,
+                                            day: dayLabels[dayId] || dayId,
+                                            period: `Tiết ${period}`,
+                                            col: col === 'col1' ? 'Môn' : 'Ghi chú',
+                                            weekDocId: d.id
+                                        });
+                                    }
+                                });
+                            });
+                            tkb = tkb.slice(0, 5);
+                        } catch(e) {}
+
+                        setResults({ events: evs, todos: tds, notes: nts, timetable: tkb });
+                        setShowDropdown(true);
+                        setSelectedIndex(-1);
+                    } catch (e) {
+                        console.error("Lỗi tìm kiếm:", e);
+                    } finally {
+                        setLoading(false);
+                    }
+                }, 300);
+
+                return () => clearTimeout(timer);
+            }, [query, db, appId, user]);
+
+            // Tính toán vị trí dropdown khi hiển thị
+            useEffect(() => {
+                if (showDropdown && inputRef.current) {
+                    const rect = inputRef.current.getBoundingClientRect();
+                    // Lấy header để có chiều rộng chuẩn
+                    const header = document.querySelector('header');
+                    if (header) {
+                        const headerRect = header.getBoundingClientRect();
+                        const appWidth = Math.min(headerRect.width, 448); // 448 = 28rem (max-w-md)
+                        const leftOffset = headerRect.left + (headerRect.width - appWidth) / 2;
+                        setDropdownPosition({
+                            top: rect.bottom + 4,
+                            left: leftOffset,
+                            width: appWidth
+                        });
+                    } else {
+                        setDropdownPosition({
+                            top: rect.bottom + 4,
+                            left: rect.left - 10,
+                            width: rect.width + 20
+                        });
+                    }
+                }
+            }, [showDropdown]);
+
+            // Xử lý phím mũi tên và Enter
+            const handleKeyDown = (e) => {
+                const allItems = [...results.events, ...results.todos, ...results.notes, ...results.timetable];
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => Math.min(prev + 1, allItems.length - 1));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => Math.max(prev - 1, -1));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // Nếu có mục được chọn, điều hướng đến mục đó
+                    if (selectedIndex >= 0 && selectedIndex < allItems.length) {
+                        const item = allItems[selectedIndex];
+                        handleItemClick(item);
+                    } else {
+                        // Ngược lại, kích hoạt SmartEngine
+                        onSmartCreate(query);
+                        setQuery('');
+                        setShowDropdown(false);
+                    }
+                } else if (e.key === 'Escape') {
+                    setShowDropdown(false);
+                }
+            };
+
+            const handleItemClick = (item) => {
+                if (item.type === 'event') {
+                    if (item.date) {
+                        const d = new Date(item.date.seconds * 1000);
+                        onNavigate('calendar', item);
+                    } else {
+                        onNavigate('calendar', item);
+                    }
+                } else if (item.type === 'todo') {
+                    onNavigate('todo', item);
+                } else if (item.type === 'note') {
+                    onNavigate('notes', item);
+                } else if (item.type === 'timetable') {
+                    onNavigate('timetable', { id: item.id, weekDocId: item.weekDocId });
+                }
+                setQuery('');
+                setShowDropdown(false);
+                setSelectedIndex(-1);
+            };
+
+            const allItems = [...results.events, ...results.todos, ...results.notes, ...results.timetable];
+
+            return (
+                <div className="relative flex-1 mx-3 min-w-0">
+                    <div className="flex items-center bg-blue-500/50 hover:bg-blue-500/80 border border-blue-400/50 rounded-full px-3 py-1 transition">
+                        <Search size={14} className="text-blue-200 shrink-0" />
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => query.trim() && setShowDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                            placeholder="Tìm kiếm hoặc lệnh..."
+                            className="flex-1 bg-transparent outline-none text-xs text-white placeholder-blue-200/80 font-sans min-w-0"
+                        />
+                        <button
+                            onClick={() => {
+                                if (query.trim()) {
+                                    onSmartCreate(query);
+                                    setQuery('');
+                                    setShowDropdown(false);
+                                }
+                            }}
+                            className="smart-btn p-0.5 text-yellow-300 hover:text-yellow-200 transition-colors shrink-0"
+                            title="Xử lý lệnh thông minh (Enter)"
+                        >
+                            <Sparkles size={16} />
+                        </button>
+                    </div>
+
+                    {showDropdown && (
+                        <div
+                            ref={dropdownRef}
+                            className="search-dropdown-fixed"
+                            style={{
+                                top: dropdownPosition.top,
+                                left: dropdownPosition.left,
+                                width: dropdownPosition.width,
+                                maxWidth: '28rem',
+                            }}
+                        >
+                            {loading && <div className="no-result">Đang tìm kiếm...</div>}
+                            {!loading && allItems.length === 0 && query.trim() && (
+                                <div className="no-result">Không tìm thấy kết quả. Nhấn Enter để tạo mới.</div>
+                            )}
+                            {allItems.map((item, idx) => {
+                                let label = '';
+                                let sub = '';
+                                if (item.type === 'event') {
+                                    label = item.title || 'Sự kiện';
+                                    sub = item.date ? new Date(item.date.seconds * 1000).toLocaleDateString('vi-VN') : '';
+                                } else if (item.type === 'todo') {
+                                    label = item.text || 'Việc làm';
+                                    sub = item.deadlineTime ? new Date(item.deadlineTime.seconds * 1000).toLocaleDateString('vi-VN') : '';
+                                } else if (item.type === 'note') {
+                                    label = item.title || 'Ghi chú';
+                                    sub = item.content ? item.content.substring(0, 30) : '';
+                                } else if (item.type === 'timetable') {
+                                    label = item.text;
+                                    sub = `${item.day} · ${item.period}`;
+                                }
+                                return (
+                                    <div
+                                        key={item.id || idx}
+                                        className={`search-dropdown-item ${selectedIndex === idx ? 'active' : ''}`}
+                                        onClick={() => handleItemClick(item)}
+                                        onMouseEnter={() => setSelectedIndex(idx)}
+                                    >
+                                        <div className="font-medium text-sm text-slate-800 truncate">{label}</div>
+                                        {sub && <div className="text-xs text-slate-400 truncate">{sub}</div>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- GLOBAL SEARCH MODAL (giữ nguyên) ---
         const GlobalSearchModal = ({ onClose, db, user, appId, onNavigate }) => {
             const [query, setQuery] = React.useState('');
             const [results, setResults] = React.useState({ dateEvents: [], dateTarget: null, events: [], todos: [], notes: [], timetable: [] });
@@ -645,7 +1132,6 @@
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex flex-col items-center pt-0" onClick={onClose}>
                     <div className="w-full max-w-md bg-white shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
-                        {/* Thanh tìm kiếm */}
                         <div className="flex items-center gap-3 px-4 py-3 border-b bg-blue-600">
                             <Search size={20} className="text-white shrink-0" />
                             <input
@@ -666,7 +1152,6 @@
                             </button>
                         </div>
 
-                        {/* Kết quả */}
                         <div className="overflow-y-auto flex-1 no-scrollbar">
                             {!query.trim() && (
                                 <div className="text-center text-gray-400 py-12 px-4">
@@ -704,8 +1189,6 @@
 
                             {query.trim() && !loading && (results.dateTarget || totalCount > 0) && (
                                 <div className="p-4 space-y-5">
-
-                                    {/* Kết quả ngày cụ thể */}
                                     {results.dateTarget && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -734,7 +1217,6 @@
                                         </div>
                                     )}
 
-                                    {/* Sự kiện theo từ khóa - hiển thị tuổi hoặc năm mất */}
                                     {results.events.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -773,7 +1255,6 @@
                                         </div>
                                     )}
 
-                                    {/* Việc cần làm */}
                                     {results.todos.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -791,7 +1272,6 @@
                                         </div>
                                     )}
 
-                                    {/* Ghi chú */}
                                     {results.notes.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -809,7 +1289,6 @@
                                         </div>
                                     )}
 
-                                    {/* Lịch biểu */}
                                     {results.timetable.length > 0 && (
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -830,7 +1309,6 @@
                             )}
                         </div>
 
-                        {/* Footer */}
                         {query.trim() && !loading && totalCount > 0 && (
                             <div className="border-t px-4 py-2 text-center bg-gray-50 shrink-0">
                                 <span className="text-xs text-gray-400">Tìm thấy <b className="text-gray-600">{totalCount}</b> kết quả</span>
@@ -841,21 +1319,19 @@
             );
         };
 
-        // --- CÁC COMPONENT CON ---
+        // --- CÁC COMPONENT CON KHÁC ---
+        // SettingsModal
         const SettingsModal = ({ theme, onSave, onClose, auth, db, appId, onSignOut }) => {
             const [localTheme, setLocalTheme] = useState(theme);
             const [newPassword, setNewPassword] = useState('');
             const [passwordMessage, setPasswordMessage] = useState('');
             const [passwordError, setPasswordError] = useState('');
             const [showChangePassword, setShowChangePassword] = useState(false);
-
-            // Bổ sung thiết lập mật khẩu PIN ứng dụng
             const [appPassword, setAppPassword] = useState('');
             const [enableLock, setEnableLock] = useState(false);
             const [lockError, setLockError] = useState('');
             const [lockSuccess, setLockSuccess] = useState('');
 
-            // Tải cấu hình mật khẩu bảo mật hiện tại từ Firebase / localStorage
             useEffect(() => {
                 if (!auth.currentUser) return;
                 const loadLockConfig = async () => {
@@ -867,7 +1343,6 @@
                             setAppPassword(data.appPassword || '');
                             setEnableLock(data.enableLock || false);
                         } else {
-                            // Dự phòng localStorage
                             const savedPassword = localStorage.getItem('vt_app_password') || '';
                             const savedEnable = localStorage.getItem('vt_enable_lock') === 'true';
                             setAppPassword(savedPassword);
@@ -880,7 +1355,6 @@
                 loadLockConfig();
             }, [auth.currentUser]);
 
-            // Lưu cài đặt khóa
             const handleSaveLockSettings = async (e) => {
                 e.preventDefault();
                 setLockError('');
@@ -891,10 +1365,7 @@
                 }
                 try {
                     const settingsRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'lock');
-                    const payload = {
-                        appPassword: appPassword.trim(),
-                        enableLock: enableLock
-                    };
+                    const payload = { appPassword: appPassword.trim(), enableLock: enableLock };
                     await setDoc(settingsRef, payload, { merge: true });
                     localStorage.setItem('vt_app_password', appPassword.trim());
                     localStorage.setItem('vt_enable_lock', enableLock ? 'true' : 'false');
@@ -904,7 +1375,6 @@
                 }
             };
 
-            // Tính năng Đổi mật khẩu
             const handleChangePassword = async (e) => {
                 e.preventDefault();
                 setPasswordMessage('');
@@ -953,32 +1423,19 @@
                             <button onClick={() => onSave(localTheme)} className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md">Lưu & Đồng Bộ Màu</button>
                             <button onClick={() => onSave({ bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' })} className="w-full border border-gray-300 text-gray-600 py-2 rounded-lg text-sm">Khôi phục màu mặc định</button>
                             
-                            {/* KHU VỰC: Đặt mã PIN bảo vệ việc làm & ghi chú */}
                             <div className="border-t pt-4 mt-4">
                                 <h4 className="font-bold text-sm text-slate-800 flex items-center gap-2 mb-3"><Lock size={16} /> Bảo vệ Ghi chú & Việc cần làm</h4>
                                 <form onSubmit={handleSaveLockSettings} className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-xs font-semibold text-slate-600">Trạng thái khóa bảo vệ:</span>
                                         <label className="relative inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                className="sr-only peer" 
-                                                checked={enableLock} 
-                                                onChange={e => setEnableLock(e.target.checked)} 
-                                            />
+                                            <input type="checkbox" className="sr-only peer" checked={enableLock} onChange={e => setEnableLock(e.target.checked)} />
                                             <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                                         </label>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="block text-[10px] font-bold text-slate-500 uppercase">Mã PIN bảo mật</label>
-                                        <input 
-                                            type="password" 
-                                            maxLength={12}
-                                            className="w-full px-3 py-1.5 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                                            placeholder="Nhập mã bảo vệ cá nhân..."
-                                            value={appPassword}
-                                            onChange={e => setAppPassword(e.target.value)}
-                                        />
+                                        <input type="password" maxLength={12} className="w-full px-3 py-1.5 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập mã bảo vệ cá nhân..." value={appPassword} onChange={e => setAppPassword(e.target.value)} />
                                     </div>
                                     {lockError && <p className="text-red-500 text-xs">{lockError}</p>}
                                     {lockSuccess && <p className="text-green-600 text-xs font-medium">{lockSuccess}</p>}
@@ -986,25 +1443,14 @@
                                 </form>
                             </div>
 
-                            {/* Khu vực tính năng đổi mật khẩu */}
                             <div className="border-t pt-4 mt-4">
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowChangePassword(!showChangePassword)} 
-                                    className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-50 transition"
-                                >
+                                <button type="button" onClick={() => setShowChangePassword(!showChangePassword)} className="w-full flex items-center justify-center gap-2 border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-50 transition">
                                     <Key size={16} /> {showChangePassword ? "Ẩn đổi mật khẩu" : "Đổi mật khẩu tài khoản"}
                                 </button>
                                 {showChangePassword && (
                                     <form onSubmit={handleChangePassword} className="mt-4 space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in">
                                         <label className="block text-xs font-bold text-slate-600">Mật khẩu mới</label>
-                                        <input 
-                                            type="password" 
-                                            className="w-full px-3 py-2 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                                            placeholder="Nhập mật khẩu mới..."
-                                            value={newPassword}
-                                            onChange={e => setNewPassword(e.target.value)}
-                                        />
+                                        <input type="password" className="w-full px-3 py-2 border rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Nhập mật khẩu mới..." value={newPassword} onChange={e => setNewPassword(e.target.value)} />
                                         {passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
                                         {passwordMessage && <p className="text-green-600 text-xs font-medium">{passwordMessage}</p>}
                                         <button type="submit" className="w-full bg-slate-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-slate-700 transition">Xác nhận đổi mật khẩu</button>
@@ -1012,12 +1458,8 @@
                                 )}
                             </div>
 
-                            {/* Nút Đăng xuất */}
                             <div className="border-t pt-4 mt-4">
-                                <button
-                                    onClick={onSignOut}
-                                    className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 py-2.5 rounded-lg text-sm font-bold transition"
-                                >
+                                <button onClick={onSignOut} className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 py-2.5 rounded-lg text-sm font-bold transition">
                                     <LogOut size={16} /> Đăng xuất tài khoản
                                 </button>
                             </div>
@@ -1027,6 +1469,7 @@
             );
         };
 
+        // AuthScreen
         const AuthScreen = ({ auth, appId }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [email, setEmail] = useState('');
@@ -1047,7 +1490,6 @@
                 }
             };
 
-            // Tính năng Quên mật khẩu
             const handleForgotPassword = async () => {
                 setError('');
                 setMessage('');
@@ -1071,42 +1513,17 @@
                         <div className="text-center mb-6"><span className="text-[10px] px-2 py-1 rounded font-mono border bg-green-100 text-green-700 border-green-200">Server: <b>{appId}</b></span></div>
                         <form onSubmit={handleAuth} className="space-y-4">
                             <input type="email" required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-                            
-                            {/* Ô nhập mật khẩu tích hợp ẩn/hiện mật khẩu */}
                             <div className="relative w-full">
-                                <input 
-                                    type={showPassword ? "text" : "password"} 
-                                    required 
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 pr-12" 
-                                    placeholder="Mật khẩu" 
-                                    value={password} 
-                                    onChange={e => setPassword(e.target.value)} 
-                                />
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
+                                <input type={showPassword ? "text" : "password"} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 pr-12" placeholder="Mật khẩu" value={password} onChange={e => setPassword(e.target.value)} />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                             </div>
-
                             {error && <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">{error}</p>}
                             {message && <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded font-medium">{message}</p>}
-                            
                             <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition">{isLogin ? 'Vào Ứng Dụng' : 'Tạo Tài Khoản'}</button>
                         </form>
-
                         <div className="mt-6 flex flex-col items-center gap-3 text-sm">
-                            {/* Nút quên mật khẩu */}
                             {isLogin && (
-                                <button 
-                                    type="button" 
-                                    onClick={handleForgotPassword} 
-                                    className="text-slate-500 hover:text-blue-600 text-xs transition"
-                                >
-                                    Quên mật khẩu?
-                                </button>
+                                <button type="button" onClick={handleForgotPassword} className="text-slate-500 hover:text-blue-600 text-xs transition">Quên mật khẩu?</button>
                             )}
                             <button onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); }} className="text-blue-600 hover:underline font-medium">{isLogin ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}</button>
                         </div>
@@ -1115,7 +1532,7 @@
             );
         };
 
-        // --- COMPONENT DROPDOWN TÙY CHỈNH (sắp xếp mới nhất lên đầu) ---
+        // CustomDropdown
         const CustomDropdown = ({ value, onChange, onAdd, onDelete, placeholder, label, items, onSelect }) => {
             const [isOpen, setIsOpen] = useState(false);
             const [inputValue, setInputValue] = useState('');
@@ -1131,11 +1548,7 @@
                 return () => document.removeEventListener('mousedown', handleClickOutside);
             }, []);
 
-            // Sắp xếp items: mới nhất lên đầu (dựa trên thứ tự trong mảng hiện tại - đảo ngược)
-            const sortedItems = useMemo(() => {
-                // Giả sử items được truyền vào theo thứ tự cũ (cũ nhất trước). Ta đảo ngược.
-                return [...items].reverse();
-            }, [items]);
+            const sortedItems = useMemo(() => [...items].reverse(), [items]);
 
             const handleAdd = (e) => {
                 e.preventDefault();
@@ -1159,60 +1572,20 @@
             return (
                 <div className="relative flex-1 min-w-0" ref={dropdownRef}>
                     <div className="relative">
-                        <input
-                            type="text"
-                            value={value}
-                            onChange={(e) => {
-                                onChange(e.target.value);
-                            }}
-                            onFocus={() => setIsOpen(true)}
-                            placeholder={placeholder}
-                            className="w-full px-2 py-1 border border-slate-200 rounded text-xs text-slate-700 focus:ring-1 focus:ring-blue-500 outline-none pr-7"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setIsOpen(!isOpen)}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                            <ChevronDown size={14} />
-                        </button>
+                        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setIsOpen(true)} placeholder={placeholder} className="w-full px-2 py-1 border border-slate-200 rounded text-xs text-slate-700 focus:ring-1 focus:ring-blue-500 outline-none pr-7" />
+                        <button type="button" onClick={() => setIsOpen(!isOpen)} className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><ChevronDown size={14} /></button>
                     </div>
                     {isOpen && (
                         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                            {/* Dòng nhập mới */}
                             <div className="p-2 border-b border-slate-100 flex items-center gap-1 sticky top-0 bg-white z-10">
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(e); }}
-                                    placeholder={`Nhập ${label} mới...`}
-                                    className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 outline-none"
-                                />
-                                <button
-                                    onClick={handleAdd}
-                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                >
-                                    <Plus size={14} />
-                                </button>
+                                <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(e); }} placeholder={`Nhập ${label} mới...`} className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 outline-none" />
+                                <button onClick={handleAdd} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Plus size={14} /></button>
                             </div>
-                            {/* Danh sách các mục (sắp xếp mới nhất lên đầu) */}
-                            {sortedItems.length === 0 && (
-                                <div className="px-3 py-2 text-xs text-slate-400 italic">Chưa có {label} nào</div>
-                            )}
+                            {sortedItems.length === 0 && <div className="px-3 py-2 text-xs text-slate-400 italic">Chưa có {label} nào</div>}
                             {sortedItems.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0"
-                                    onClick={() => handleSelect(item)}
-                                >
+                                <div key={index} className="flex items-center justify-between px-3 py-1.5 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0" onClick={() => handleSelect(item)}>
                                     <span className="text-sm text-slate-700">{item}</span>
-                                    <button
-                                        onClick={(e) => handleDelete(e, item)}
-                                        className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50"
-                                    >
-                                        <X size={14} />
-                                    </button>
+                                    <button onClick={(e) => handleDelete(e, item)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50"><X size={14} /></button>
                                 </div>
                             ))}
                         </div>
@@ -1221,52 +1594,49 @@
             );
         };
 
-        // --- MÀN HÌNH LỊCH BIỂU (TKB VIEW) ---
+        // TimeTableView
         const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear, activeTab }) => {
             const [schedule, setSchedule] = useState({});
             const [headers, setHeaders] = useState({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
             const [highlightKey, setHighlightKey] = useState(null);
             const [highlightKw, setHighlightKw] = useState('');
-            
-            // --- QUẢN LÝ ENTRY (Năm học + Tuần) ---
             const [entries, setEntries] = useState([]);
             const [selectedIndex, setSelectedIndex] = useState(-1);
-            
-            // Tham chiếu đến meta document trên Firebase
+            const [yearInput, setYearInput] = useState('');
+            const [weekInput, setWeekInput] = useState('');
+            const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
+                const now = new Date();
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(now.setDate(diff));
+                monday.setHours(0, 0, 0, 0);
+                return monday;
+            });
+
             const metaRef = useMemo(() => {
                 if (!db || !user) return null;
                 return doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', 'meta');
             }, [db, appId, user]);
 
-            // Lắng nghe entries từ Firebase
             useEffect(() => {
                 if (!metaRef) return;
                 const unsub = onSnapshot(metaRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        if (data.entries && Array.isArray(data.entries)) {
-                            setEntries(data.entries);
-                        } else {
-                            setEntries([]);
-                        }
+                        setEntries(data.entries && Array.isArray(data.entries) ? data.entries : []);
                     } else {
                         setEntries([]);
                     }
-                }, (error) => {
-                    console.warn("Lỗi lắng nghe meta timetable:", error);
-                    // Khi lỗi, có thể thử tải từ localStorage? Nhưng ta sẽ bỏ qua.
-                });
+                }, (error) => { console.warn("Lỗi lắng nghe meta timetable:", error); });
                 return unsub;
             }, [metaRef]);
 
-            // Khi entries thay đổi từ Firebase, tự động chọn entry mới nhất (cuối cùng) nếu chưa chọn
             useEffect(() => {
                 if (entries.length > 0 && selectedIndex === -1) {
                     setSelectedIndex(entries.length - 1);
                 }
             }, [entries]);
 
-            // Hàm ghi entries lên Firebase
             const saveEntriesToFirebase = async (newEntries) => {
                 if (!metaRef) return;
                 try {
@@ -1277,48 +1647,28 @@
                 }
             };
 
-            // Lấy danh sách năm học duy nhất (theo thứ tự thêm mới)
             const yearList = useMemo(() => {
                 const years = entries.map(e => e.year).filter(y => y && y.trim());
                 return [...new Set(years)];
             }, [entries]);
 
-            // Lấy danh sách tuần thuộc năm học hiện tại (yearInput)
-            const [yearInput, setYearInput] = useState('');
-            const [weekInput, setWeekInput] = useState('');
+            const weekListForYear = useMemo(() => {
+                if (!yearInput) return [];
+                const weeks = entries.filter(e => e.year === yearInput && e.week && e.week.trim()).map(e => e.week);
+                return [...new Set(weeks)];
+            }, [entries, yearInput]);
 
-            // Cập nhật yearInput và weekInput khi selectedIndex thay đổi
             useEffect(() => {
                 if (selectedIndex >= 0 && selectedIndex < entries.length) {
                     const entry = entries[selectedIndex];
                     setYearInput(entry.year || '');
                     setWeekInput(entry.week || '');
                 } else {
-                    // Nếu không có entry nào được chọn, để rỗng
                     setYearInput('');
                     setWeekInput('');
                 }
             }, [selectedIndex, entries]);
 
-            const weekListForYear = useMemo(() => {
-                if (!yearInput) return [];
-                const weeks = entries
-                    .filter(e => e.year === yearInput && e.week && e.week.trim())
-                    .map(e => e.week);
-                return [...new Set(weeks)];
-            }, [entries, yearInput]);
-
-            // State lưu ngày thứ 2 đầu tuần đang hiển thị
-            const [startOfWeekDate, setStartOfWeekDate] = useState(() => {
-                const now = new Date();
-                const day = now.getDay();
-                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(now.setDate(diff));
-                monday.setHours(0, 0, 0, 0);
-                return monday;
-            });
-
-            // Khi selectedIndex thay đổi, cập nhật startOfWeekDate
             useEffect(() => {
                 if (selectedIndex >= 0 && selectedIndex < entries.length) {
                     const entry = entries[selectedIndex];
@@ -1330,7 +1680,6 @@
                 }
             }, [selectedIndex, entries]);
 
-            // Reset về tuần hiện tại khi activeTab được bật
             useEffect(() => {
                 if (activeTab === 'timetable') {
                     const now = new Date();
@@ -1339,24 +1688,18 @@
                     const monday = new Date(now.setDate(diff));
                     monday.setHours(0, 0, 0, 0);
                     setStartOfWeekDate(monday);
-                    // Không tự động chọn entry nào, để useEffect trên kia xử lý
-                    // Nếu entries có dữ liệu, nó sẽ tự chọn entry cuối cùng
                 }
             }, [activeTab]);
 
-            // Hàm thêm entry mới (thêm vào cuối mảng)
             const addEntry = (year, week, startDate) => {
                 const newEntry = { year, week, startDate: startDate.toISOString() };
                 const newEntries = [...entries, newEntry];
                 setEntries(newEntries);
                 saveEntriesToFirebase(newEntries);
-                // Chọn entry vừa thêm
-                const newIndex = newEntries.length - 1;
-                setSelectedIndex(newIndex);
-                return newIndex;
+                setSelectedIndex(newEntries.length - 1);
+                return newEntries.length - 1;
             };
 
-            // Hàm xóa entry (nếu xóa cả year và week)
             const deleteEntry = (year, week) => {
                 const newEntries = entries.filter(e => !(e.year === year && e.week === week));
                 setEntries(newEntries);
@@ -1366,7 +1709,6 @@
                 }
             };
 
-            // Hàm xóa năm (xóa tất cả entries có year đó)
             const deleteYear = (year) => {
                 const newEntries = entries.filter(e => e.year !== year);
                 setEntries(newEntries);
@@ -1380,7 +1722,6 @@
                 }
             };
 
-            // Hàm xóa tuần (xóa tất cả entries có week đó và year trùng)
             const deleteWeek = (week) => {
                 const newEntries = entries.filter(e => !(e.week === week && e.year === yearInput));
                 setEntries(newEntries);
@@ -1393,69 +1734,28 @@
                 }
             };
 
-            // Chọn năm từ dropdown
             const selectYear = (year) => {
                 setYearInput(year);
-                // Tìm entry đầu tiên có year đó và week (ưu tiên week hiện tại nếu có)
                 const existing = entries.find(e => e.year === year && e.week === weekInput);
                 if (existing) {
-                    const idx = entries.indexOf(existing);
-                    setSelectedIndex(idx);
+                    setSelectedIndex(entries.indexOf(existing));
                 } else {
-                    // Nếu chưa có, chỉ set year, không chọn entry cụ thể.
                     setSelectedIndex(-1);
                 }
             };
 
-            // Chọn tuần từ dropdown
             const selectWeek = (week) => {
                 setWeekInput(week);
                 const existing = entries.find(e => e.week === week && e.year === yearInput);
                 if (existing) {
-                    const idx = entries.indexOf(existing);
-                    setSelectedIndex(idx);
+                    setSelectedIndex(entries.indexOf(existing));
                 }
             };
 
-            // Xử lý khi người dùng nhập năm mới và nhấn Enter
-            const handleYearKeyDown = (e) => {
-                if (e.key === 'Enter') {
-                    const year = yearInput.trim();
-                    if (year) {
-                        // Kiểm tra xem năm đã tồn tại chưa, nếu chưa thì tạo entry với week rỗng
-                        const existing = entries.find(e => e.year === year && e.week === '');
-                        if (!existing) {
-                            const newDate = new Date(startOfWeekDate);
-                            addEntry(year, '', newDate);
-                        } else {
-                            setSelectedIndex(entries.indexOf(existing));
-                        }
-                    }
-                }
-            };
-
-            const handleWeekKeyDown = (e) => {
-                if (e.key === 'Enter') {
-                    const week = weekInput.trim();
-                    if (week && yearInput) {
-                        const existing = entries.find(e => e.week === week && e.year === yearInput);
-                        if (!existing) {
-                            const newDate = new Date(startOfWeekDate);
-                            addEntry(yearInput, week, newDate);
-                        } else {
-                            setSelectedIndex(entries.indexOf(existing));
-                        }
-                    }
-                }
-            };
-
-            // Hàm chuyển đến entry tiếp theo/trước đó (dựa trên danh sách entries đã sắp xếp)
             const goToPrevEntry = () => {
                 if (entries.length === 0) return;
-                // Lấy danh sách entry hợp lệ có year và week khác rỗng (bỏ qua các entry trống)
                 const validEntries = entries.filter(e => e.year && e.week);
                 if (validEntries.length === 0) return;
-                // Tìm index của entry hiện tại trong validEntries
                 let currentIdx = validEntries.findIndex(e => e.year === yearInput && e.week === weekInput);
                 if (currentIdx === -1) currentIdx = 0;
                 let newIdx = currentIdx - 1;
@@ -1463,8 +1763,7 @@
                 const entry = validEntries[newIdx];
                 setYearInput(entry.year);
                 setWeekInput(entry.week);
-                const idx = entries.indexOf(entry);
-                setSelectedIndex(idx);
+                setSelectedIndex(entries.indexOf(entry));
             };
 
             const goToNextEntry = () => {
@@ -1478,11 +1777,9 @@
                 const entry = validEntries[newIdx];
                 setYearInput(entry.year);
                 setWeekInput(entry.week);
-                const idx = entries.indexOf(entry);
-                setSelectedIndex(idx);
+                setSelectedIndex(entries.indexOf(entry));
             };
 
-            // Rest of the component (periods, weekKey, tkbRef, etc.)
             const periods = [1, 2, 3, 4, 5];
             const weekKey = useMemo(() => {
                 const yyyy = startOfWeekDate.getFullYear();
@@ -1510,9 +1807,7 @@
                         setSchedule({});
                         setHeaders({ col1: 'Môn - Lớp', col2: 'Ghi chú' });
                     }
-                }, err => {
-                    console.warn("Tải lịch biểu offline warning (Sử dụng dữ liệu cached):", err);
-                });
+                }, err => { console.warn("Tải lịch biểu offline warning (Sử dụng dữ liệu cached):", err); });
                 return unsub;
             }, [tkbRef]);
 
@@ -1523,16 +1818,11 @@
                     const temp = new Date(startOfWeekDate);
                     temp.setDate(startOfWeekDate.getDate() + i);
                     const formattedDate = `${String(temp.getDate()).padStart(2, '0')}/${String(temp.getMonth() + 1).padStart(2, '0')}`;
-                    list.push({
-                        id: daysName[i],
-                        label: `Thứ ${i + 2}`,
-                        dateStr: formattedDate
-                    });
+                    list.push({ id: daysName[i], label: `Thứ ${i + 2}`, dateStr: formattedDate });
                 }
                 return list;
             }, [startOfWeekDate]);
 
-            // Xử lý search highlight
             useEffect(() => {
                 if (!searchTarget || searchTarget.tab !== 'timetable' || !searchTarget.itemId) return;
                 if (searchTarget.weekDocId) {
@@ -1579,84 +1869,24 @@
 
             return (
                 <div className="h-full flex flex-col px-4 pb-4 pt-2" style={{ color: theme.textColor }}>
-                    {/* Không hiển thị tiêu đề "Lịch biểu" nữa */}
-
-                    {/* BỘ ĐIỀU HƯỚNG - Năm học & Tuần với dropdown */}
                     <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 shrink-0 text-slate-800 gap-1">
-                        <button 
-                            onClick={goToPrevEntry}
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition disabled:opacity-40"
-                            title="Quay lại entry trước"
-                            disabled={entries.length === 0}
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-                        
+                        <button onClick={goToPrevEntry} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition disabled:opacity-40" disabled={entries.length === 0}><ChevronLeft size={20} /></button>
                         <div className="flex items-center gap-1 flex-1 justify-center min-w-[140px]">
                             <span className="text-[10px] font-bold text-blue-600">Năm học</span>
-                            <CustomDropdown
-                                value={yearInput}
-                                onChange={setYearInput}
-                                onAdd={(val) => {
-                                    // Thêm năm mới (chưa có tuần)
-                                    const existing = entries.find(e => e.year === val && e.week === '');
-                                    if (!existing) {
-                                        const newDate = new Date(startOfWeekDate);
-                                        addEntry(val, '', newDate);
-                                    }
-                                }}
-                                onDelete={deleteYear}
-                                placeholder="Năm học"
-                                label="năm học"
-                                items={yearList}
-                                onSelect={selectYear}
-                            />
+                            <CustomDropdown value={yearInput} onChange={setYearInput} onAdd={(val) => { const existing = entries.find(e => e.year === val && e.week === ''); if (!existing) { const newDate = new Date(startOfWeekDate); addEntry(val, '', newDate); } }} onDelete={deleteYear} placeholder="Năm học" label="năm học" items={yearList} onSelect={selectYear} />
                             <span className="text-[10px] font-bold text-blue-600">Tuần</span>
-                            <CustomDropdown
-                                value={weekInput}
-                                onChange={setWeekInput}
-                                onAdd={(val) => {
-                                    if (yearInput) {
-                                        const existing = entries.find(e => e.year === yearInput && e.week === val);
-                                        if (!existing) {
-                                            const newDate = new Date(startOfWeekDate);
-                                            addEntry(yearInput, val, newDate);
-                                        }
-                                    } else {
-                                        toast.warning("Vui lòng chọn hoặc nhập năm học trước.", { position: "top-center" });
-                                    }
-                                }}
-                                onDelete={deleteWeek}
-                                placeholder="Tuần"
-                                label="tuần"
-                                items={weekListForYear}
-                                onSelect={selectWeek}
-                            />
+                            <CustomDropdown value={weekInput} onChange={setWeekInput} onAdd={(val) => { if (yearInput) { const existing = entries.find(e => e.year === yearInput && e.week === val); if (!existing) { const newDate = new Date(startOfWeekDate); addEntry(yearInput, val, newDate); } } else { toast.warning("Vui lòng chọn hoặc nhập năm học trước.", { position: "top-center" }); } }} onDelete={deleteWeek} placeholder="Tuần" label="tuần" items={weekListForYear} onSelect={selectWeek} />
                         </div>
-
-                        <button 
-                            onClick={goToNextEntry}
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition disabled:opacity-40"
-                            title="Đến entry tiếp theo"
-                            disabled={entries.length === 0}
-                        >
-                            <ChevronRight size={20} />
-                        </button>
+                        <button onClick={goToNextEntry} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition disabled:opacity-40" disabled={entries.length === 0}><ChevronRight size={20} /></button>
                     </div>
-
-                    {/* Bảng lịch biểu */}
                     <div className="flex-1 overflow-y-auto rounded-xl shadow-sm border border-slate-200 mb-4 bg-white">
                         <table className="w-full text-sm border-collapse table-fixed">
                             <thead className="sticky top-0 bg-gray-100 z-10 shadow-sm">
                                 <tr className="text-blue-600 font-bold">
                                     <th className="border p-2 w-14 bg-gray-100 text-center align-middle text-xs">Thứ</th>
                                     <th className="border p-2 w-10 bg-gray-100 text-center text-xs">Tiết</th>
-                                    <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col1} onChange={e=>saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" />
-                                    </th>
-                                    <th className="border p-0 min-w-[100px] bg-gray-100">
-                                        <input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col2} onChange={e=>saveHeader('col2', e.target.value)} placeholder="Ghi chú" />
-                                    </th>
+                                    <th className="border p-0 min-w-[100px] bg-gray-100"><input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col1} onChange={e=>saveHeader('col1', e.target.value)} placeholder="Môn - Lớp" /></th>
+                                    <th className="border p-0 min-w-[100px] bg-gray-100"><input className="w-full bg-transparent text-center font-bold p-2 outline-none placeholder-blue-300 text-blue-600 text-xs" value={headers.col2} onChange={e=>saveHeader('col2', e.target.value)} placeholder="Ghi chú" /></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1676,22 +1906,10 @@
                                                     )}
                                                     <td className={`border p-2 text-center text-blue-600 font-bold text-xs align-middle ${rowBg}`}>{period}</td>
                                                     <td id={`tkb-cell-${day.id}_${period}_col1`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col1` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                        <textarea 
-                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" 
-                                                            rows={1}
-                                                            value={schedule[`${day.id}_${period}_col1`] || ''}
-                                                            onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})}
-                                                            onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)}
-                                                        />
+                                                        <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1} value={schedule[`${day.id}_${period}_col1`] || ''} onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col1`]: e.target.value})} onBlur={(e) => saveData(`${day.id}_${period}_col1`, e.target.value)} />
                                                     </td>
                                                     <td id={`tkb-cell-${day.id}_${period}_col2`} className={`border p-0 align-middle transition-all duration-500 ${rowBg} ${highlightKey === `${day.id}_${period}_col2` ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : ''}`}>
-                                                        <textarea 
-                                                            className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" 
-                                                            rows={1}
-                                                            value={schedule[`${day.id}_${period}_col2`] || ''}
-                                                            onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})}
-                                                            onBlur={(e) => saveData(`${day.id}_${period}_col2`, e.target.value)}
-                                                        />
+                                                        <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1} value={schedule[`${day.id}_${period}_col2`] || ''} onChange={(e) => setSchedule({...schedule, [`${day.id}_${period}_col2`]: e.target.value})} onBlur={(e) => saveData(`${day.id}_${period}_col2`, e.target.value)} />
                                                     </td>
                                                 </tr>
                                             );
@@ -1705,7 +1923,7 @@
             );
         };
 
-        // --- MÀN HÌNH LỊCH NGÀY (DAILY VIEW) ---
+        // DailyView
         const DailyView = ({ user, db, appId, today, setToday }) => {
             const [weather, setWeather] = useState(null);
             const [verses, setVerses] = useState([]);
@@ -1715,7 +1933,6 @@
             const [searchQuery, setSearchQuery] = useState('');
             const [todayEvents, setTodayEvents] = useState([]);
             const [isNewYearWish, setIsNewYearWish] = useState(false);
-            
             const [viewMode, setViewMode] = useState('verse');
             const [showMenu, setShowMenu] = useState(false);
             const [showAddVerse, setShowAddVerse] = useState(false);
@@ -1730,14 +1947,8 @@
                 if (!touchStart || e.changedTouches.length > 1) return;
                 const distance = touchStart - e.changedTouches[0].clientX;
                 const newDate = new Date(today);
-                if (distance > 50) { 
-                    setAnimClass('anim-next');
-                    setTimeout(() => { newDate.setDate(today.getDate() + 1); setToday(newDate); setAnimClass(''); }, 400);
-                }
-                if (distance < -50) { 
-                    setAnimClass('anim-prev');
-                    setTimeout(() => { newDate.setDate(today.getDate() - 1); setToday(newDate); setAnimClass(''); }, 400);
-                }
+                if (distance > 50) { setAnimClass('anim-next'); setTimeout(() => { newDate.setDate(today.getDate() + 1); setToday(newDate); setAnimClass(''); }, 400); }
+                if (distance < -50) { setAnimClass('anim-prev'); setTimeout(() => { newDate.setDate(today.getDate() - 1); setToday(newDate); setAnimClass(''); }, 400); }
                 setTouchStart(null);
             }
             
@@ -1748,12 +1959,12 @@
             useEffect(() => {
                 const isNewYear = today.getDate() === 1 && today.getMonth() === 0;
                 if (isNewYear) {
-                     setCurrentVerse(`Nhân dịp năm mới ${today.getFullYear()}.\nXin kính chúc mọi người và gia đình một năm mới dồi dào sức khỏe, hạnh phúc và bình an!"\n\n_ Văn Trung`);
-                     setIsNewYearWish(true);
+                    setCurrentVerse(`Nhân dịp năm mới ${today.getFullYear()}.\nXin kính chúc mọi người và gia đình một năm mới dồi dào sức khỏe, hạnh phúc và bình an!"\n\n_ Văn Trung`);
+                    setIsNewYearWish(true);
                 } else {
-                     setIsNewYearWish(false);
-                     const allVerses = [...DEFAULT_VERSES, ...verses.map(v => v.text)];
-                     if(allVerses.length > 0) setCurrentVerse(allVerses[Math.floor(Math.random() * allVerses.length)]);
+                    setIsNewYearWish(false);
+                    const allVerses = [...DEFAULT_VERSES, ...verses.map(v => v.text)];
+                    if(allVerses.length > 0) setCurrentVerse(allVerses[Math.floor(Math.random() * allVerses.length)]);
                 }
             }, [today, verses]);
 
@@ -1801,10 +2012,7 @@
                 else if (!verseToDelete) { alert("Đây là danh ngôn mặc định, không thể xóa."); }
             };
 
-            const bgImage = isNewYearWish 
-                ? "https://images.unsplash.com/photo-1516132006923-6cf348e5dee2?q=80&w=1000&auto=format&fit=crop" 
-                : BACKGROUNDS[today.getDate() % BACKGROUNDS.length];
-                
+            const bgImage = isNewYearWish ? "https://images.unsplash.com/photo-1516132006923-6cf348e5dee2?q=80&w=1000&auto=format&fit=crop" : BACKGROUNDS[today.getDate() % BACKGROUNDS.length];
             const getRandomVerse = () => { const allVerses = [...DEFAULT_VERSES, ...verses.map(v => v.text)]; setCurrentVerse(allVerses[Math.floor(Math.random() * allVerses.length)]); };
             const getWeatherIcon = (code) => {
                 if (code <= 3) return <Sun size={20} className="text-yellow-400"/>;
@@ -1819,13 +2027,10 @@
                     return (
                         <div className="w-full" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
                             <form onSubmit={handleSearch} className="flex items-center gap-2 mb-4 bg-white/20 p-2 rounded-lg w-full">
-                                <button type="submit" className="p-1 hover:bg-white/10 rounded">
-                                     <Search size={16} className="text-white shrink-0"/>
-                                </button>
+                                <button type="submit" className="p-1 hover:bg-white/10 rounded"><Search size={16} className="text-white shrink-0"/></button>
                                 <input className="flex-1 bg-transparent outline-none text-white placeholder-white/70 text-sm font-bold text-right" placeholder="Nhập tên TP..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} />
                             </form>
-                             <div className="text-xs font-bold uppercase text-yellow-300 text-center mb-2">{locationName}</div>
-
+                            <div className="text-xs font-bold uppercase text-yellow-300 text-center mb-2">{locationName}</div>
                             <div className="flex justify-between overflow-x-auto no-scrollbar gap-2 pb-2">
                                 {weather ? weather.time.slice(0, 7).map((t, i) => (
                                     <div key={t} className="flex flex-col items-center min-w-[40px] bg-black/20 p-2 rounded-lg">
@@ -1843,7 +2048,7 @@
                 }
 
                 if (viewMode === 'events') {
-                     return (
+                    return (
                         <div className="w-full h-full overflow-y-auto no-scrollbar" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
                             <h4 className="text-sm font-bold mb-2 border-b border-white/20 pb-1">Sự kiện hôm nay</h4>
                             {todayEvents.length === 0 ? <p className="text-center text-xs opacity-60 mt-4">Không có sự kiện nào.</p> : (
@@ -1856,18 +2061,18 @@
                 return (
                     <div className="text-center w-full flex flex-col h-full relative">
                         {showAddVerse ? (
-                             <div className="flex flex-col gap-2 h-full" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
+                            <div className="flex flex-col gap-2 h-full" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
                                 <textarea className="flex-1 bg-white/20 rounded p-2 text-sm text-white placeholder-white/50 outline-none resize-none" placeholder="Nhập câu danh ngôn..." value={newVerse} onChange={e=>setNewVerse(e.target.value)}></textarea>
                                 <div className="flex gap-2 justify-end">
                                     <button onClick={()=>setShowAddVerse(false)} className="text-xs bg-gray-500/50 px-2 py-1 rounded">Hủy</button>
                                     <button onClick={handleAddVerse} className="text-xs bg-blue-500 px-2 py-1 rounded">Lưu</button>
                                 </div>
-                             </div>
+                            </div>
                         ) : (
                             <>
                                 <div className="flex justify-end gap-2 mb-1 absolute bottom-1 right-1">
-                                     <button onClick={(e)=>{e.stopPropagation(); setShowAddVerse(true)}} className="p-1 opacity-40 hover:opacity-100"><Plus size={12}/></button>
-                                     <button onClick={(e)=>{e.stopPropagation(); handleDeleteVerse(currentVerse)}} className="p-1 opacity-40 hover:opacity-100 text-red-300"><Trash2 size={12}/></button>
+                                    <button onClick={(e)=>{e.stopPropagation(); setShowAddVerse(true)}} className="p-1 opacity-40 hover:opacity-100"><Plus size={12}/></button>
+                                    <button onClick={(e)=>{e.stopPropagation(); handleDeleteVerse(currentVerse)}} className="p-1 opacity-40 hover:opacity-100 text-red-300"><Trash2 size={12}/></button>
                                 </div>
                                 <div className={`flex-1 flex flex-col items-center justify-center font-sans font-medium leading-relaxed whitespace-pre-wrap ${getVerseFontSize(currentVerse)} overflow-y-auto no-scrollbar`} onClick={getRandomVerse}>
                                     <div>"{currentVerse}"</div>
@@ -1890,18 +2095,13 @@
                     <button onClick={goNextDay} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 bg-black/20 hover:bg-black/50 rounded-full text-white/50 hover:text-white transition"><ChevronRight size={32}/></button>
 
                     <div className={`relative z-10 flex-1 flex flex-col items-center gap-2 overflow-hidden ${animClass}`}>
-                        
-                        {/* Khu vực Ngày chính */}
                         <div className="text-center drop-shadow-lg mt-12 z-20 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" onClick={() => setToday(new Date())} title="Về hôm nay">
                             <p className="text-2xl font-light uppercase tracking-widest mb-1 text-white/90">{getDayOfWeek(today)}</p>
                             <h2 className="text-[7rem] md:text-[8rem] font-bold leading-none text-white">{today.getDate()}</h2>
                             <p className="text-xl mt-2 font-medium text-white/90">Tháng {today.getMonth() + 1} - {today.getFullYear()}</p>
-                            <div className="mt-4 inline-block bg-white/20 backdrop-blur-sm px-6 py-2 rounded-full text-base border border-white/30 font-serif">
-                                Âm lịch: {getLunarDate(today)}
-                            </div>
+                            <div className="mt-4 inline-block bg-white/20 backdrop-blur-sm px-6 py-2 rounded-full text-base border border-white/30 font-serif">Âm lịch: {getLunarDate(today)}</div>
                         </div>
 
-                        {/* Thẻ Thông Tin Trung Tâm */}
                         <div className="w-full max-w-md mt-auto relative group z-30 flex-1 flex flex-col justify-end pb-0">
                             <div className="bg-black/20 backdrop-blur-sm rounded-t-2xl p-6 border-t border-x border-white/10 flex-1 flex flex-col justify-center items-center relative transition-all duration-300">
                                 <div className="absolute top-3 right-3">
@@ -1922,41 +2122,21 @@
             );
         };
 
-        // --- LỊCH VIEW (THÁNG) ---
+        // CalendarView
         const CalendarView = ({ user, db, appId, currentDate, setCurrentDate, selectedDate, setSelectedDate, onTabChange, theme }) => {
             const [events, setEvents] = useState([]);
             const [showEventModal, setShowEventModal] = useState(false);
             const [animClass, setAnimClass] = useState('');
             const [touchStart, setTouchStart] = useState(null);
             
-            // START: Logic vuốt sang ngang để chuyển tháng (Sửa lỗi 1)
-            const onTouchStart = (e) => { 
-                if (e.touches.length > 1) return; 
-                setTouchStart(e.targetTouches[0].clientX); 
-            };
-            
+            const onTouchStart = (e) => { if (e.touches.length > 1) return; setTouchStart(e.targetTouches[0].clientX); };
             const onTouchEnd = (e) => {
                 if (!touchStart || e.changedTouches.length > 1) return;
                 const distance = touchStart - e.changedTouches[0].clientX;
-                // Vuốt sang trái (distance > 50) -> chuyển sang tháng sau
-                if (distance > 50) { 
-                    setAnimClass('anim-next'); 
-                    setTimeout(() => { 
-                        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); 
-                        setAnimClass(''); 
-                    }, 300); 
-                }
-                // Vuốt sang phải (distance < -50) -> chuyển sang tháng trước
-                if (distance < -50) { 
-                    setAnimClass('anim-prev'); 
-                    setTimeout(() => { 
-                        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); 
-                        setAnimClass(''); 
-                    }, 300); 
-                }
+                if (distance > 50) { setAnimClass('anim-next'); setTimeout(() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); setAnimClass(''); }, 300); }
+                if (distance < -50) { setAnimClass('anim-prev'); setTimeout(() => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); setAnimClass(''); }, 300); }
                 setTouchStart(null);
             };
-            // END: Logic vuốt sang ngang để chuyển tháng
 
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
@@ -1972,33 +2152,12 @@
                 const dateStr = date.toDateString();
                 const lunar = getLunarDetails(date);
                 return events.some(e => {
-                    if (!e.repeat || e.repeat === 'none') {
-                        return e.date && new Date(e.date.seconds * 1000).toDateString() === dateStr;
-                    }
-                    if (e.repeat === 'lunar') {
-                        return e.lunarDay === lunar.day && e.lunarMonth === lunar.month;
-                    }
-                    if (e.repeat === 'solar' && e.date) {
-                        const d = new Date(e.date.seconds * 1000);
-                        return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
-                    }
-                    if (e.repeat === 'weekly' && e.date) {
-                        const d = new Date(e.date.seconds * 1000);
-                        const dayMatches = d.getDay() === date.getDay();
-                        if (!dayMatches) return false;
-                        if (e.weeklyMonths && e.weeklyMonths.length > 0) {
-                            return e.weeklyMonths.includes(date.getMonth() + 1);
-                        }
-                        return true;
-                    }
-                    if (e.repeat === 'monthly' && e.date) {
-                        const d = new Date(e.date.seconds * 1000);
-                        return d.getDate() === date.getDate();
-                    }
-                    if (e.repeat === 'yearly' && e.date) {
-                        const d = new Date(e.date.seconds * 1000);
-                        return d.getDate() === date.getDate() && d.getMonth() === date.getMonth();
-                    }
+                    if (!e.repeat || e.repeat === 'none') return e.date && new Date(e.date.seconds * 1000).toDateString() === dateStr;
+                    if (e.repeat === 'lunar') return e.lunarDay === lunar.day && e.lunarMonth === lunar.month;
+                    if (e.repeat === 'solar' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
+                    if (e.repeat === 'weekly' && e.date) { const d = new Date(e.date.seconds * 1000); const dayMatches = d.getDay() === date.getDay(); if (!dayMatches) return false; if (e.weeklyMonths && e.weeklyMonths.length > 0) { return e.weeklyMonths.includes(date.getMonth() + 1); } return true; }
+                    if (e.repeat === 'monthly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate(); }
+                    if (e.repeat === 'yearly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
                     return false;
                 });
             };
@@ -2011,15 +2170,7 @@
                     if (!e.repeat || e.repeat === 'none') return e.date && new Date(e.date.seconds * 1000).toDateString() === dateStr;
                     if (e.repeat === 'lunar') return e.lunarDay === lunar.day && e.lunarMonth === lunar.month;
                     if (e.repeat === 'solar' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
-                    if (e.repeat === 'weekly' && e.date) { 
-                        const d = new Date(e.date.seconds * 1000); 
-                        const dayMatches = d.getDay() === date.getDay();
-                        if (!dayMatches) return false;
-                        if (e.weeklyMonths && e.weeklyMonths.length > 0) {
-                            return e.weeklyMonths.includes(date.getMonth() + 1);
-                        }
-                        return true;
-                    }
+                    if (e.repeat === 'weekly' && e.date) { const d = new Date(e.date.seconds * 1000); const dayMatches = d.getDay() === date.getDay(); if (!dayMatches) return false; if (e.weeklyMonths && e.weeklyMonths.length > 0) { return e.weeklyMonths.includes(date.getMonth() + 1); } return true; }
                     if (e.repeat === 'monthly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate(); }
                     if (e.repeat === 'yearly' && e.date) { const d = new Date(e.date.seconds * 1000); return d.getDate() === date.getDate() && d.getMonth() === date.getMonth(); }
                     return false;
@@ -2035,10 +2186,9 @@
             const getDayColor = (index) => {
                 if (index === 5) return 'text-[#84cc16]'; 
                 if (index === 6) return 'text-[#ec4899]'; 
-                return 'text-slate-500'; 
+                return 'text-slate-500';
             };
             return (
-                // SỬA LỖI 1: Gắn trực tiếp onTouchStart và onTouchEnd vào thẻ div bọc ngoài của CalendarView
                 <div className="p-4 select-none perspective-container" style={{ color: theme.textColor }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
                     <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-150">
                         <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft className="text-gray-600" /></button>
@@ -2068,8 +2218,8 @@
                         })}
                     </div>
                     <div className="mt-6 flex justify-center gap-2">
-                         <button onClick={() => setShowEventModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform"><Plus size={16}/> Thêm sự kiện</button>
-                         <button onClick={() => onTabChange('day')} className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform">Hôm nay</button>
+                        <button onClick={() => setShowEventModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform"><Plus size={16}/> Thêm sự kiện</button>
+                        <button onClick={() => onTabChange('day')} className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform">Hôm nay</button>
                     </div>
                     {showEventModal && <EventModal 
                         date={selectedDate} 
@@ -2101,13 +2251,12 @@
             );
         };
 
+        // EventModal
         const EventModal = ({ date, events, onClose, onAdd, onDelete, onUpdate }) => {
             const [newEvent, setNewEvent] = useState('');
             const [repeatType, setRepeatType] = useState('none'); 
-            const [weeklyMonths, setWeeklyMonths] = useState([]); // [] = mọi tháng; [1,3,5,...] = tháng cụ thể
+            const [weeklyMonths, setWeeklyMonths] = useState([]);
             const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-            // Các State phục vụ việc Chỉnh sửa Sự kiện
             const [editingId, setEditingId] = useState(null);
             const [editTitle, setEditTitle] = useState('');
             const [editDate, setEditDate] = useState('');
@@ -2158,24 +2307,10 @@
                                         return (
                                             <li key={e.id} className="flex flex-col gap-2 bg-blue-50 p-3 rounded text-sm text-gray-800">
                                                 <div className="flex flex-col gap-1 w-full">
-                                                    <input 
-                                                        type="text" 
-                                                        value={editTitle} 
-                                                        onChange={ev => setEditTitle(ev.target.value)} 
-                                                        className="border rounded px-2 py-1 text-sm outline-none focus:border-blue-500 text-slate-800 w-full"
-                                                    />
+                                                    <input type="text" value={editTitle} onChange={ev => setEditTitle(ev.target.value)} className="border rounded px-2 py-1 text-sm outline-none focus:border-blue-500 text-slate-800 w-full" />
                                                     <div className="flex gap-2">
-                                                        <input 
-                                                            type="date" 
-                                                            value={editDate} 
-                                                            onChange={ev => setEditDate(ev.target.value)} 
-                                                            className="border rounded px-2 py-1 text-xs outline-none focus:border-blue-500 text-slate-800 flex-1"
-                                                        />
-                                                        <select 
-                                                            value={editRepeat} 
-                                                            onChange={ev => setEditRepeat(ev.target.value)} 
-                                                            className="border rounded px-2 py-1 text-xs outline-none focus:border-blue-500 text-slate-800"
-                                                        >
+                                                        <input type="date" value={editDate} onChange={ev => setEditDate(ev.target.value)} className="border rounded px-2 py-1 text-xs outline-none focus:border-blue-500 text-slate-800 flex-1" />
+                                                        <select value={editRepeat} onChange={ev => setEditRepeat(ev.target.value)} className="border rounded px-2 py-1 text-xs outline-none focus:border-blue-500 text-slate-800">
                                                             <option value="none">— Không lặp —</option>
                                                             <option value="lunar">Lặp Âm</option>
                                                             <option value="solar">Lặp Dương</option>
@@ -2188,10 +2323,8 @@
                                                             <div className="flex items-center justify-between mb-1.5">
                                                                 <p className="text-[10px] text-indigo-700 font-black">📅 Tháng áp dụng</p>
                                                                 <div className="flex gap-1">
-                                                                    <button type="button" onClick={() => setEditWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])}
-                                                                        className="text-[8px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
-                                                                    <button type="button" onClick={() => setEditWeeklyMonths([])}
-                                                                        className="text-[8px] px-1.5 py-0.5 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
+                                                                    <button type="button" onClick={() => setEditWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])} className="text-[8px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
+                                                                    <button type="button" onClick={() => setEditWeeklyMonths([])} className="text-[8px] px-1.5 py-0.5 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
                                                                 </div>
                                                             </div>
                                                             <p className="text-[8px] text-indigo-400 mb-1.5">Bỏ chọn tất cả = lặp mọi tháng</p>
@@ -2200,17 +2333,12 @@
                                                                     const m = i + 1;
                                                                     const active = editWeeklyMonths.includes(m);
                                                                     return (
-                                                                        <button key={m} type="button" onClick={() => toggleMonth(m, editWeeklyMonths, setEditWeeklyMonths)}
-                                                                            className={`text-[9px] py-1 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400'}`}>
-                                                                            {lb}
-                                                                        </button>
+                                                                        <button key={m} type="button" onClick={() => toggleMonth(m, editWeeklyMonths, setEditWeeklyMonths)} className={`text-[9px] py-1 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400'}`}>{lb}</button>
                                                                     );
                                                                 })}
                                                             </div>
                                                             {editWeeklyMonths.length > 0 && (
-                                                                <p className="text-[8px] text-indigo-500 mt-1.5 font-semibold text-center">
-                                                                    ✓ {editWeeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}
-                                                                </p>
+                                                                <p className="text-[8px] text-indigo-500 mt-1.5 font-semibold text-center">✓ {editWeeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}</p>
                                                             )}
                                                         </div>
                                                     )}
@@ -2263,10 +2391,8 @@
                                             <p className="text-[9px] text-indigo-400 mt-0.5">Bỏ chọn tất cả = lặp mọi tháng trong năm</p>
                                         </div>
                                         <div className="flex gap-1">
-                                            <button type="button" onClick={() => setWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])}
-                                                className="text-[9px] px-2 py-1 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
-                                            <button type="button" onClick={() => setWeeklyMonths([])}
-                                                className="text-[9px] px-2 py-1 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
+                                            <button type="button" onClick={() => setWeeklyMonths([1,2,3,4,5,6,7,8,9,10,11,12])} className="text-[9px] px-2 py-1 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">Tất cả</button>
+                                            <button type="button" onClick={() => setWeeklyMonths([])} className="text-[9px] px-2 py-1 rounded-full bg-white text-indigo-500 border border-indigo-300 font-bold hover:bg-indigo-100 transition">Xóa</button>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-6 gap-1">
@@ -2274,17 +2400,12 @@
                                             const m = i + 1;
                                             const active = weeklyMonths.includes(m);
                                             return (
-                                                <button key={m} type="button" onClick={() => toggleMonth(m, weeklyMonths, setWeeklyMonths)}
-                                                    className={`text-[10px] py-1.5 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'}`}>
-                                                    {lb}
-                                                </button>
+                                                <button key={m} type="button" onClick={() => toggleMonth(m, weeklyMonths, setWeeklyMonths)} className={`text-[10px] py-1.5 rounded-lg font-bold border transition-all ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'}`}>{lb}</button>
                                             );
                                         })}
                                     </div>
                                     {weeklyMonths.length > 0 && (
-                                        <p className="text-[9px] text-indigo-500 mt-2 font-semibold text-center">
-                                            ✓ Lặp trong: {weeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}
-                                        </p>
+                                        <p className="text-[9px] text-indigo-500 mt-2 font-semibold text-center">✓ Lặp trong: {weeklyMonths.map(m => MONTH_LABELS[m-1]).join(', ')}</p>
                                     )}
                                 </div>
                             )}
@@ -2298,6 +2419,7 @@
             );
         };
 
+        // TodoEditor
         const TodoEditor = ({ initialText, initialReminder, initialDeadline, isNew, onSave, onCancel }) => {
             const [text, setText] = useState(initialText || '');
             const [reminder, setReminder] = useState(initialReminder || '');
@@ -2318,6 +2440,7 @@
             );
         };
 
+        // TodoView
         const TodoView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [todos, setTodos] = useState([]);
             const [editing, setEditing] = useState(null);
@@ -2325,16 +2448,13 @@
             const [highlightId, setHighlightId] = useState(null);
             const todoRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'todos'), [db, appId, user.uid]);
             
-            // Scroll và highlight khi có searchTarget
             useEffect(() => {
                 if (!searchTarget || searchTarget.tab !== 'todo' || !searchTarget.itemId) return;
                 setHighlightId(searchTarget.itemId);
-                // Scroll đến item sau khi render
                 setTimeout(() => {
                     const el = document.getElementById(`todo-item-${searchTarget.itemId}`);
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 200);
-                // Tắt highlight sau 3 giây
                 const timer = setTimeout(() => {
                     setHighlightId(null);
                     if (onSearchTargetClear) onSearchTargetClear();
@@ -2342,28 +2462,20 @@
                 return () => clearTimeout(timer);
             }, [searchTarget]);
             
-            // Logic tự động sắp xếp danh sách công việc (todos)
             useEffect(() => {
                 const unsub = onSnapshot(query(todoRef), snap => {
                     const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     data.sort((a, b) => {
                         const aActiveDeadline = !a.completed && a.deadlineTime;
                         const bActiveDeadline = !b.completed && b.deadlineTime;
-
                         if (aActiveDeadline && !bActiveDeadline) return -1;
                         if (!aActiveDeadline && bActiveDeadline) return 1;
-
                         if (aActiveDeadline && bActiveDeadline) {
                             const aSecs = a.deadlineTime.seconds || 0;
                             const bSecs = b.deadlineTime.seconds || 0;
-                            if (aSecs !== bSecs) {
-                                return aSecs - bSecs;
-                            }
+                            if (aSecs !== bSecs) return aSecs - bSecs;
                         }
-
-                        if (a.order !== undefined && b.order !== undefined) {
-                            return a.order - b.order;
-                        }
+                        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
                         return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
                     });
                     setTodos(data);
@@ -2439,6 +2551,7 @@
             );
         };
 
+        // NoteEditor
         const NoteEditor = ({ initialTitle, initialContent, initialReminder, initialColor, isNew, onSave, onCancel }) => {
             const [title, setTitle] = useState(initialTitle || '');
             const [content, setContent] = useState(initialContent || '');
@@ -2468,6 +2581,7 @@
             );
         };
 
+        // NotesView
         const NotesView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             const [notes, setNotes] = useState([]);
             const [editing, setEditing] = useState(null);
@@ -2476,7 +2590,6 @@
             const noteRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'notes'), [db, appId, user.uid]);
             useEffect(() => onSnapshot(query(noteRef), snap => setNotes(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0)))), [noteRef]);
 
-            // Scroll và highlight khi có searchTarget
             useEffect(() => {
                 if (!searchTarget || searchTarget.tab !== 'notes' || !searchTarget.itemId) return;
                 setHighlightId(searchTarget.itemId);
@@ -2542,7 +2655,7 @@
             );
         };
 
-        // --- COMPONENT MÀN HÌNH KHÓA BẢO VỆ ---
+        // LockScreen
         const LockScreen = ({ onUnlock, correctPassword }) => {
             const [pin, setPin] = useState('');
             const [error, setError] = useState('');
@@ -2562,35 +2675,19 @@
             return (
                 <div className="flex flex-col flex-1 items-center justify-center p-6 bg-slate-50 font-sans">
                     <div className="w-full max-w-xs text-center space-y-6">
-                        <div className="mx-auto bg-blue-100 text-blue-600 p-4 rounded-full w-16 h-16 flex items-center justify-center">
-                            <Lock size={28} />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800">Khu vực bảo mật</h3>
-                            <p className="text-xs text-slate-400 mt-1">Vui lòng cung cấp mã PIN để xem dữ liệu</p>
-                        </div>
+                        <div className="mx-auto bg-blue-100 text-blue-600 p-4 rounded-full w-16 h-16 flex items-center justify-center"><Lock size={28} /></div>
+                        <div><h3 className="text-lg font-bold text-slate-800">Khu vực bảo mật</h3><p className="text-xs text-slate-400 mt-1">Vui lòng cung cấp mã PIN để xem dữ liệu</p></div>
                         <form onSubmit={handleUnlockSubmit} className="space-y-4">
-                            <input 
-                                type="password" 
-                                required
-                                value={pin}
-                                onChange={e => setPin(e.target.value)}
-                                placeholder="Nhập mã bảo vệ..." 
-                                className="w-full px-4 py-3 border border-slate-200 text-center rounded-xl text-lg font-bold tracking-widest text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
-                            />
+                            <input type="password" required value={pin} onChange={e => setPin(e.target.value)} placeholder="Nhập mã bảo vệ..." className="w-full px-4 py-3 border border-slate-200 text-center rounded-xl text-lg font-bold tracking-widest text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm" />
                             {error && <p className="text-red-500 text-xs text-center font-medium">{error}</p>}
-                            <button 
-                                type="submit" 
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition"
-                            >
-                                Xác nhận mở khóa
-                            </button>
+                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition">Xác nhận mở khóa</button>
                         </form>
                     </div>
                 </div>
             );
         };
 
+        // --- APP ---
         const App = () => {
             const [user, setUser] = useState(null);
             const [loading, setLoading] = useState(true);
@@ -2599,30 +2696,21 @@
             const [showSettings, setShowSettings] = useState(false);
             const [showMenu, setShowMenu] = useState(false);
             const [connectionError, setConnectionError] = useState(false);
-            
-            // START: Quản lý Trạng thái Ngoại tuyến (UI/UX)
             const [isOffline, setIsOffline] = useState(!navigator.onLine);
             const [showOfflineBadge, setShowOfflineBadge] = useState(false);
-            // END: Quản lý Trạng thái Ngoại tuyến (UI/UX)
-
             const [dailyDate, setDailyDate] = useState(new Date());
             const [calendarCurrentDate, setCalendarCurrentDate] = useState(new Date());
             const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date());
-
             const [activeAlerts, setActiveAlerts] = useState([]);
             const [showAlertModal, setShowAlertModal] = useState(false);
-
-            // Các State phục vụ việc Chỉnh sửa Sự kiện / Todo trực tiếp trong Modal cảnh báo
             const [editingAlertId, setEditingAlertId] = useState(null);
             const [editAlertTitle, setEditAlertTitle] = useState('');
             const [editAlertTimeStr, setEditAlertTimeStr] = useState('');
-
             const [showSearch, setShowSearch] = useState(false);
 
             const [avatarUrl, setAvatarUrl] = useState(() => {
                 try { return localStorage.getItem('vt_avatar_url') || null; } catch(e) { return null; }
             });
-
             const avatarInputRef = React.useRef(null);
 
             const handleAvatarChange = (e) => {
@@ -2640,55 +2728,24 @@
             const [lockPassword, setLockPassword] = useState('');
             const [lockEnabled, setLockEnabled] = useState(false);
             const [unlockedTabs, setUnlockedTabs] = useState({ todo: false, notes: false });
-
             const [completedAlerts, setCompletedAlerts] = useState(() => {
-                try {
-                    const saved = localStorage.getItem('vt_completed_alerts');
-                    return saved ? JSON.parse(saved) : {};
-                } catch (e) {
-                    return {};
-                }
+                try { const saved = localStorage.getItem('vt_completed_alerts'); return saved ? JSON.parse(saved) : {}; } catch (e) { return {}; }
             });
-
             const [theme, setTheme] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('app_theme')) || { bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' }; } 
                 catch(e) { return { bgColor: '#f3f4f6', noteColor: '#FEFCE8', textColor: '#1F2937' }; }
             });
 
-            // Đồng bộ completedAlerts vào LocalStorage
-            useEffect(() => {
-                localStorage.setItem('vt_completed_alerts', JSON.stringify(completedAlerts));
-            }, [completedAlerts]);
+            useEffect(() => { localStorage.setItem('vt_completed_alerts', JSON.stringify(completedAlerts)); }, [completedAlerts]);
 
-            // START: Đăng ký lắng nghe tình trạng Internet thay đổi và tự động đồng bộ
             useEffect(() => {
-                const handleOnline = () => {
-                    setIsOffline(false);
-                    setShowOfflineBadge(true);
-                    toast.success("Đã khôi phục kết nối mạng! Dữ liệu đang được đồng bộ tự động.", {
-                        position: "top-center"
-                    });
-                    setTimeout(() => setShowOfflineBadge(false), 3000);
-                };
-                const handleOffline = () => {
-                    setIsOffline(true);
-                    setShowOfflineBadge(true);
-                    toast.warning("Mất kết nối mạng! Ứng dụng chuyển sang chế độ ngoại tuyến.", {
-                        position: "top-center"
-                    });
-                };
-
+                const handleOnline = () => { setIsOffline(false); setShowOfflineBadge(true); toast.success("Đã khôi phục kết nối mạng! Dữ liệu đang được đồng bộ tự động.", { position: "top-center" }); setTimeout(() => setShowOfflineBadge(false), 3000); };
+                const handleOffline = () => { setIsOffline(true); setShowOfflineBadge(true); toast.warning("Mất kết nối mạng! Ứng dụng chuyển sang chế độ ngoại tuyến.", { position: "top-center" }); };
                 window.addEventListener('online', handleOnline);
                 window.addEventListener('offline', handleOffline);
-
-                return () => {
-                    window.removeEventListener('online', handleOnline);
-                    window.removeEventListener('offline', handleOffline);
-                };
+                return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
             }, []);
-            // END: Đăng ký lắng nghe tình trạng Internet thay đổi
 
-            // 1. Logic Khởi Tạo & Xác Thực Hệ Thống (Có tích hợp Offline Persistence)
             useEffect(() => {
                 const init = async () => {
                     try {
@@ -2696,58 +2753,21 @@
                         setApp(newApp);
                         const auth = getAuth(newApp);
                         const db = getFirestore(newApp);
-                        
-                        // Kích hoạt tính năng Offline Persistence của Firebase (Yêu cầu 1)
-                        try {
-                            await enableIndexedDbPersistence(db);
-                        } catch (err) {
-                            if (err.code === 'failed-precondition') {
-                                // Mở trên nhiều tab trình duyệt cùng lúc -> chỉ tab đầu tiên được bật persistence
-                                console.warn("Firebase Offline Persistence failed-precondition: Chỉ cho phép lưu offline trên một tab.");
-                            } else if (err.code === 'unimplemented') {
-                                // Trình duyệt không hỗ trợ IndexedDB
-                                console.warn("Firebase Offline Persistence unimplemented: Trình duyệt không hỗ trợ lưu offline.");
-                            } else {
-                                console.error("Firebase Offline Persistence Error:", err);
-                            }
-                        }
-
-                        if ('Notification' in window && Notification.permission !== 'granted') {
-                            Notification.requestPermission();
-                        }
-
+                        try { await enableIndexedDbPersistence(db); } catch (err) { console.warn("Firebase Offline Persistence:", err); }
+                        if ('Notification' in window && Notification.permission !== 'granted') { Notification.requestPermission(); }
                         onAuthStateChanged(auth, async (u) => {
                             setUser(u);
                             if (u) {
-                                // Tải chủ đề
                                 const docSnap = await getDoc(doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', u.uid, 'settings', 'theme'));
-                                if (docSnap.exists()) {
-                                    const loadedTheme = docSnap.data();
-                                    setTheme(loadedTheme);
-                                    localStorage.setItem('app_theme', JSON.stringify(loadedTheme));
-                                }
-                                
-                                // Tải cấu hình bảo vệ
+                                if (docSnap.exists()) { const loadedTheme = docSnap.data(); setTheme(loadedTheme); localStorage.setItem('app_theme', JSON.stringify(loadedTheme)); }
                                 const lockSnap = await getDoc(doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', u.uid, 'settings', 'lock'));
-                                if (lockSnap.exists()) {
-                                    const lockData = lockSnap.data();
-                                    setLockPassword(lockData.appPassword || '');
-                                    setLockEnabled(lockData.enableLock || false);
-                                } else {
-                                    const savedPassword = localStorage.getItem('vt_app_password') || '';
-                                    const savedEnable = localStorage.getItem('vt_enable_lock') === 'true';
-                                    setLockPassword(savedPassword);
-                                    setLockEnabled(savedEnable);
-                                }
-
+                                if (lockSnap.exists()) { const lockData = lockSnap.data(); setLockPassword(lockData.appPassword || ''); setLockEnabled(lockData.enableLock || false); } else { const savedPassword = localStorage.getItem('vt_app_password') || ''; const savedEnable = localStorage.getItem('vt_enable_lock') === 'true'; setLockPassword(savedPassword); setLockEnabled(savedEnable); }
                                 checkDailyEvents(db, u.uid);
                             }
                             setLoading(false);
                         });
                         setConnectionError(false);
                     } catch (e) {
-                        // Sửa logic xử lý lỗi kết nối mạng
-                        // Nếu do mất mạng không khởi tạo được Firebase khi mở ứng dụng, ta vẫn cho phép chạy tiếp bằng LocalCache
                         console.warn("Lỗi kết nối khởi tạo hệ thống Google Firebase:", e);
                         setIsOffline(true);
                         setLoading(false);
@@ -2756,167 +2776,92 @@
                 init();
             }, []);
 
-            // Cơ chế quét sự kiện và nhắc nhở công việc quá hạn
             const checkDailyEvents = async (db, uid) => {
                 const alreadyNotifiedInSession = sessionStorage.getItem('vt_notified_session');
-                if (alreadyNotifiedInSession === 'true') {
-                    return; 
-                }
-
+                if (alreadyNotifiedInSession === 'true') return;
                 const today = new Date();
                 const todayStr = today.toDateString();
-
                 const eventsRef = collection(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', uid, 'events');
                 const todosRef = collection(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', uid, 'todos');
-
                 try {
                     const unsubEvents = onSnapshot(query(eventsRef), snapEvents => {
                         const allEvents = snapEvents.docs.map(d => ({ id: d.id, type: 'Sự kiện', ...d.data() }));
                         const unsubTodos = onSnapshot(query(todosRef), snapTodos => {
                             const allTodos = snapTodos.docs.map(d => ({ id: d.id, type: 'Công việc', ...d.data() }));
-
                             const combined = [...allEvents, ...allTodos];
                             const lunar = getLunarDetails(today);
                             const validAlerts = [];
-
                             combined.forEach(item => {
-                                // Nếu công việc đã được đánh dấu hoàn thành, bỏ qua ngay lập tức
                                 if (item.completed === true) return;
-
-                                // Kiểm tra xem người dùng đã đóng cảnh báo này ở phiên làm việc trước chưa
                                 const storageCompleted = localStorage.getItem('vt_completed_alerts');
-                                if (storageCompleted) {
-                                    const parsedObj = JSON.parse(storageCompleted);
-                                    if (parsedObj[item.id] === true) {
-                                        return; 
-                                    }
-                                }
-
-                                let isToday = false;
-                                let isOverdue = false;
-                                let targetTime = null; 
-
+                                if (storageCompleted) { const parsedObj = JSON.parse(storageCompleted); if (parsedObj[item.id] === true) return; }
+                                let isToday = false; let isOverdue = false; let targetTime = null;
                                 const timeSource = item.date || item.deadlineTime || item.reminderTime;
-                                if (timeSource) {
-                                    targetTime = new Date(timeSource.seconds * 1000);
-                                }
-
+                                if (timeSource) targetTime = new Date(timeSource.seconds * 1000);
                                 if (item.type === 'Sự kiện') {
-                                    if (!item.repeat || item.repeat === 'none') {
-                                        isToday = targetTime && targetTime.toDateString() === todayStr;
-                                    } else if (item.repeat === 'lunar') {
-                                        isToday = item.lunarDay === lunar.day && item.lunarMonth === lunar.month;
-                                    } else if (item.repeat === 'solar' && targetTime) {
-                                        isToday = targetTime.getDate() === today.getDate() && targetTime.getMonth() === today.getMonth();
-                                    } else if (item.repeat === 'weekly' && targetTime) {
-                                        isToday = targetTime.getDay() === today.getDay();
-                                    } else if (item.repeat === 'monthly' && targetTime) {
-                                        isToday = targetTime.getDate() === today.getDate();
-                                    } else if (item.repeat === 'yearly' && targetTime) {
-                                        isToday = targetTime.getDate() === today.getDate() && targetTime.getMonth() === today.getMonth();
-                                    }
+                                    if (!item.repeat || item.repeat === 'none') isToday = targetTime && targetTime.toDateString() === todayStr;
+                                    else if (item.repeat === 'lunar') isToday = item.lunarDay === lunar.day && item.lunarMonth === lunar.month;
+                                    else if (item.repeat === 'solar' && targetTime) isToday = targetTime.getDate() === today.getDate() && targetTime.getMonth() === today.getMonth();
+                                    else if (item.repeat === 'weekly' && targetTime) isToday = targetTime.getDay() === today.getDay();
+                                    else if (item.repeat === 'monthly' && targetTime) isToday = targetTime.getDate() === today.getDate();
+                                    else if (item.repeat === 'yearly' && targetTime) isToday = targetTime.getDate() === today.getDate() && targetTime.getMonth() === today.getMonth();
                                 } else {
-                                    // Đối với Công việc chưa hoàn thành: Hiển thị nếu là ngày hôm nay HOẶC đã quá hạn trong quá khứ
                                     isToday = targetTime && targetTime.toDateString() === todayStr;
                                     isOverdue = targetTime && targetTime < today && targetTime.toDateString() !== todayStr;
                                 }
-
                                 if (isToday || isOverdue) {
-                                    // Chỉ áp dụng bộ lọc giờ đã qua đối với Sự kiện không lặp lại (để tránh báo sự kiện đã diễn ra sáng nay)
-                                    // TUYỆT ĐỐI không áp dụng cho Công việc chưa hoàn thành
                                     if (item.type === 'Sự kiện' && (!item.repeat || item.repeat === 'none') && targetTime) {
-                                        const itemHours = targetTime.getHours();
-                                        const itemMinutes = targetTime.getMinutes();
-                                        
+                                        const itemHours = targetTime.getHours(); const itemMinutes = targetTime.getMinutes();
                                         if (itemHours !== 0 || itemMinutes !== 0) {
-                                            const currentHours = today.getHours();
-                                            const currentMinutes = today.getMinutes();
-
-                                            if (itemHours < currentHours || (itemHours === currentHours && itemMinutes < currentMinutes)) {
-                                                return; 
-                                            }
+                                            const currentHours = today.getHours(); const currentMinutes = today.getMinutes();
+                                            if (itemHours < currentHours || (itemHours === currentHours && itemMinutes < currentMinutes)) return;
                                         }
                                     }
-
-                                    // Định dạng nhãn thời gian hiển thị thông minh để người dùng biết mức độ trễ hạn
                                     let timeLabel = 'Cả ngày';
                                     if (targetTime) {
                                         if (isOverdue) {
                                             const daysDiff = Math.floor((today - targetTime) / (1000 * 60 * 60 * 24));
-                                            timeLabel = daysDiff > 0 
-                                                ? `Trễ ${daysDiff} ngày (${targetTime.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'})})`
-                                                : `Quá hạn (${targetTime.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'})})`;
+                                            timeLabel = daysDiff > 0 ? `Trễ ${daysDiff} ngày (${targetTime.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'})})` : `Quá hạn (${targetTime.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit'})})`;
                                         } else if (targetTime.getHours() !== 0 || targetTime.getMinutes() !== 0) {
                                             timeLabel = targetTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
                                         }
                                     }
-
-                                    validAlerts.push({
-                                        id: item.id,
-                                        title: item.title || item.text || "Lịch hẹn chưa đặt tên",
-                                        type: item.type,
-                                        rawTime: timeSource, 
-                                        time: timeLabel
-                                    });
+                                    validAlerts.push({ id: item.id, title: item.title || item.text || "Lịch hẹn chưa đặt tên", type: item.type, rawTime: timeSource, time: timeLabel });
                                 }
                             });
-
                             if (validAlerts.length > 0) {
                                 setActiveAlerts(validAlerts);
                                 setShowAlertModal(true);
-
-                                validAlerts.forEach(alertItem => {
-                                    sendNotification(`🔔 ${alertItem.type}: ${alertItem.title}`, `Thời gian: ${alertItem.time}`);
-                                });
+                                validAlerts.forEach(alertItem => { sendNotification(`🔔 ${alertItem.type}: ${alertItem.title}`, `Thời gian: ${alertItem.time}`); });
                             }
-
                             sessionStorage.setItem('vt_notified_session', 'true');
                             unsubEvents();
                             unsubTodos();
                         });
-                    }, err => {
-                        console.warn("onSnapshot events offline warning (sử dụng dữ liệu cached):", err);
-                    });
-                } catch (err) {
-                    console.error("Lỗi quét dữ liệu thông báo:", err);
-                }
+                    }, err => { console.warn("onSnapshot events offline warning (sử dụng dữ liệu cached):", err); });
+                } catch (err) { console.error("Lỗi quét dữ liệu thông báo:", err); }
             };
 
             const handleCheckAlertCompleted = (id) => {
-                setCompletedAlerts(prev => {
-                    const updated = { ...prev, [id]: true };
-                    setActiveAlerts(curr => curr.filter(alert => alert.id !== id));
-                    return updated;
-                });
+                setCompletedAlerts(prev => { const updated = { ...prev, [id]: true }; setActiveAlerts(curr => curr.filter(alert => alert.id !== id)); return updated; });
             };
-
-            // Hàm kích hoạt chế độ chỉnh sửa Inline ngay trong dòng của Modal Cảnh báo
             const handleStartEditAlert = (alert) => {
                 setEditingAlertId(alert.id);
                 setEditAlertTitle(alert.title);
-                
                 const rawDate = alert.rawTime ? new Date(alert.rawTime.seconds * 1000) : new Date();
-                
                 if (alert.type === 'Sự kiện') {
-                    const yyyy = rawDate.getFullYear();
-                    const mm = String(rawDate.getMonth() + 1).padStart(2, '0');
-                    const dd = String(rawDate.getDate()).padStart(2, '0');
+                    const yyyy = rawDate.getFullYear(); const mm = String(rawDate.getMonth() + 1).padStart(2, '0'); const dd = String(rawDate.getDate()).padStart(2, '0');
                     setEditAlertTimeStr(`${yyyy}-${mm}-${dd}`);
                 } else {
                     setEditAlertTimeStr(formatDateTimeForInput(rawDate));
                 }
             };
-
-            // Hàm lưu thông tin cập nhật lên Firebase và cập nhật ngay lập tức State
             const handleSaveAlertEdit = async (alert) => {
                 if (!editAlertTitle.trim()) return;
-                
                 const db = getFirestore(app);
                 const targetCollection = alert.type === 'Sự kiện' ? 'events' : 'todos';
                 const docRef = doc(db, 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, targetCollection, alert.id);
-
                 const newTimestamp = editAlertTimeStr ? Timestamp.fromDate(new Date(editAlertTimeStr)) : null;
-
                 try {
                     if (alert.type === 'Sự kiện') {
                         const updateData = { title: editAlertTitle };
@@ -2924,67 +2869,39 @@
                         await updateDoc(docRef, updateData);
                     } else {
                         const updateData = { text: editAlertTitle };
-                        if (newTimestamp) {
-                            updateData.deadlineTime = newTimestamp;
-                        }
+                        if (newTimestamp) updateData.deadlineTime = newTimestamp;
                         await updateDoc(docRef, updateData);
                     }
-
                     setActiveAlerts(curr => curr.map(item => {
                         if (item.id === alert.id) {
                             const updatedDate = newTimestamp ? new Date(newTimestamp.seconds * 1000) : new Date();
-                            const displayTime = updatedDate && (updatedDate.getHours() !== 0 || updatedDate.getMinutes() !== 0)
-                                ? updatedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                                : 'Cả ngày';
-                            
-                            return {
-                                ...item,
-                                title: editAlertTitle,
-                                rawTime: newTimestamp,
-                                time: displayTime
-                            };
+                            const displayTime = updatedDate && (updatedDate.getHours() !== 0 || updatedDate.getMinutes() !== 0) ? updatedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Cả ngày';
+                            return { ...item, title: editAlertTitle, rawTime: newTimestamp, time: displayTime };
                         }
                         return item;
                     }));
-
                     setEditingAlertId(null);
                     toast.info("Đã lưu dữ liệu tạm thời dưới máy khách.", { position: "top-center" });
-                } catch (e) {
-                    console.error("Lỗi cập nhật dữ liệu từ Modal cảnh báo:", e);
-                }
+                } catch (e) { console.error("Lỗi cập nhật dữ liệu từ Modal cảnh báo:", e); }
             };
 
             const handleSaveTheme = async (newTheme) => {
                 setTheme(newTheme);
                 setShowSettings(false);
-                try {
-                    localStorage.setItem('app_theme', JSON.stringify(newTheme));
-                } catch (e) {
-                    console.error("Lỗi lưu local theme:", e);
-                }
+                try { localStorage.setItem('app_theme', JSON.stringify(newTheme)); } catch (e) { console.error("Lỗi lưu local theme:", e); }
                 if (user) await setDoc(doc(getFirestore(app), 'artifacts', MANUAL_CONFIG.projectId, 'users', user.uid, 'settings', 'theme'), newTheme);
             };
 
             const handleTabChange = (tab) => {
-                if (tab === 'day') {
-                    setDailyDate(new Date()); 
-                } else if (tab === 'calendar') {
-                    setCalendarCurrentDate(new Date()); 
-                    setCalendarSelectedDate(new Date()); 
-                }
-                
+                if (tab === 'day') { setDailyDate(new Date()); } else if (tab === 'calendar') { setCalendarCurrentDate(new Date()); setCalendarSelectedDate(new Date()); }
                 setUnlockedTabs({ todo: false, notes: false });
                 setActiveTab(tab);
             };
 
-            const handleUnlockTab = (tab) => {
-                setUnlockedTabs(prev => ({ ...prev, [tab]: true }));
-            };
+            const handleUnlockTab = (tab) => { setUnlockedTabs(prev => ({ ...prev, [tab]: true })); };
 
-            // State lưu mục tiêu điều hướng từ tìm kiếm: { tab, itemId, keyword }
             const [searchTarget, setSearchTarget] = useState(null);
 
-            // Điều hướng đến kết quả tìm kiếm
             const handleSearchNavigate = (type, item, keyword) => {
                 if (type === 'calendar' && item.date) {
                     const d = new Date(item.date.seconds * 1000);
@@ -2993,19 +2910,10 @@
                     setActiveTab('calendar');
                     setSearchTarget(null);
                 } else if (type === 'todo') {
-                    // Kiểm tra lock trước khi navigate
-                    if (lockEnabled && lockPassword && !unlockedTabs.todo) {
-                        setSearchTarget({ tab: 'todo', itemId: item.id, keyword, pendingLock: true });
-                    } else {
-                        setSearchTarget({ tab: 'todo', itemId: item.id, keyword });
-                    }
+                    if (lockEnabled && lockPassword && !unlockedTabs.todo) { setSearchTarget({ tab: 'todo', itemId: item.id, keyword, pendingLock: true }); } else { setSearchTarget({ tab: 'todo', itemId: item.id, keyword }); }
                     setActiveTab('todo');
                 } else if (type === 'notes') {
-                    if (lockEnabled && lockPassword && !unlockedTabs.notes) {
-                        setSearchTarget({ tab: 'notes', itemId: item.id, keyword, pendingLock: true });
-                    } else {
-                        setSearchTarget({ tab: 'notes', itemId: item.id, keyword });
-                    }
+                    if (lockEnabled && lockPassword && !unlockedTabs.notes) { setSearchTarget({ tab: 'notes', itemId: item.id, keyword, pendingLock: true }); } else { setSearchTarget({ tab: 'notes', itemId: item.id, keyword }); }
                     setActiveTab('notes');
                 } else if (type === 'timetable') {
                     setSearchTarget({ tab: 'timetable', itemId: item.id, weekDocId: item.weekDocId, keyword });
@@ -3016,7 +2924,35 @@
                 }
             };
 
-            // START: Thêm đoạn code đăng ký Service Worker chạy ngầm (Yêu cầu 3)
+            const handleSmartCreate = async (query) => {
+                if (!query.trim()) return;
+                const result = SmartEngine.parse(query);
+                if (!result) {
+                    toast.warning("Không hiểu câu lệnh. Vui lòng nhập rõ ràng hơn.", { position: "top-center" });
+                    return;
+                }
+                const db = getFirestore(app);
+                const uid = user.uid;
+                const projectId = MANUAL_CONFIG.projectId;
+                try {
+                    if (result.type === 'event') {
+                        const eventsRef = collection(db, 'artifacts', projectId, 'users', uid, 'events');
+                        const eventData = { title: result.title, date: Timestamp.fromDate(result.date), repeat: result.repeat, createdAt: serverTimestamp() };
+                        if (result.repeat === 'lunar') { const lunar = getLunarDetails(result.date); eventData.lunarDay = lunar.day; eventData.lunarMonth = lunar.month; }
+                        await addDoc(eventsRef, eventData);
+                        toast.success(`✅ Đã tạo sự kiện: "${result.title}" vào ${result.date.toLocaleDateString('vi-VN')}`, { position: "top-center" });
+                    } else if (result.type === 'todo') {
+                        const todosRef = collection(db, 'artifacts', projectId, 'users', uid, 'todos');
+                        const todoData = { text: result.title, deadlineTime: Timestamp.fromDate(result.date), completed: false, createdAt: serverTimestamp(), order: Date.now() };
+                        await addDoc(todosRef, todoData);
+                        toast.success(`✅ Đã tạo việc làm: "${result.title}" (hạn ${result.date.toLocaleDateString('vi-VN')})`, { position: "top-center" });
+                    }
+                } catch (e) {
+                    console.error("Lỗi tạo từ SmartEngine:", e);
+                    toast.error("Không thể tạo dữ liệu. Vui lòng thử lại.", { position: "top-center" });
+                }
+            };
+
             useEffect(() => {
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', () => {
@@ -3026,14 +2962,12 @@
                     });
                 }
             }, []);
-            // END: Thêm đoạn code đăng ký Service Worker chạy ngầm
 
             if (loading) return <div className="h-screen flex items-center justify-center text-blue-500">Đang tải...</div>;
             if (!user) return <AuthScreen auth={getAuth(app)} appId={MANUAL_CONFIG.projectId} />;
 
             return (
                 <div className="flex flex-col h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative transition-colors duration-300 animate-fade-in" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
-                    {/* KHU VỰC CHỈ BÁO OFFLINE MINI TẠI HEADER */}
                     {isOffline && (
                         <div className="bg-amber-500 text-white text-[10px] font-black uppercase text-center py-1 flex items-center justify-center gap-1.5 shrink-0 select-none animate-pulse">
                             <WifiOff size={10} /> Đang chạy ngoại tuyến (Offline Mode)
@@ -3047,140 +2981,60 @@
 
                     <header className="bg-blue-600 text-white p-2 flex justify-between items-center shadow-md z-20 shrink-0">
                         <div className="flex items-center gap-2 shrink-0">
-                            {/* Avatar người dùng */}
-                            <button
-                                onClick={() => avatarInputRef.current && avatarInputRef.current.click()}
-                                className="relative shrink-0 w-9 h-9 rounded-full overflow-hidden border-2 border-blue-300 hover:border-white transition group"
-                                title="Bấm để đổi ảnh đại diện"
-                            >
-                                {avatarUrl ? (
-                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-blue-500 flex items-center justify-center">
-                                        <User size={18} className="text-blue-200 group-hover:text-white transition" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                                    <span className="text-[8px] text-white font-bold leading-tight text-center">Đổi<br/>ảnh</span>
-                                </div>
+                            <button onClick={() => avatarInputRef.current && avatarInputRef.current.click()} className="relative shrink-0 w-9 h-9 rounded-full overflow-hidden border-2 border-blue-300 hover:border-white transition group" title="Bấm để đổi ảnh đại diện">
+                                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-500 flex items-center justify-center"><User size={18} className="text-blue-200 group-hover:text-white transition" /></div>}
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition"><span className="text-[8px] text-white font-bold leading-tight text-center">Đổi<br/>ảnh</span></div>
                             </button>
-                            <input
-                                ref={avatarInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleAvatarChange}
-                            />
+                            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                             <div className="flex flex-col overflow-hidden">
                                 <h1 className="text-base font-bold whitespace-nowrap truncate font-sans leading-tight">Lịch đa năng</h1>
                                 <span className="text-[10px] text-blue-100 opacity-80 font-sans">Thiết kế bởi Văn Trung</span>
                             </div>
                         </div>
-                        {/* Thanh tìm kiếm toàn cục mini */}
-                        <button
-                            onClick={() => setShowSearch(true)}
-                            className="flex-1 mx-3 flex items-center gap-2 bg-blue-500/50 hover:bg-blue-500/80 border border-blue-400/50 rounded-full px-3 py-1.5 transition min-w-0 max-w-[160px]"
-                            title="Tìm kiếm toàn cục"
-                        >
-                            <Search size={14} className="text-blue-200 shrink-0" />
-                            <span className="text-[11px] text-blue-200 truncate font-sans">Tìm kiếm...</span>
-                        </button>
+
+                        <SearchBox user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} onNavigate={handleSearchNavigate} onSmartCreate={handleSmartCreate} />
+
                         <div className="flex gap-2 items-center shrink-0">
                             <button onClick={() => setShowSettings(true)} className="p-1.5 hover:bg-blue-700 rounded-full transition"><Settings size={18} /></button>
                         </div>
                     </header>
 
                     <main className="flex-1 overflow-y-auto relative flex flex-col" style={{ backgroundColor: theme.bgColor }}>
-                        {/* Tab Lịch ngày */}
                         <div style={{ display: activeTab === 'day' ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
-                            <DailyView 
-                                user={user} 
-                                db={getFirestore(app)} 
-                                appId={MANUAL_CONFIG.projectId} 
-                                today={dailyDate} 
-                                setToday={setDailyDate} 
-                            />
+                            <DailyView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} today={dailyDate} setToday={setDailyDate} />
                         </div>
-
-                        {/* Tab Lịch tháng */}
                         <div style={{ display: activeTab === 'calendar' ? 'block' : 'none' }}>
-                            <CalendarView 
-                                user={user} 
-                                db={getFirestore(app)} 
-                                appId={MANUAL_CONFIG.projectId} 
-                                currentDate={calendarCurrentDate} 
-                                setCurrentDate={setCalendarCurrentDate} 
-                                selectedDate={calendarSelectedDate} 
-                                setSelectedDate={setCalendarSelectedDate}
-                                onTabChange={handleTabChange}
-                                theme={theme}
-                            />
+                            <CalendarView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} currentDate={calendarCurrentDate} setCurrentDate={setCalendarCurrentDate} selectedDate={calendarSelectedDate} setSelectedDate={setCalendarSelectedDate} onTabChange={handleTabChange} theme={theme} />
                         </div>
-
-                        {/* Tab Việc cần làm */}
                         <div style={{ display: activeTab === 'todo' ? 'block' : 'none', height: '100%' }}>
                             {lockEnabled && lockPassword && !unlockedTabs.todo ? (
-                                <LockScreen correctPassword={lockPassword} onUnlock={() => {
-                                    handleUnlockTab('todo');
-                                    // Sau khi mở khóa, nếu có searchTarget đang chờ thì kích hoạt
-                                    if (searchTarget?.pendingLock && searchTarget?.tab === 'todo') {
-                                        setSearchTarget(prev => ({ ...prev, pendingLock: false }));
-                                    }
-                                }} />
+                                <LockScreen correctPassword={lockPassword} onUnlock={() => { handleUnlockTab('todo'); if (searchTarget?.pendingLock && searchTarget?.tab === 'todo') { setSearchTarget(prev => ({ ...prev, pendingLock: false })); } }} />
                             ) : (
                                 <TodoView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                             )}
                         </div>
-
-                        {/* Tab Ghi chú */}
                         <div style={{ display: activeTab === 'notes' ? 'block' : 'none', height: '100%' }}>
                             {lockEnabled && lockPassword && !unlockedTabs.notes ? (
-                                <LockScreen correctPassword={lockPassword} onUnlock={() => {
-                                    handleUnlockTab('notes');
-                                    if (searchTarget?.pendingLock && searchTarget?.tab === 'notes') {
-                                        setSearchTarget(prev => ({ ...prev, pendingLock: false }));
-                                    }
-                                }} />
+                                <LockScreen correctPassword={lockPassword} onUnlock={() => { handleUnlockTab('notes'); if (searchTarget?.pendingLock && searchTarget?.tab === 'notes') { setSearchTarget(prev => ({ ...prev, pendingLock: false })); } }} />
                             ) : (
                                 <NotesView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} />
                             )}
                         </div>
-
-                        {/* Tab Lịch biểu */}
                         <div style={{ display: activeTab === 'timetable' ? 'flex' : 'none', flex: 1, flexDirection: 'column' }}>
-                            <TimeTableView 
-                                user={user} 
-                                db={getFirestore(app)} 
-                                appId={MANUAL_CONFIG.projectId} 
-                                theme={theme} 
-                                searchTarget={searchTarget} 
-                                onSearchTargetClear={() => setSearchTarget(null)} 
-                                activeTab={activeTab}
-                            />
+                            <TimeTableView user={user} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} theme={theme} searchTarget={searchTarget} onSearchTargetClear={() => setSearchTarget(null)} activeTab={activeTab} />
                         </div>
                     </main>
 
                     <nav className="w-full bg-white border-t flex justify-around py-3 shadow-lg z-20 relative shrink-0">
-                        <button onClick={()=>handleTabChange('day')} className={activeTab==='day'?'text-blue-600 font-semibold':'text-gray-400'}>
-                            <div className="flex flex-col items-center"><CalendarDays size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Hôm Nay</span></div>
-                        </button>
-                        <button onClick={()=>handleTabChange('calendar')} className={activeTab==='calendar'?'text-blue-600 font-semibold':'text-gray-400'}>
-                            <div className="flex flex-col items-center"><Calendar size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Lịch</span></div>
-                        </button>
-                        <button onClick={()=>handleTabChange('todo')} className={activeTab==='todo'?'text-blue-600 font-semibold':'text-gray-400'}>
-                            <div className="flex flex-col items-center"><CheckSquare size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Việc làm</span></div>
-                        </button>
-                        <button onClick={()=>handleTabChange('notes')} className={activeTab==='notes'?'text-blue-600 font-semibold':'text-gray-400'}>
-                            <div className="flex flex-col items-center"><StickyNote size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Ghi chú</span></div>
-                        </button>
-                        
+                        <button onClick={()=>handleTabChange('day')} className={activeTab==='day'?'text-blue-600 font-semibold':'text-gray-400'}><div className="flex flex-col items-center"><CalendarDays size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Hôm Nay</span></div></button>
+                        <button onClick={()=>handleTabChange('calendar')} className={activeTab==='calendar'?'text-blue-600 font-semibold':'text-gray-400'}><div className="flex flex-col items-center"><Calendar size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Lịch</span></div></button>
+                        <button onClick={()=>handleTabChange('todo')} className={activeTab==='todo'?'text-blue-600 font-semibold':'text-gray-400'}><div className="flex flex-col items-center"><CheckSquare size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Việc làm</span></div></button>
+                        <button onClick={()=>handleTabChange('notes')} className={activeTab==='notes'?'text-blue-600 font-semibold':'text-gray-400'}><div className="flex flex-col items-center"><StickyNote size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Ghi chú</span></div></button>
                         <div className="relative">
                             <button onClick={()=>setShowMenu(!showMenu)} className={`text-gray-400 ${showMenu ? 'text-blue-600' : ''}`}><div className="flex flex-col items-center"><MoreVertical size={22}/><span className="text-[9px] mt-1 text-slate-500 font-sans">Thêm</span></div></button>
                             {showMenu && (
                                 <div className="absolute bottom-12 right-0 bg-white shadow-xl rounded-lg border w-40 overflow-hidden fade-in z-50">
-                                    <button onClick={()=>{handleTabChange('timetable'); setShowMenu(false);}} className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 text-left font-sans">
-                                        <Table size={16}/> Lịch biểu
-                                    </button>
+                                    <button onClick={()=>{handleTabChange('timetable'); setShowMenu(false);}} className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 text-left font-sans"><Table size={16}/> Lịch biểu</button>
                                 </div>
                             )}
                         </div>
@@ -3189,16 +3043,9 @@
                     {showSettings && <SettingsModal theme={theme} onSave={handleSaveTheme} onClose={()=>setShowSettings(false)} auth={getAuth(app)} db={getFirestore(app)} appId={MANUAL_CONFIG.projectId} onSignOut={() => { setShowSettings(false); signOut(getAuth(app)); }} />}
                     
                     {showSearch && app && user && (
-                        <GlobalSearchModal
-                            onClose={() => setShowSearch(false)}
-                            db={getFirestore(app)}
-                            user={user}
-                            appId={MANUAL_CONFIG.projectId}
-                            onNavigate={handleSearchNavigate}
-                        />
+                        <GlobalSearchModal onClose={() => setShowSearch(false)} db={getFirestore(app)} user={user} appId={MANUAL_CONFIG.projectId} onNavigate={handleSearchNavigate} />
                     )}
                     
-                    {/* HỘP THOẠI NỔI BÁO LỊCH KHI MỞ APP */}
                     {showAlertModal && activeAlerts.length > 0 && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -3220,57 +3067,22 @@
                                                             <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 shrink-0">{alert.type}</span>
                                                             <span className="text-[10px] text-slate-400 font-bold">Chỉnh sửa</span>
                                                         </div>
-                                                        <input 
-                                                            type="text"
-                                                            value={editAlertTitle}
-                                                            onChange={(ev) => setEditAlertTitle(ev.target.value)}
-                                                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none font-bold"
-                                                            placeholder="Nhập tên mới..."
-                                                        />
+                                                        <input type="text" value={editAlertTitle} onChange={(ev) => setEditAlertTitle(ev.target.value)} className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none font-bold" placeholder="Nhập tên mới..." />
                                                         <div className="flex items-center gap-2">
                                                             {alert.type === 'Sự kiện' ? (
-                                                                <input 
-                                                                    type="date"
-                                                                    value={editAlertTimeStr}
-                                                                    onChange={(ev) => setEditAlertTimeStr(ev.target.value)}
-                                                                    className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                                                                />
+                                                                <input type="date" value={editAlertTimeStr} onChange={(ev) => setEditAlertTimeStr(ev.target.value)} className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none" />
                                                             ) : (
-                                                                <input 
-                                                                    type="datetime-local"
-                                                                    value={editAlertTimeStr}
-                                                                    onChange={(ev) => setEditAlertTimeStr(ev.target.value)}
-                                                                    className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none font-sans"
-                                                                />
+                                                                <input type="datetime-local" value={editAlertTimeStr} onChange={(ev) => setEditAlertTimeStr(ev.target.value)} className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none font-sans" />
                                                             )}
                                                             <div className="flex items-center gap-1 shrink-0">
-                                                                <button 
-                                                                    onClick={() => setEditingAlertId(null)}
-                                                                    className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition"
-                                                                    title="Hủy"
-                                                                >
-                                                                    <X size={16} />
-                                                                </button>
-                                                                <button 
-                                                                    onClick={() => handleSaveAlertEdit(alert)}
-                                                                    className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition"
-                                                                    title="Lưu thay đổi"
-                                                                >
-                                                                    <Check size={16} strokeWidth={2.5} />
-                                                                </button>
+                                                                <button onClick={() => setEditingAlertId(null)} className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition" title="Hủy"><X size={16} /></button>
+                                                                <button onClick={() => handleSaveAlertEdit(alert)} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition" title="Lưu thay đổi"><Check size={16} strokeWidth={2.5} /></button>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-start gap-3 transition-all">
-                                                        <button 
-                                                            onClick={() => handleCheckAlertCompleted(alert.id)}
-                                                            className="w-5 h-5 rounded border border-slate-300 hover:border-green-500 bg-white flex items-center justify-center text-green-600 mt-1 shrink-0 transition"
-                                                            title="Tích để hoàn thành"
-                                                        >
-                                                            <div className="w-2.5 h-2.5 rounded bg-transparent group-hover:bg-green-100 transition-colors"></div>
-                                                        </button>
-                                                        
+                                                        <button onClick={() => handleCheckAlertCompleted(alert.id)} className="w-5 h-5 rounded border border-slate-300 hover:border-green-500 bg-white flex items-center justify-center text-green-600 mt-1 shrink-0 transition" title="Tích để hoàn thành"><div className="w-2.5 h-2.5 rounded bg-transparent group-hover:bg-green-100 transition-colors"></div></button>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 shrink-0">{alert.type}</span>
@@ -3278,14 +3090,7 @@
                                                             </div>
                                                             <p className="font-bold text-slate-800 text-sm truncate">{alert.title}</p>
                                                         </div>
-
-                                                        <button 
-                                                            onClick={() => handleStartEditAlert(alert)}
-                                                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition shrink-0 self-center"
-                                                            title="Sửa"
-                                                        >
-                                                            <Pencil size={14} />
-                                                        </button>
+                                                        <button onClick={() => handleStartEditAlert(alert)} className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-blue-600 rounded-lg transition shrink-0 self-center" title="Sửa"><Pencil size={14} /></button>
                                                     </div>
                                                 )}
                                             </div>
@@ -3293,18 +3098,12 @@
                                     })}
                                 </div>
                                 <div className="p-4 border-t bg-slate-50 flex justify-end shrink-0">
-                                    <button 
-                                        onClick={() => setShowAlertModal(false)}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-md transition-all active:scale-95 font-sans"
-                                    >
-                                        Đã hiểu
-                                    </button>
+                                    <button onClick={() => setShowAlertModal(false)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-md transition-all active:scale-95 font-sans">Đã hiểu</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* SỬA LỖI UI KẾT NỐI (Yêu cầu 2): Chỉ hiển thị Modal cảnh báo lỗi kết nối khi thật sự không thể tải dữ liệu và cho phép đóng để tiếp tục dùng Offline */}
                     {connectionError && (
                         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                             <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-xs w-full">
@@ -3319,16 +3118,7 @@
                         </div>
                     )}
                     
-                    {/* START: Thêm cổng hiển thị động Toast Container ở cuối cấu phần App */}
-                    <ToastContainer 
-                        position="top-center"
-                        autoClose={3000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick
-                        rtl={false}
-                    />
-                    {/* END: Thêm cổng hiển thị động Toast Container ở cuối cấu phần App */}
+                    <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} />
                 </div>
             );
         };
