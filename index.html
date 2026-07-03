@@ -1295,91 +1295,119 @@
                         {/* Mũi tên TRÁI */}
                         <button onClick={() => navigateWeek(-1)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500 transition shrink-0"><ChevronLeft size={18}/></button>
 
-                        {/* Giữa */}
-                        <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
+                        {/* Giữa: Năm học + Tuần — cùng 1 hàng */}
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
 
-                            {/* DROPDOWN NĂM HỌC */}
-                            <div className="relative" style={{flex: '3'}}>
+                            {/* DROPDOWN NĂM HỌC — flex-5 (lớn hơn) */}
+                            <div className="relative" style={{flex: 5}} ref={el => { if (el) el._yearBtn = el.querySelector('button'); }}>
                                 <button
+                                    id="tkb-year-btn"
                                     onClick={e => { e.stopPropagation(); setShowWeekDrop(false); setShowYearDrop(v => !v); }}
                                     className="flex items-center gap-1 border border-blue-200 hover:border-blue-500 rounded-lg px-2 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 transition w-full"
                                 >
-                                    <span className="text-blue-400 font-semibold shrink-0 mr-0.5">Năm:</span>
+                                    <span className="text-blue-400 font-semibold shrink-0">Năm:</span>
                                     <span className="flex-1 truncate text-left">{displayYearName || (activeYear ? activeYear.name : null) || <span className="text-blue-300 font-normal">Chọn năm</span>}</span>
-                                    <ChevronDown size={12} className="text-blue-400 shrink-0"/>
+                                    <ChevronDown size={11} className="text-blue-400 shrink-0"/>
                                 </button>
                                 {showYearDrop && (
-                                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden" onClick={e => e.stopPropagation()}>
-                                        <div className="flex items-center gap-1 p-2 border-b bg-blue-50">
+                                    <div className="absolute top-full left-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                                        style={{width: 'max(180px, 100%)', maxHeight: '60vh', display: 'flex', flexDirection: 'column'}}
+                                        onClick={e => e.stopPropagation()}>
+                                        {/* Ô nhập */}
+                                        <div className="flex items-center gap-1.5 p-2.5 border-b border-blue-100 bg-blue-50 shrink-0">
                                             <input autoFocus
-                                                className="flex-1 text-xs border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 bg-white"
+                                                className="flex-1 text-xs border border-blue-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500 bg-white min-w-0"
                                                 placeholder="Tên năm học mới..."
                                                 value={yearInput}
                                                 onChange={e => setYearInput(e.target.value)}
                                                 onKeyDown={e => { if (e.key === 'Enter') addYear(); }}
                                             />
-                                            <button onClick={addYear} className="text-[10px] bg-blue-500 text-white px-2 py-1 rounded font-bold hover:bg-blue-600 transition shrink-0">+</button>
+                                            <button onClick={addYear}
+                                                className="shrink-0 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                                Thêm
+                                            </button>
                                         </div>
-                                        {yearList.length === 0 && <p className="text-xs text-slate-400 italic text-center py-3">Chưa có năm học nào</p>}
-                                        <div className="max-h-52 overflow-y-auto">
-                                            {yearList.map(yr => (
-                                                <div key={yr.id}
-                                                    onClick={() => { setActiveYearId(yr.id); setShowYearDrop(false); setShowWeekDrop(true); }}
-                                                    className={'flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 cursor-pointer ' + (activeYearId === yr.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700')}>
-                                                    <span className="text-xs truncate flex-1">{yr.name}</span>
-                                                    <button onClick={e => { e.stopPropagation(); removeYear(yr.id); }} className="text-slate-300 hover:text-red-500 transition ml-2 shrink-0"><X size={12}/></button>
-                                                </div>
-                                            ))}
+                                        {/* Danh sách */}
+                                        <div className="overflow-y-auto flex-1">
+                                            {yearList.length === 0
+                                                ? <p className="text-xs text-slate-400 italic text-center py-4">Chưa có năm học nào</p>
+                                                : yearList.map(yr => (
+                                                    <div key={yr.id}
+                                                        onClick={() => { setActiveYearId(yr.id); setShowYearDrop(false); setShowWeekDrop(true); }}
+                                                        className={'flex items-center justify-between px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 ' + (activeYearId === yr.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700')}>
+                                                        <span className="text-sm flex-1 truncate">{yr.name}</span>
+                                                        <button
+                                                            onClick={e => { e.stopPropagation(); removeYear(yr.id); }}
+                                                            className="shrink-0 ml-3 w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-300 hover:text-red-500 transition">
+                                                            <X size={14}/>
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            }
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* DROPDOWN TUẦN */}
-                            <div className="relative" style={{flex: '2'}}>
+                            {/* DROPDOWN TUẦN — flex-3 (nhỏ hơn) */}
+                            <div className="relative" style={{flex: 3}}>
                                 <button
+                                    id="tkb-week-btn"
                                     onClick={e => { e.stopPropagation(); setShowYearDrop(false); setShowWeekDrop(v => !v); }}
                                     className="flex items-center gap-1 border border-blue-200 hover:border-blue-500 rounded-lg px-2 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 transition w-full"
                                 >
-                                    <span className="text-blue-400 font-semibold shrink-0 mr-0.5">T{currentWeekNum}:</span>
+                                    <span className="text-blue-400 font-semibold shrink-0">T{currentWeekNum}:</span>
                                     <span className="flex-1 truncate text-left">{displayWeekName || <span className="text-blue-300 font-normal">Đặt tên</span>}</span>
-                                    <ChevronDown size={12} className="text-blue-400 shrink-0"/>
+                                    <ChevronDown size={11} className="text-blue-400 shrink-0"/>
                                 </button>
                                 {showWeekDrop && (
-                                    <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden" onClick={e => e.stopPropagation()}>
-                                        <div className="flex items-center gap-1 p-2 border-b bg-blue-50">
+                                    <div className="absolute top-full right-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                                        style={{width: 'max(200px, 100%)', maxHeight: '60vh', display: 'flex', flexDirection: 'column'}}
+                                        onClick={e => e.stopPropagation()}>
+                                        {/* Ô nhập */}
+                                        <div className="p-2.5 border-b border-blue-100 bg-blue-50 shrink-0">
                                             {activeYearId ? (
-                                                <>
+                                                <div className="flex items-center gap-1.5">
                                                     <input autoFocus
-                                                        className="flex-1 text-xs border border-blue-200 rounded px-2 py-1 outline-none focus:border-blue-500 bg-white"
+                                                        className="flex-1 text-xs border border-blue-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500 bg-white min-w-0"
                                                         placeholder="Đặt tên tuần này..."
                                                         value={weekInput}
                                                         onChange={e => setWeekInput(e.target.value)}
                                                         onKeyDown={e => { if (e.key === 'Enter') addWeek(); }}
                                                     />
-                                                    <button onClick={addWeek} className="text-[10px] bg-blue-500 text-white px-2 py-1 rounded font-bold hover:bg-blue-600 transition shrink-0">+</button>
-                                                </>
+                                                    <button onClick={addWeek}
+                                                        className="shrink-0 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                                        Thêm
+                                                    </button>
+                                                </div>
                                             ) : (
-                                                <p className="text-xs text-orange-500 font-medium py-0.5 w-full text-center">⚠ Chọn năm học trước</p>
+                                                <p className="text-xs text-orange-500 font-semibold text-center py-1">⚠ Chọn năm học trước</p>
                                             )}
                                         </div>
-                                        {weeksOfActiveYear.length === 0 && <p className="text-xs text-slate-400 italic text-center py-3">{activeYearId ? 'Chưa có tuần nào' : 'Chọn năm để xem tuần'}</p>}
-                                        <div className="max-h-52 overflow-y-auto">
-                                            {weeksOfActiveYear.map(w => {
-                                                const yr2 = yearList.find(y => y.id === w.yearId);
-                                                const mon = yr2 ? getMondayFromAnchorOffset(yr2.anchorWeekKey, w.offset) : null;
-                                                const isAct = mon && mon.toDateString() === startOfWeekDate.toDateString();
-                                                return (
-                                                    <div key={w.id} onClick={() => jumpToWeekEntry(w)}
-                                                        className={'flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 cursor-pointer ' + (isAct ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700')}>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs truncate">{w.name}</div>
-                                                            {mon && <div className="text-[9px] text-slate-400">{String(mon.getDate()).padStart(2,'0') + '/' + String(mon.getMonth()+1).padStart(2,'0') + '/' + mon.getFullYear()}</div>}
+                                        {/* Danh sách tuần */}
+                                        <div className="overflow-y-auto flex-1">
+                                            {weeksOfActiveYear.length === 0
+                                                ? <p className="text-xs text-slate-400 italic text-center py-4">{activeYearId ? 'Chưa có tuần nào' : 'Chọn năm để xem tuần'}</p>
+                                                : weeksOfActiveYear.map(w => {
+                                                    const yr2 = yearList.find(y => y.id === w.yearId);
+                                                    const mon = yr2 ? getMondayFromAnchorOffset(yr2.anchorWeekKey, w.offset) : null;
+                                                    const isAct = mon && mon.toDateString() === startOfWeekDate.toDateString();
+                                                    return (
+                                                        <div key={w.id} onClick={() => jumpToWeekEntry(w)}
+                                                            className={'flex items-center justify-between px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 ' + (isAct ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700')}>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-sm truncate">{w.name}</div>
+                                                                {mon && <div className="text-[10px] text-slate-400 mt-0.5">{String(mon.getDate()).padStart(2,'0') + '/' + String(mon.getMonth()+1).padStart(2,'0') + '/' + mon.getFullYear()}</div>}
+                                                            </div>
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); removeWeek(w.id); }}
+                                                                className="shrink-0 ml-3 w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-300 hover:text-red-500 transition">
+                                                                <X size={14}/>
+                                                            </button>
                                                         </div>
-                                                        <button onClick={e => { e.stopPropagation(); removeWeek(w.id); }} className="text-slate-300 hover:text-red-500 transition ml-2 shrink-0"><X size={12}/></button>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })
+                                            }
                                         </div>
                                     </div>
                                 )}
