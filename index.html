@@ -34,9 +34,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.min.css">
     <!-- END: CSS của react-toastify -->
 
-    <!-- Thư viện xlsx để đọc file Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
     <script type="importmap">
     {
       "imports": {
@@ -88,7 +85,7 @@
             Clock, Bell, Palette, ArrowUp, ArrowDown, WifiOff, RefreshCw,
             Sun, Cloud, CloudRain, BookOpen, Coins, CalendarDays, Search, MapPin, 
             Eye, EyeOff, MoreVertical, MoreHorizontal, Table, Key, Lock, Unlock,
-            Pencil, Check, Wifi, Upload, FileSpreadsheet, Image, Sparkles
+            Pencil, Check, Wifi, Upload
         } from 'lucide-react';
         
         // START: Import thư viện react-toastify
@@ -286,7 +283,7 @@
             "Người giữ giới như vàng óng ánh\nMột lòng tu, đức hạnh cao vời\nXứng danh khen ngợi của đời\nPhạm thiên cũng phải ngỏ lời tán dương.",
             "Thân làm chủ thì đừng cáu giận\nPhòng hộ thân sẽ đặng an lành\nCác điều xấu ác chớ làm\nNhững điều đạo đức tinh cần không quên.",
             "Làm chủ miệng thì đừng cáu giận\nPhòng hộ lời sẽ đặng an lành\nKhông lời thô ác, cộc cần\nNhững lời từ ái tinh cần không quên.",
-            "Làm chủ ý thì không cáu giận\nPhòng hộ tâm sẽ đặng an lành\nTâm không tà kiến, dữ dằn\nTư duy chân chánh tinh cần không quên.",
+            "Làm chủ ý thì không cáu giận\nPhòng hộ ý sẽ đặng an lành\nTâm không tà kiến, dữ dằn\nTư duy chân chánh tinh cần không quên.",
             "Bậc hiền trí điều thân, miệng, ý\nGìn cả ba tỉ mỉ không quên\nThân lành, lời đẹp, ý chơn\nHoàn thành điều phục, không còn bợn nhơ.",
             "Thân thể sẽ tàn như lá úa\nThần chết luôn chầu chực kề bên\nỞ đời, mạng sống vô thường\n“Hành trang” chưa đủ, đường trường mệt hơi.",
             "Hãy xây dựng cho mình hòn đảo\nGấp tinh cần, vì đạo tu hành\nDứt phiền não, ý tịnh thanh\nLên miền đất thánh, tái sanh trời lành.",
@@ -993,325 +990,6 @@
             );
         };
 
-        // --- HÀM PARSE EXCEL VÀ AI ---
-        const parseExcelToSchedule = (data) => {
-            if (!data || data.length < 2) return {};
-            const schedule = {};
-            let headerRowIndex = -1;
-            let dayCols = {};
-            // Tìm header row
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
-                for (let j = 0; j < row.length; j++) {
-                    const cell = String(row[j] || '').toLowerCase().trim();
-                    if (cell.includes('thứ 2') || cell.includes('t2')) {
-                        headerRowIndex = i;
-                        dayCols[j] = 't2';
-                        for (let k = j+1; k < row.length; k++) {
-                            const cell2 = String(row[k] || '').toLowerCase().trim();
-                            if (cell2.includes('thứ 3') || cell2.includes('t3')) dayCols[k] = 't3';
-                            else if (cell2.includes('thứ 4') || cell2.includes('t4')) dayCols[k] = 't4';
-                            else if (cell2.includes('thứ 5') || cell2.includes('t5')) dayCols[k] = 't5';
-                            else if (cell2.includes('thứ 6') || cell2.includes('t6')) dayCols[k] = 't6';
-                            else if (cell2.includes('thứ 7') || cell2.includes('t7')) dayCols[k] = 't7';
-                        }
-                        break;
-                    }
-                }
-                if (headerRowIndex !== -1) break;
-            }
-            // Nếu không tìm thấy, giả định hàng 1 là header
-            if (headerRowIndex === -1) {
-                headerRowIndex = 0;
-                const row = data[0];
-                const dayIds = ['t2', 't3', 't4', 't5', 't6', 't7'];
-                let idx = 0;
-                for (let j = 1; j < row.length; j++) {
-                    const cell = String(row[j] || '').toLowerCase().trim();
-                    if (cell.includes('thứ') || cell.includes('t2') || cell.includes('t3') || cell.includes('t4') || cell.includes('t5') || cell.includes('t6') || cell.includes('t7')) {
-                        if (cell.includes('2') || cell.includes('t2')) dayCols[j] = 't2';
-                        else if (cell.includes('3') || cell.includes('t3')) dayCols[j] = 't3';
-                        else if (cell.includes('4') || cell.includes('t4')) dayCols[j] = 't4';
-                        else if (cell.includes('5') || cell.includes('t5')) dayCols[j] = 't5';
-                        else if (cell.includes('6') || cell.includes('t6')) dayCols[j] = 't6';
-                        else if (cell.includes('7') || cell.includes('t7')) dayCols[j] = 't7';
-                        else if (idx < dayIds.length) { dayCols[j] = dayIds[idx]; idx++; }
-                    } else if (idx < dayIds.length) { dayCols[j] = dayIds[idx]; idx++; }
-                }
-                if (Object.keys(dayCols).length === 0) {
-                    const dayIds = ['t2', 't3', 't4', 't5', 't6', 't7'];
-                    for (let j = 1; j < Math.min(row.length, 7); j++) {
-                        dayCols[j] = dayIds[j-1];
-                    }
-                }
-            }
-
-            // Tìm cột tiết
-            let periodCol = -1;
-            for (let i = headerRowIndex + 1; i < data.length; i++) {
-                const row = data[i];
-                for (let j = 0; j < row.length; j++) {
-                    const cell = String(row[j] || '').trim();
-                    if (['1','2','3','4','5'].includes(cell)) {
-                        periodCol = j;
-                        break;
-                    }
-                }
-                if (periodCol !== -1) break;
-            }
-            if (periodCol === -1) periodCol = 0;
-
-            // Lấy dữ liệu
-            for (let i = headerRowIndex + 1; i < data.length; i++) {
-                const row = data[i];
-                const periodStr = String(row[periodCol] || '').trim();
-                const period = parseInt(periodStr);
-                if (isNaN(period) || period < 1 || period > 5) continue;
-                for (const [colIdx, dayId] of Object.entries(dayCols)) {
-                    const col = parseInt(colIdx);
-                    const value = String(row[col] || '').trim();
-                    if (value) {
-                        schedule[`${dayId}_${period}_col1`] = value;
-                    }
-                }
-            }
-            return schedule;
-        };
-
-        const parseAIResultToSchedule = (jsonStr) => {
-            try {
-                const parsed = JSON.parse(jsonStr);
-                if (parsed.schedule) return parsed.schedule;
-                return parsed;
-            } catch (e) {
-                throw new Error('Không thể parse JSON từ AI');
-            }
-        };
-
-        // --- IMPORT MODAL (Excel / AI) ---
-        const ImportModal = ({ onClose, onApply }) => {
-            const [tab, setTab] = useState('excel');
-            const [excelFile, setExcelFile] = useState(null);
-            const [excelData, setExcelData] = useState([]);
-            const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
-            const [imageFile, setImageFile] = useState(null);
-            const [imagePreview, setImagePreview] = useState(null);
-            const [aiResult, setAiResult] = useState('');
-            const [isLoading, setIsLoading] = useState(false);
-            const [error, setError] = useState('');
-            const [parsedSchedule, setParsedSchedule] = useState(null);
-            const [excelPreviewRows, setExcelPreviewRows] = useState([]);
-
-            useEffect(() => {
-                localStorage.setItem('gemini_api_key', apiKey);
-            }, [apiKey]);
-
-            const handleExcelFileChange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                setExcelFile(file);
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const data = new Uint8Array(ev.target.result);
-                        const workbook = window.XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                        setExcelData(jsonData);
-                        setExcelPreviewRows(jsonData.slice(0, 10));
-                        setError('');
-                    } catch (err) {
-                        setError('Lỗi đọc file Excel: ' + err.message);
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            };
-
-            const handleParseExcel = () => {
-                if (!excelData || excelData.length === 0) {
-                    setError('Vui lòng tải file Excel trước.');
-                    return;
-                }
-                try {
-                    const schedule = parseExcelToSchedule(excelData);
-                    setParsedSchedule(schedule);
-                    toast.success('Đã parse dữ liệu từ Excel thành công!');
-                } catch (err) {
-                    setError('Lỗi parse Excel: ' + err.message);
-                }
-            };
-
-            const handleImageFileChange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                setImageFile(file);
-                const reader = new FileReader();
-                reader.onload = (ev) => setImagePreview(ev.target.result);
-                reader.readAsDataURL(file);
-                setAiResult('');
-                setParsedSchedule(null);
-            };
-
-            const handleSendToAI = async () => {
-                if (!imageFile) {
-                    setError('Vui lòng chọn ảnh.');
-                    return;
-                }
-                if (!apiKey.trim()) {
-                    setError('Vui lòng nhập API key Gemini.');
-                    return;
-                }
-                setIsLoading(true);
-                setError('');
-                try {
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => resolve(ev.target.result.split(',')[1]);
-                        reader.readAsDataURL(imageFile);
-                    });
-                    const prompt = `Bạn là trợ lý AI chuyên trích xuất thông tin từ ảnh chụp thời khóa biểu. Hãy phân tích ảnh và trả về dữ liệu dưới dạng JSON với cấu trúc:
-        {
-          "schedule": {
-            "t2_1_col1": "môn học",
-            "t2_1_col2": "ghi chú",
-            ...
-          }
-        }
-        Quy ước:
-        - t2 = Thứ 2, t3 = Thứ 3, ..., t7 = Thứ 7
-        - Số sau là tiết (1-5)
-        - col1 là tên môn học, col2 là ghi chú (nếu có)
-        Chỉ trả về JSON, không thêm bất kỳ văn bản nào khác.`;
-
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { text: prompt },
-                                    { inline_data: { mime_type: imageFile.type, data: base64 } }
-                                ]
-                            }]
-                        })
-                    });
-                    const data = await response.json();
-                    if (!response.ok) {
-                        throw new Error(data.error?.message || 'Lỗi gọi API Gemini');
-                    }
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                    setAiResult(text);
-                    try {
-                        const schedule = parseAIResultToSchedule(text);
-                        setParsedSchedule(schedule);
-                        toast.success('AI đã trích xuất dữ liệu thành công!');
-                    } catch (parseErr) {
-                        setError('AI trả về định dạng không hợp lệ. Vui lòng kiểm tra lại.');
-                        console.error(parseErr);
-                    }
-                } catch (err) {
-                    setError('Lỗi: ' + err.message);
-                }
-                setIsLoading(false);
-            };
-
-            const handleApply = () => {
-                if (!parsedSchedule || Object.keys(parsedSchedule).length === 0) {
-                    setError('Không có dữ liệu để áp dụng.');
-                    return;
-                }
-                onApply(parsedSchedule);
-                toast.success('Đã áp dụng lịch biểu thành công!');
-                onClose();
-            };
-
-            return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-                    <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-blue-600 p-4 text-white flex justify-between items-center shrink-0">
-                            <h3 className="font-bold flex items-center gap-2"><Upload size={18}/> Nhập liệu từ Excel / Ảnh</h3>
-                            <button onClick={onClose}><X size={20}/></button>
-                        </div>
-                        <div className="flex border-b shrink-0">
-                            <button className={`flex-1 py-2 text-sm font-bold ${tab === 'excel' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`} onClick={() => setTab('excel')}>📊 Excel</button>
-                            <button className={`flex-1 py-2 text-sm font-bold ${tab === 'image' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`} onClick={() => setTab('image')}>🖼️ Ảnh (AI)</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-                            {tab === 'excel' && (
-                                <div className="space-y-4">
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition">
-                                        <FileSpreadsheet size={32} className="mx-auto text-gray-400 mb-2" />
-                                        <input type="file" accept=".xlsx,.xls" onChange={handleExcelFileChange} className="block mx-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                                        {excelFile && <p className="text-sm text-green-600 mt-2">✅ Đã tải: {excelFile.name}</p>}
-                                    </div>
-                                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                                    {excelData.length > 0 && (
-                                        <div>
-                                            <button onClick={handleParseExcel} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition">Parse dữ liệu</button>
-                                            {parsedSchedule && (
-                                                <div className="mt-3">
-                                                    <p className="text-sm font-bold text-green-600">✅ Đã parse {Object.keys(parsedSchedule).length} ô</p>
-                                                    <button onClick={handleApply} className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">Áp dụng</button>
-                                                </div>
-                                            )}
-                                            {excelPreviewRows.length > 0 && (
-                                                <div className="mt-3 overflow-auto max-h-40 border rounded-lg">
-                                                    <table className="w-full text-xs">
-                                                        <tbody>
-                                                            {excelPreviewRows.map((row, idx) => (
-                                                                <tr key={idx} className="border-b">
-                                                                    {row.map((cell, cIdx) => (
-                                                                        <td key={cIdx} className="px-2 py-1 border-r">{cell}</td>
-                                                                    ))}
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {tab === 'image' && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">🔑 API Key Gemini</label>
-                                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Nhập API key của bạn..." className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-                                        <p className="text-xs text-gray-400 mt-1">Lấy key tại <a href="https://aistudio.google.com/apikey" target="_blank" className="text-blue-500 underline">aistudio.google.com/apikey</a></p>
-                                    </div>
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition">
-                                        <Image size={32} className="mx-auto text-gray-400 mb-2" />
-                                        <input type="file" accept="image/*" onChange={handleImageFileChange} className="block mx-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                                        {imagePreview && <img src={imagePreview} alt="Preview" className="mt-2 max-h-40 mx-auto rounded-lg shadow" />}
-                                    </div>
-                                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                                    <button onClick={handleSendToAI} disabled={isLoading} className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
-                                        {isLoading ? '⏳ Đang xử lý...' : <><Sparkles size={16}/> Gửi lên AI</>}
-                                    </button>
-                                    {aiResult && (
-                                        <div className="mt-3">
-                                            <p className="text-sm font-bold text-gray-700">📄 Kết quả từ AI:</p>
-                                            <pre className="bg-gray-100 p-3 rounded-lg text-xs overflow-auto max-h-40 whitespace-pre-wrap">{aiResult}</pre>
-                                            {parsedSchedule && (
-                                                <div className="mt-2">
-                                                    <p className="text-sm font-bold text-green-600">✅ Đã parse {Object.keys(parsedSchedule).length} ô</p>
-                                                    <button onClick={handleApply} className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">Áp dụng</button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 border-t bg-gray-50 flex justify-end shrink-0">
-                            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Đóng</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
         // --- MÀN HÌNH THỜI KHÓA BIỂU (TKB VIEW) ---
         const TimeTableView = ({ user, db, appId, theme, searchTarget, onSearchTargetClear }) => {
             // ── STATE ───────────────────────────────────────────────────────────
@@ -1322,11 +1000,11 @@
             const [showWeekDrop, setShowWeekDrop] = useState(false);
             const [yearInput, setYearInput]       = useState('');
             const [weekInput, setWeekInput]       = useState('');
+            // yearList: [{ id, name, anchorWeekKey }]
+            // weekList: [{ id, name, yearId, offset }]  offset=0,1,2... từ anchor
             const [yearList, setYearList] = useState([]);
             const [weekList, setWeekList] = useState([]);
             const [activeYearId, setActiveYearId] = useState(null);
-            // State cho Import Modal
-            const [showImportModal, setShowImportModal] = useState(false);
 
             // ── TUẦN HIỆN HÀNH ──────────────────────────────────────────────────
             const getCurrentMonday = () => {
@@ -1433,9 +1111,11 @@
 
             // ── ĐIỀU HƯỚNG ──────────────────────────────────────────────────────
             const navigateWeek = (dir) => {
+                // Nếu đang trong năm học có tuần đặt tên → chỉ nhảy trong các tuần đó
                 if (activeYearId && weeksOfActiveYear.length > 0) {
                     const yr = yearList.find(y => y.id === activeYearId);
                     if (!yr) return;
+                    // weeksOfActiveYear đã sort offset giảm dần → đảo lại để tăng dần cho navigation
                     const sorted = [...weeksOfActiveYear].sort((a, b) => a.offset - b.offset);
                     const cur = startOfWeekDate.getTime();
                     const idx = sorted.findIndex(w => getMondayFromAnchorOffset(yr.anchorWeekKey, w.offset).getTime() === cur);
@@ -1445,6 +1125,7 @@
                         return;
                     }
                 }
+                // Fallback: ±1 tuần thường
                 const d = new Date(startOfWeekDate); d.setDate(d.getDate() + dir * 7); setStartOfWeekDate(d);
             };
 
@@ -1523,8 +1204,10 @@
 
             // ── ÁP DỤNG CHO TUẦN SAU ────────────────────────────────────────────
             const applyToNextWeek = async () => {
+                // Tính startOfWeekDate của tuần kế tiếp
                 const nextMon = new Date(startOfWeekDate);
                 nextMon.setDate(nextMon.getDate() + 7);
+                // weekKey của tuần kế tiếp
                 const getWK = (date) => {
                     const t = new Date(date.valueOf()), dn = (date.getDay()+6)%7;
                     t.setDate(t.getDate()-dn+3); const ft = t.valueOf(); t.setMonth(0,1);
@@ -1536,6 +1219,7 @@
                 const nextKey = getWK(nextMon);
                 const nextRef = doc(db, 'artifacts', appId, 'users', user.uid, 'timetable', 'main_' + nextKey);
                 await setDoc(nextRef, { schedule: { ...schedule }, headers: { ...headers } }, { merge: true });
+                // Nhảy sang tuần đó
                 setStartOfWeekDate(nextMon);
                 setShowWeekDrop(false);
             };
@@ -1567,16 +1251,366 @@
             const displayYearName = currentWeekEntry ? currentWeekEntry.year.name : null;
             const displayWeekName = currentWeekEntry ? currentWeekEntry.week.name : null;
 
-            // Xử lý áp dụng dữ liệu từ ImportModal
-            const handleApplyImport = (newSchedule) => {
-                setSchedule(prev => ({ ...prev, ...newSchedule }));
-                setDoc(tkbRef, { schedule: { ...schedule, ...newSchedule } }, { merge: true });
+            // ── IMPORT AI STATE ──────────────────────────────────────────────────
+            const [showImportAI, setShowImportAI]   = useState(false);
+            const [importTab, setImportTab]         = useState('image');
+            const [importFile, setImportFile]       = useState(null);
+            const [importPreview, setImportPreview] = useState(null);
+            const [importLoading, setImportLoading] = useState(false);
+            const [importResult, setImportResult]   = useState(null);
+            const [importError, setImportError]     = useState('');
+            const [importSuccessMsg, setImportSuccessMsg] = useState('');
+            const [geminiKey, setGeminiKey]         = useState(() => { try { return localStorage.getItem('vt_gemini_key') || ''; } catch(e){ return ''; } });
+            const [showKeyInput, setShowKeyInput]   = useState(false);
+            const importFileRef = React.useRef(null);
+
+            const GEMINI_PROMPT = `Bạn là trợ lý nhập liệu thời khóa biểu. Nhiệm vụ: đọc dữ liệu bảng TKB và trả về JSON THUẦN TÚY (không markdown, không giải thích, không code block).
+Định dạng JSON bắt buộc:
+{"headers":{"col1":"tên cột 1","col2":"tên cột 2"},"schedule":{"t2_1_col1":"nội dung","t2_1_col2":"ghi chú","t3_2_col1":"..."}}
+Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết: 1/2/3/4/5 — cột: col1/col2.
+Ô trống: bỏ qua hoàn toàn. Chỉ có 1 cột nội dung thì dùng col1. Trả về JSON hợp lệ duy nhất.`;
+
+            const fileToBase64 = (file) => new Promise((res, rej) => {
+                const r = new FileReader();
+                r.onload = e => res(e.target.result.split(',')[1]);
+                r.onerror = rej;
+                r.readAsDataURL(file);
+            });
+
+            const callGeminiAPI = async (bodyObj, apiKey) => {
+                // Dùng gemini-2.0-flash-lite: model mới nhất, miễn phí, hỗ trợ vision
+                const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' + apiKey, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj)
+                });
+                if (!res.ok) {
+                    let errMsg = 'Lỗi API ' + res.status;
+                    try { const e = await res.json(); errMsg = e.error?.message || errMsg; } catch(e2) {}
+                    throw new Error(errMsg);
+                }
+                const data = await res.json();
+                const text = (data.candidates?.[0]?.content?.parts?.[0]?.text) || '';
+                // Tìm JSON block linh hoạt hơn (kể cả trong markdown code block)
+                const cleaned = text.replace(/```json/g,'').replace(/```/g,'').trim();
+                const m = cleaned.match(/\{[\s\S]*\}/);
+                if (!m) throw new Error('AI không trả về JSON hợp lệ. Thử lại hoặc chụp ảnh rõ hơn.');
+                try { return JSON.parse(m[0]); }
+                catch(e) { throw new Error('Không đọc được kết quả AI. Thử lại.'); }
             };
+
+            const handleImportApply = async () => {
+                if (!importResult) return;
+                const merged = { ...schedule, ...importResult.schedule };
+                setSchedule(merged);
+                const newH = (importResult.headers?.col1) ? importResult.headers : headers;
+                setHeaders(newH);
+                await setDoc(tkbRef, { schedule: merged, headers: newH }, { merge: true });
+                setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
+            };
+
+            // Hàm tải file mẫu Excel
+            const handleDownloadTemplate = async () => {
+                try {
+                    const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs');
+                    const wb = XLSX.utils.book_new();
+                    const data = [
+                        ['', '', '', '', '', '', ''], // dòng 1 trống
+                        ['Tiết', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'],
+                        [1, '', '', '', '', '', ''],
+                        [2, '', '', '', '', '', ''],
+                        [3, '', '', '', '', '', ''],
+                        [4, '', '', '', '', '', ''],
+                        [5, '', '', '', '', '', ''],
+                    ];
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'mau_thoi_khoa_bieu.xlsx';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    toast.success('Đã tải file mẫu!', { position: 'top-center' });
+                } catch (err) {
+                    toast.error('Không thể tạo file mẫu: ' + err.message, { position: 'top-center' });
+                }
+            };
+
+            const handleImportFileChange = async (e) => {
+                const f = e.target.files[0]; if (!f) return;
+                e.target.value = '';
+                setImportFile(f); setImportResult(null); setImportError('');
+                if (importTab === 'image') setImportPreview(URL.createObjectURL(f));
+                else setImportPreview(null);
+
+                setImportLoading(true); setImportError('');
+                try {
+                    if (importTab === 'excel') {
+                        // ── Excel / CSV: đọc thẳng bằng XLSX, không cần API Key ──
+                        const arrBuf = await f.arrayBuffer();
+                        const XLSX = (await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs'));
+                        const wb = XLSX.read(new Uint8Array(arrBuf), { type: 'array' });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        // Chuyển sheet thành mảng 2D (bao gồm ô trống)
+                        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+                        // SỬA LỖI NHẬP EXCEL: logic mới map đúng cấu trúc bảng
+                        const dayKeyMap = {
+                            'thứ 2': 't2', 'thứ hai': 't2', 't2': 't2',
+                            'thứ 3': 't3', 'thứ ba': 't3', 't3': 't3',
+                            'thứ 4': 't4', 'thứ tư': 't4', 't4': 't4',
+                            'thứ 5': 't5', 'thứ năm': 't5', 't5': 't5',
+                            'thứ 6': 't6', 'thứ sáu': 't6', 't6': 't6',
+                            'thứ 7': 't7', 'thứ bảy': 't7', 't7': 't7'
+                        };
+                        const dayKeys = ['t2','t3','t4','t5','t6','t7'];
+                        
+                        let newSchedule = {};
+                        let detectedHeaders = { col1: headers.col1 || 'Môn', col2: headers.col2 || 'Ghi chú' };
+
+                        // Bỏ qua các hàng trống ở đầu
+                        let startRow = 0;
+                        while (startRow < rows.length && rows[startRow].every(cell => String(cell).trim() === '')) {
+                            startRow++;
+                        }
+
+                        // Tìm header row (chứa "Tiết" và "Thứ")
+                        let headerRow = null;
+                        let headerIndex = -1;
+                        for (let i = startRow; i < rows.length; i++) {
+                            const row = rows[i];
+                            const rowStr = row.map(c => String(c).toLowerCase());
+                            const hasTiet = rowStr.some(c => c.includes('tiết') || c.includes('tiet'));
+                            const hasThu = rowStr.some(c => c.includes('thứ') || c.includes('thu'));
+                            if (hasTiet && hasThu) {
+                                headerRow = row;
+                                headerIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (headerRow && headerIndex >= 0) {
+                            // Tìm cột Tiết
+                            const hLow = headerRow.map(c => String(c).toLowerCase().trim());
+                            const iPer = hLow.findIndex(c => c.includes('tiết') || c.includes('tiet'));
+
+                            // Tìm các cột Thứ (từ Thứ 2 đến Thứ 7)
+                            const dayCols = [];
+                            for (let i = 0; i < headerRow.length; i++) {
+                                const val = String(headerRow[i] || '').trim();
+                                const lower = val.toLowerCase();
+                                const match = lower.match(/thứ\s*(\d+)/);
+                                if (match) {
+                                    const num = parseInt(match[1], 10);
+                                    if (num >= 2 && num <= 7) {
+                                        dayCols.push({ index: i, dayNum: num, label: lower });
+                                    }
+                                }
+                            }
+                            // Sắp xếp theo thứ tự ngày
+                            dayCols.sort((a, b) => a.dayNum - b.dayNum);
+
+                            if (iPer >= 0 && dayCols.length > 0) {
+                                const dataRows = rows.slice(headerIndex + 1);
+                                dataRows.forEach(row => {
+                                    const perCell = String(row[iPer] || '').trim();
+                                    const per = parseInt(perCell, 10);
+                                    if (isNaN(per) || per < 1 || per > 5) return;
+
+                                    dayCols.forEach(col => {
+                                        const dayKey = dayKeyMap[col.label];
+                                        if (!dayKey) return;
+                                        const value = String(row[col.index] || '').trim();
+                                        if (value) {
+                                            newSchedule[`${dayKey}_${per}_col1`] = value;
+                                        }
+                                    });
+                                });
+                            } else {
+                                // Fallback: không tìm được cột Tiết hoặc Thứ
+                                const dataRows = rows.slice(headerIndex + 1);
+                                dataRows.forEach((row, ri) => {
+                                    const dayIdx = Math.floor(ri / 5);
+                                    const per = (ri % 5) + 1;
+                                    if (dayIdx < 6) {
+                                        const dk = dayKeys[dayIdx];
+                                        const v1 = String(row[0] || '').trim();
+                                        const v2 = String(row[1] || '').trim();
+                                        if (v1) newSchedule[`${dk}_${per}_col1`] = v1;
+                                        if (v2) newSchedule[`${dk}_${per}_col2`] = v2;
+                                    }
+                                });
+                            }
+                        } else {
+                            // Không tìm thấy header: map theo thứ tự hàng
+                            const dataRows = rows.slice(startRow);
+                            dataRows.forEach((row, ri) => {
+                                const dayIdx = Math.floor(ri / 5);
+                                const per = (ri % 5) + 1;
+                                if (dayIdx < 6) {
+                                    const dk = dayKeys[dayIdx];
+                                    const v1 = String(row[0] || '').trim();
+                                    const v2 = String(row[1] || '').trim();
+                                    if (v1) newSchedule[`${dk}_${per}_col1`] = v1;
+                                    if (v2) newSchedule[`${dk}_${per}_col2`] = v2;
+                                }
+                            });
+                        }
+
+                        const merged = { ...schedule, ...newSchedule };
+                        setSchedule(merged);
+                        setHeaders(detectedHeaders);
+                        await setDoc(tkbRef, { schedule: merged, headers: detectedHeaders }, { merge: true });
+                        setShowImportAI(false); setImportFile(null); setImportPreview(null); setImportError('');
+                        setImportSuccessMsg('✅ Đã nhập lịch biểu từ Excel thành công!');
+                        setTimeout(() => setImportSuccessMsg(''), 3000);
+
+                    } else {
+                        // ── Ảnh: gọi Gemini AI ──
+                        const key = geminiKey.trim();
+                        if (!key) { setShowKeyInput(true); setImportError('Cần nhập Gemini API Key để đọc ảnh.'); setImportLoading(false); return; }
+                        const b64 = await fileToBase64(f);
+                        const mime = f.type || 'image/jpeg';
+                        const bodyObj = { contents: [{ parts: [{ text: GEMINI_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 } };
+                        const result = await callGeminiAPI(bodyObj, key);
+                        if (!result.schedule) throw new Error('Không tìm thấy dữ liệu lịch biểu trong ảnh.');
+                        const merged = { ...schedule, ...result.schedule };
+                        setSchedule(merged);
+                        const newH = result.headers?.col1 ? result.headers : headers;
+                        setHeaders(newH);
+                        await setDoc(tkbRef, { schedule: merged, headers: newH }, { merge: true });
+                        setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
+                        setImportSuccessMsg('✅ Đã nhập lịch biểu từ ảnh thành công!');
+                        setTimeout(() => setImportSuccessMsg(''), 3000);
+                    }
+                } catch(err) {
+                    setImportError('Lỗi: ' + (err.message || String(err)));
+                } finally { setImportLoading(false); }
+            };
+
+            const closeImportModal = () => {
+                if (importLoading) return;
+                setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
+            };
+
+            const dayLabels2 = { t2:'Thứ 2', t3:'Thứ 3', t4:'Thứ 4', t5:'Thứ 5', t6:'Thứ 6', t7:'Thứ 7' };
 
             // ── RENDER ───────────────────────────────────────────────────────────
             return (
                 <div className="h-full flex flex-col px-3 pb-4 pt-2 relative"
                     onClick={() => { setShowYearDrop(false); setShowWeekDrop(false); }}>
+
+                    {/* MODAL IMPORT AI */}
+                    {showImportAI && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center"
+                            onClick={closeImportModal}>
+                            <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden" style={{maxHeight:'90vh'}} onClick={e=>e.stopPropagation()}>
+
+                                {/* Header modal */}
+                                <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white shrink-0">
+                                    <div>
+                                        <h3 className="font-bold text-sm">Nhập liệu bằng AI ✨</h3>
+                                        <p className="text-[10px] text-blue-200">Gemini AI đọc ảnh chụp hoặc file Excel</p>
+                                    </div>
+                                    <button onClick={closeImportModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-500 transition"><X size={18}/></button>
+                                </div>
+
+                                {/* API Key bar */}
+                                <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <Key size={13} className="text-amber-500 shrink-0"/>
+                                        {showKeyInput ? (
+                                            <input autoFocus type="password"
+                                                className="flex-1 text-xs border border-amber-300 rounded-lg px-2.5 py-1.5 outline-none focus:border-amber-500 bg-white"
+                                                placeholder="Dán Gemini API Key vào đây..."
+                                                value={geminiKey}
+                                                onChange={e => setGeminiKey(e.target.value)}
+                                                onBlur={() => { try { localStorage.setItem('vt_gemini_key', geminiKey); } catch(e2){} setShowKeyInput(false); }}
+                                                onKeyDown={e => { if(e.key==='Enter'){ try { localStorage.setItem('vt_gemini_key', geminiKey); } catch(e2){} setShowKeyInput(false); }}}/>
+                                        ) : (
+                                            <button onClick={() => setShowKeyInput(true)} className="flex-1 text-left text-xs hover:opacity-80 transition">
+                                                {geminiKey
+                                                    ? <span className="text-green-700 font-semibold">✅ API Key đã lưu (bấm để đổi)</span>
+                                                    : <span className="text-orange-600 font-bold">⚠ Chưa có API Key — bấm để nhập</span>}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto">
+                                    {/* Tabs */}
+                                    <div className="flex border-b shrink-0">
+                                        <button onClick={() => { setImportTab('image'); setImportFile(null); setImportPreview(null); setImportError(''); }}
+                                            className={'flex-1 py-3 text-xs font-bold transition border-b-2 ' + (importTab==='image' ? 'text-blue-600 border-blue-500 bg-blue-50' : 'text-slate-500 border-transparent hover:bg-slate-50')}>
+                                            📷 Ảnh chụp
+                                        </button>
+                                        <button onClick={() => { setImportTab('excel'); setImportFile(null); setImportPreview(null); setImportError(''); }}
+                                            className={'flex-1 py-3 text-xs font-bold transition border-b-2 ' + (importTab==='excel' ? 'text-green-600 border-green-500 bg-green-50' : 'text-slate-500 border-transparent hover:bg-slate-50')}>
+                                            📊 Excel / CSV
+                                        </button>
+                                    </div>
+
+                                    <div className="p-4 space-y-3">
+                                        {/* Vùng chọn file — bấm vào là xử lý ngay */}
+                                        <div onClick={() => !importLoading && importFileRef.current && importFileRef.current.click()}
+                                            className={'border-2 border-dashed rounded-xl p-6 text-center transition ' + (importLoading ? 'border-blue-300 bg-blue-50 cursor-wait' : 'border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 cursor-pointer')}>
+                                            <input ref={importFileRef} type="file"
+                                                accept={importTab==='image' ? 'image/*' : '.xlsx,.xls,.csv'}
+                                                className="hidden" onChange={handleImportFileChange} />
+                                            {importLoading ? (
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <span className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin inline-block" style={{borderWidth:3}}></span>
+                                                    <p className="text-sm font-bold text-blue-600">AI đang phân tích và áp dụng...</p>
+                                                    <p className="text-[10px] text-blue-400">Vui lòng chờ trong giây lát</p>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <p className="text-4xl mb-2">{importTab==='image' ? '📷' : '📊'}</p>
+                                                    <p className="text-sm text-slate-700 font-bold">Bấm để chọn {importTab==='image' ? 'ảnh' : 'file Excel'}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-1.5">{importTab==='image' ? 'Ảnh chụp, screenshot, scan bảng TKB' : '.xlsx · .xls · .csv'}</p>
+                                                    <p className="text-[10px] text-blue-500 mt-1 font-semibold">✨ AI sẽ tự đọc và điền vào lịch ngay</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Nút tải file mẫu - chỉ hiển thị khi tab Excel */}
+                                        {importTab === 'excel' && (
+                                            <button
+                                                onClick={handleDownloadTemplate}
+                                                className="w-full py-2.5 rounded-xl border border-blue-300 text-blue-600 font-bold text-xs hover:bg-blue-50 transition flex items-center justify-center gap-2"
+                                            >
+                                                📥 Tải file mẫu Excel
+                                            </button>
+                                        )}
+
+                                        {/* Lỗi */}
+                                        {importError && (
+                                            <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-3 text-xs text-red-600 font-medium flex items-start gap-2">
+                                                <span className="shrink-0 mt-0.5">⚠</span>
+                                                <span>{importError}</span>
+                                            </div>
+                                        )}
+                                        {importError && (
+                                            <button onClick={() => { setImportError(''); setImportFile(null); }}
+                                                className="w-full py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                                                ↩ Thử lại
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Footer hint — chỉ hiện với tab ảnh */}
+                                {!importLoading && importTab === 'image' && (
+                                    <div className="px-4 py-2.5 bg-slate-50 border-t text-[10px] text-slate-400 text-center shrink-0">
+                                        Lấy Gemini API Key miễn phí tại <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 font-semibold underline">aistudio.google.com</a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* BỘ ĐIỀU HƯỚNG */}
                     <div className="flex items-center justify-between mb-3 bg-white p-2 rounded-xl shadow-sm border border-blue-100 shrink-0 gap-1" onClick={e => e.stopPropagation()}>
@@ -1722,14 +1756,23 @@
                             </div>
                         </div>
 
-                        {/* Mũi tên PHẢI + Nút Import */}
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setShowImportModal(true)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500 transition shrink-0" title="Nhập từ Excel/Ảnh">
-                                <Upload size={18}/>
-                            </button>
-                            <button onClick={() => navigateWeek(1)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500 transition shrink-0"><ChevronRight size={18}/></button>
-                        </div>
+                        {/* Nút upload AI — icon nhỏ cạnh mũi tên phải */}
+                        <button onClick={e => { e.stopPropagation(); setShowImportAI(true); }}
+                            className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500 transition shrink-0"
+                            title="Nhập từ Ảnh / Excel bằng AI">
+                            <Upload size={18}/>
+                        </button>
+
+                        {/* Mũi tên PHẢI */}
+                        <button onClick={() => navigateWeek(1)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500 transition shrink-0"><ChevronRight size={18}/></button>
                     </div>
+
+                    {/* Toast thành công */}
+                    {importSuccessMsg && (
+                        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[200] bg-green-600 text-white text-xs font-bold px-5 py-2.5 rounded-full shadow-lg animate-bounce">
+                            {importSuccessMsg}
+                        </div>
+                    )}
 
                     {/* BẢNG LỊCH BIỂU */}
                     <div className="flex-1 overflow-y-auto rounded-xl shadow-sm border border-blue-200 mb-4 bg-white">
@@ -1752,48 +1795,45 @@
                                     const rowBg = isToday ? 'bg-blue-50' : dayBg[dayIndex];
                                     return (
                                         <React.Fragment key={day.id}>
-                                            {periods.map((period, pIdx) => (
-                                                <tr key={day.id + '_' + period} className={'border-b border-blue-100 ' + rowBg}>
-                                                    {pIdx === 0 && (
-                                                        <td className={'border border-blue-100 p-1 align-middle text-center ' + rowBg} rowSpan={5}>
-                                                            <div className="flex flex-col items-center justify-center gap-0.5">
-                                                                <div className={'font-extrabold text-xs ' + (isToday ? 'text-blue-700' : 'text-blue-600')}>{day.label}</div>
-                                                                <div className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-500')}>{day.dateStr}</div>
-                                                            </div>
+                                            {periods.map((period, pIdx) => {
+                                                // Thêm border-bottom đậm hơn cho tiết 5
+                                                const borderClass = period === 5 ? 'border-b-2 border-blue-500' : 'border-b border-blue-100';
+                                                return (
+                                                    <tr key={day.id + '_' + period} className={borderClass + ' ' + rowBg}>
+                                                        {pIdx === 0 && (
+                                                            <td className={'border border-blue-100 p-1 align-middle text-center ' + rowBg} rowSpan={5}>
+                                                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                                                    <div className={'font-extrabold text-xs ' + (isToday ? 'text-blue-700' : 'text-blue-600')}>{day.label}</div>
+                                                                    <div className={'text-[10px] font-bold px-1.5 py-0.5 rounded-full ' + (isToday ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-500')}>{day.dateStr}</div>
+                                                                </div>
+                                                            </td>
+                                                        )}
+                                                        <td className={'border border-blue-100 p-2 text-center font-bold text-xs align-middle ' + (isToday ? 'text-blue-700' : 'text-blue-400')}>{period}</td>
+                                                        <td id={'tkb-cell-' + day.id + '_' + period + '_col1'} className={'border border-blue-100 p-0 align-middle transition-all duration-500 ' + (highlightKey === day.id + '_' + period + '_col1' ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : '')}>
+                                                            <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1}
+                                                                value={schedule[day.id + '_' + period + '_col1'] || ''}
+                                                                onChange={e => setSchedule({ ...schedule, [day.id + '_' + period + '_col1']: e.target.value })}
+                                                                onBlur={e => saveData(day.id + '_' + period + '_col1', e.target.value)} />
                                                         </td>
-                                                    )}
-                                                    <td className={'border border-blue-100 p-2 text-center font-bold text-xs align-middle ' + (isToday ? 'text-blue-700' : 'text-blue-400')}>{period}</td>
-                                                    <td id={'tkb-cell-' + day.id + '_' + period + '_col1'} className={'border border-blue-100 p-0 align-middle transition-all duration-500 ' + (highlightKey === day.id + '_' + period + '_col1' ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : '')}>
-                                                        <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1}
-                                                            value={schedule[day.id + '_' + period + '_col1'] || ''}
-                                                            onChange={e => setSchedule({ ...schedule, [day.id + '_' + period + '_col1']: e.target.value })}
-                                                            onBlur={e => saveData(day.id + '_' + period + '_col1', e.target.value)} />
-                                                    </td>
-                                                    <td id={'tkb-cell-' + day.id + '_' + period + '_col2'} className={'border border-blue-100 p-0 align-middle transition-all duration-500 ' + (highlightKey === day.id + '_' + period + '_col2' ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : '')}>
-                                                        <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1}
-                                                            value={schedule[day.id + '_' + period + '_col2'] || ''}
-                                                            onChange={e => setSchedule({ ...schedule, [day.id + '_' + period + '_col2']: e.target.value })}
-                                                            onBlur={e => saveData(day.id + '_' + period + '_col2', e.target.value)} />
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        <td id={'tkb-cell-' + day.id + '_' + period + '_col2'} className={'border border-blue-100 p-0 align-middle transition-all duration-500 ' + (highlightKey === day.id + '_' + period + '_col2' ? 'bg-yellow-100 ring-2 ring-yellow-400 ring-inset' : '')}>
+                                                            <textarea className="w-full h-full p-2 outline-none bg-transparent resize-none overflow-hidden text-black text-xs leading-tight" rows={1}
+                                                                value={schedule[day.id + '_' + period + '_col2'] || ''}
+                                                                onChange={e => setSchedule({ ...schedule, [day.id + '_' + period + '_col2']: e.target.value })}
+                                                                onBlur={e => saveData(day.id + '_' + period + '_col2', e.target.value)} />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </React.Fragment>
                                     );
                                 })}
                             </tbody>
                         </table>
                     </div>
-
-                    {/* Import Modal */}
-                    {showImportModal && (
-                        <ImportModal
-                            onClose={() => setShowImportModal(false)}
-                            onApply={handleApplyImport}
-                        />
-                    )}
                 </div>
             );
         };
+        // END: TimeTableView
 
         // --- MÀN HÌNH LỊCH NGÀY (DAILY VIEW) ---
         const DailyView = ({ user, db, appId, today, setToday }) => {
@@ -1852,7 +1892,7 @@
 
             const eventsRef = useMemo(() => collection(db, 'artifacts', appId, 'users', user.uid, 'events'), [db, appId, user.uid]);
             useEffect(() => onSnapshot(query(eventsRef), snap => {
-                const allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const allEvents = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 const dateStr = today.toDateString();
                 const lunar = getLunarDetails(today);
                 const todays = allEvents.filter(e => {
