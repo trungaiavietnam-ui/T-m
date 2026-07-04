@@ -282,7 +282,7 @@
             "“Người có trí sống không tỳ vết\nGiới hạnh và định, tuệ tròn đầy.”\nAI thường thẩm sát vị này\nCông tâm tán thán, nể người chân tu.",
             "Người giữ giới như vàng óng ánh\nMột lòng tu, đức hạnh cao vời\nXứng danh khen ngợi của đời\nPhạm thiên cũng phải ngỏ lời tán dương.",
             "Thân làm chủ thì đừng cáu giận\nPhòng hộ thân sẽ đặng an lành\nCác điều xấu ác chớ làm\nNhững điều đạo đức tinh cần không quên.",
-            "Làm chủ miệng thì đừng cáu giận\nPhòng hộ lời sẽ đặng an lành\nKhông lời thô ác, cộc cần\nNhững lời từ ái tinh cần không quên.",
+            "Làm chủ miệng thì không cáu giận\nPhòng hộ lời sẽ đặng an lành\nKhông lời thô ác, cộc cần\nNhững lời từ ái tinh cần không quên.",
             "Làm chủ ý thì không cáu giận\nPhòng hộ ý sẽ đặng an lành\nTâm không tà kiến, dữ dằn\nTư duy chân chánh tinh cần không quên.",
             "Bậc hiền trí điều thân, miệng, ý\nGìn cả ba tỉ mỉ không quên\nThân lành, lời đẹp, ý chơn\nHoàn thành điều phục, không còn bợn nhơ.",
             "Thân thể sẽ tàn như lá úa\nThần chết luôn chầu chực kề bên\nỞ đời, mạng sống vô thường\n“Hành trang” chưa đủ, đường trường mệt hơi.",
@@ -1261,14 +1261,34 @@
             const [importError, setImportError]     = useState('');
             const [importSuccessMsg, setImportSuccessMsg] = useState('');
             const [geminiKey, setGeminiKey]         = useState(() => { try { return localStorage.getItem('vt_gemini_key') || ''; } catch(e){ return ''; } });
+            const [geminiModelOverride, setGeminiModelOverride] = useState(() => { try { return localStorage.getItem('vt_gemini_model_override') || ''; } catch(e){ return ''; } });
             const [showKeyInput, setShowKeyInput]   = useState(false);
+            const [showModelInput, setShowModelInput] = useState(false);
             const importFileRef = React.useRef(null);
 
-            const GEMINI_PROMPT = `Bạn là trợ lý nhập liệu thời khóa biểu. Nhiệm vụ: đọc dữ liệu bảng TKB và trả về JSON THUẦN TÚY (không markdown, không giải thích, không code block).
-Định dạng JSON bắt buộc:
-{"headers":{"col1":"tên cột 1","col2":"tên cột 2"},"schedule":{"t2_1_col1":"nội dung","t2_1_col2":"ghi chú","t3_2_col1":"..."}}
-Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết: 1/2/3/4/5 — cột: col1/col2.
-Ô trống: bỏ qua hoàn toàn. Chỉ có 1 cột nội dung thì dùng col1. Trả về JSON hợp lệ duy nhất.`;
+            // SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): prompt cũ không nêu rõ thứ tự cột trái→phải theo
+            // đúng thứ trong tuần, không có ví dụ mẫu, và không nhắc AI tự kiểm tra lại kết quả
+            // trước khi trả lời — khiến ảnh có nhiều dòng/cột dễ bị đọc lệch thứ/tiết hoặc
+            // gộp nhầm nội dung của ô bên cạnh. Prompt mới nêu rõ từng bước + ví dụ đầy đủ.
+            const GEMINI_PROMPT = `Bạn là trợ lý đọc bảng thời khóa biểu (TKB) từ ảnh chụp/scan. Hãy làm theo đúng các bước sau:
+
+BƯỚC 1 — Xác định cấu trúc bảng: hàng là "Tiết" (1-5), cột là "Thứ" (Thứ 2 → Thứ 7, thường xếp trái sang phải theo đúng thứ tự này). Nếu bảng xoay ngang (Thứ theo hàng, Tiết theo cột) thì vẫn phải map lại đúng theo hàng=Tiết, cột=Thứ khi xuất kết quả.
+BƯỚC 2 — Với mỗi ô có chữ, xác định chính xác nó thuộc Thứ nào và Tiết nào bằng cách dóng đúng theo hàng/cột của ô đó, KHÔNG suy đoán theo vị trí ô liền kề. Nếu 1 ô gộp (merge) nhiều tiết, lặp lại nội dung đó cho từng tiết mà ô che phủ.
+BƯỚC 3 — Nếu 1 ô có 2 dòng thông tin (VD: tên môn + phòng học/ghi chú), dòng đầu là col1, dòng phụ là col2. Nếu ô chỉ có 1 dòng thông tin, chỉ dùng col1.
+BƯỚC 4 — Trước khi trả lời, tự kiểm tra lại: mỗi key phải đúng định dạng, không trùng lặp sai vị trí, không bịa thêm dữ liệu không có trong ảnh.
+
+Chỉ trả về JSON THUẦN TÚY (không markdown, không giải thích, không code block), đúng định dạng:
+{"headers":{"col1":"tên cột 1","col2":"tên cột 2"},"schedule":{"t2_1_col1":"...","t2_1_col2":"...","t3_2_col1":"..."}}
+
+Quy tắc key bắt buộc: "<thu>_<tiet>_<cot>"
+- <thu> chỉ được là một trong: t2, t3, t4, t5, t6, t7 (t2 = Thứ 2/Thứ Hai ... t7 = Thứ 7/Thứ Bảy)
+- <tiet> chỉ được là một trong: 1, 2, 3, 4, 5
+- <cot> chỉ được là: col1 hoặc col2
+
+Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
+{"headers":{"col1":"Môn - Lớp","col2":"Ghi chú"},"schedule":{"t2_1_col1":"Toán - 10A1","t2_1_col2":"Phòng A2","t2_2_col1":"Văn - 10A1","t4_3_col1":"Anh - 10A1","t6_5_col1":"Thể dục - 10A1"}}
+
+Ô trống thì bỏ qua hoàn toàn, không tạo key cho ô trống. Không được tạo key ngoài định dạng trên.`;
 
             const fileToBase64 = (file) => new Promise((res, rej) => {
                 const r = new FileReader();
@@ -1277,34 +1297,163 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                 r.readAsDataURL(file);
             });
 
-            const callGeminiAPI = async (bodyObj, apiKey) => {
-                // Dùng gemini-2.0-flash-lite: model mới nhất, miễn phí, hỗ trợ vision
-                const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' + apiKey, {
+            // Danh sách model dự phòng "biết trước" — dùng trước tiên vì không tốn thêm lượt gọi
+            // API để dò danh sách. gemini-2.0-flash-lite đã bị Google NGỪNG HỖ TRỢ (quota=0 với
+            // tất cả mọi người) nên KHÔNG dùng nữa.
+            const FALLBACK_GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+            const MODEL_CACHE_KEY = 'vt_gemini_models_cache_v1';
+            const MODEL_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+            // GIẢI PHÁP CHO YÊU CẦU 2: khi TẤT CẢ model trong danh sách cứng ở trên đều báo lỗi
+            // "model not found / deprecated" (Google đã khai tử), hàm này gọi thẳng API
+            // ListModels của Google để lấy danh sách model gemini-* còn hỗ trợ generateContent +
+            // ảnh (vision) ngay tại thời điểm chạy, rồi thử lại với model mới nhất tìm được.
+            // Nhờ vậy ứng dụng tự thích nghi khi Google đổi tên/thế hệ model mà KHÔNG cần sửa code.
+            const discoverAvailableGeminiModels = async (apiKey) => {
+                try {
+                    const cachedRaw = localStorage.getItem(MODEL_CACHE_KEY);
+                    if (cachedRaw) {
+                        const cached = JSON.parse(cachedRaw);
+                        if (cached && Date.now() - cached.ts < MODEL_CACHE_TTL_MS && Array.isArray(cached.models) && cached.models.length) {
+                            return cached.models;
+                        }
+                    }
+                } catch (e) {}
+
+                const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + apiKey);
+                if (!res.ok) throw new Error('Không lấy được danh sách model từ Google.');
+                const data = await res.json();
+                const list = (data.models || [])
+                    .filter(m => m.name && m.supportedGenerationMethods?.includes('generateContent'))
+                    .map(m => m.name.replace(/^models\//, ''))
+                    .filter(name => /gemini/i.test(name) && !/embedding|aqa|imagen|tts|vision-only/i.test(name));
+
+                // Ưu tiên bản "flash-lite" / "flash" (rẻ, nhanh, đủ cho việc đọc bảng) trước "pro"
+                const rank = (name) => (/flash-lite/i.test(name) ? 0 : /flash/i.test(name) ? 1 : /pro/i.test(name) ? 2 : 3);
+                list.sort((a, b) => rank(a) - rank(b));
+
+                try { localStorage.setItem(MODEL_CACHE_KEY, JSON.stringify({ ts: Date.now(), models: list })); } catch (e) {}
+                return list;
+            };
+
+            const callGeminiSingleModel = async (bodyObj, apiKey, model) => {
+                const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj)
                 });
                 if (!res.ok) {
-                    let errMsg = 'Lỗi API ' + res.status;
+                    let status = res.status, errMsg = 'Lỗi API ' + status;
                     try { const e = await res.json(); errMsg = e.error?.message || errMsg; } catch(e2) {}
-                    throw new Error(errMsg);
+                    const err = new Error(errMsg);
+                    err.status = status;
+                    throw err;
                 }
-                const data = await res.json();
-                const text = (data.candidates?.[0]?.content?.parts?.[0]?.text) || '';
-                // Tìm JSON block linh hoạt hơn (kể cả trong markdown code block)
-                const cleaned = text.replace(/```json/g,'').replace(/```/g,'').trim();
-                const m = cleaned.match(/\{[\s\S]*\}/);
-                if (!m) throw new Error('AI không trả về JSON hợp lệ. Thử lại hoặc chụp ảnh rõ hơn.');
-                try { return JSON.parse(m[0]); }
-                catch(e) { throw new Error('Không đọc được kết quả AI. Thử lại.'); }
+                return res.json();
             };
 
+            const tryModelList = async (models, bodyObj, apiKey) => {
+                let lastErr = null;
+                for (let i = 0; i < models.length; i++) {
+                    const model = models[i];
+                    // Với mỗi model, thử tối đa 2 lần nếu bị lỗi 429 (quá tải tạm thời / vượt quota phút)
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        try {
+                            const data = await callGeminiSingleModel(bodyObj, apiKey, model);
+                            const text = (data.candidates?.[0]?.content?.parts?.[0]?.text) || '';
+                            const cleaned = text.replace(/```json/g,'').replace(/```/g,'').trim();
+                            const m = cleaned.match(/\{[\s\S]*\}/);
+                            if (!m) throw new Error('AI không trả về JSON hợp lệ. Thử lại hoặc chụp ảnh rõ hơn.');
+                            try { return JSON.parse(m[0]); }
+                            catch(e) { throw new Error('Không đọc được kết quả AI. Thử lại.'); }
+                        } catch (e) {
+                            lastErr = e;
+                            // 429 = hết quota/quá nhiều request. Thử lại 1 lần sau khi chờ, rồi chuyển model khác.
+                            if (e.status === 429 && attempt === 0) { await sleep(4000); continue; }
+                            break; // sang model dự phòng tiếp theo (nếu còn)
+                        }
+                    }
+                }
+                throw lastErr || new Error('Không thể kết nối tới Gemini AI. Thử lại sau.');
+            };
+
+            const callGeminiAPI = async (bodyObj, apiKey, modelOverride) => {
+                // Nếu người dùng tự nhập tên model (ô "Model AI tuỳ chọn") thì ưu tiên thử trước —
+                // đây là lối thoát thủ công cuối cùng nếu sau này Google đổi hẳn cách đặt tên model.
+                const primaryModels = modelOverride ? [modelOverride, ...FALLBACK_GEMINI_MODELS] : FALLBACK_GEMINI_MODELS;
+                try {
+                    return await tryModelList(primaryModels, bodyObj, apiKey);
+                } catch (firstErr) {
+                    const looksDeprecated = firstErr.status === 404 || /not found|not supported|deprecated/i.test(firstErr.message || '');
+                    if (!looksDeprecated) {
+                        if (firstErr.status === 429) {
+                            throw new Error('API Key Gemini đã hết lượt dùng miễn phí trong hôm nay/phút này. Vui lòng đợi một lát rồi thử lại, hoặc tạo API Key mới tại aistudio.google.com.');
+                        }
+                        throw firstErr;
+                    }
+                    // Toàn bộ model đã biết đều báo "không tồn tại" → có thể Google vừa khai tử model
+                    // cũ, tự động dò danh sách model mới nhất và thử lại.
+                    try {
+                        const discovered = await discoverAvailableGeminiModels(apiKey);
+                        const freshModels = discovered.filter(m => !primaryModels.includes(m));
+                        if (!freshModels.length) throw firstErr;
+                        return await tryModelList(freshModels, bodyObj, apiKey);
+                    } catch (secondErr) {
+                        throw new Error('Các model Gemini hiện tại (kể cả model mới tự dò) đều không dùng được. Google có thể vừa thay đổi model — hãy vào aistudio.google.com để xem tên model mới nhất rồi dán vào ô "Model AI tuỳ chọn" trong mục nhập ảnh.');
+                    }
+                }
+            };
+
+            // SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): trước đây kết quả JSON của AI được ghép thẳng vào
+            // lịch mà KHÔNG kiểm tra định dạng key. Nếu AI trả về key sai định dạng (thừa dấu
+            // cách, viết hoa, sai thứ/tiết ngoài phạm vi...), dữ liệu bị lưu vào các key "vô hình"
+            // không khớp với bất kỳ ô nào trên bảng ⇒ người dùng thấy "mất dữ liệu"/"sai kết quả"
+            // mà không có cảnh báo gì. Hàm dưới đây chuẩn hoá + loại bỏ key không hợp lệ, đồng thời
+            // đếm số ô hợp lệ để có thể cảnh báo người dùng trước khi lưu.
+            const sanitizeAiSchedule = (rawSchedule) => {
+                const validKey = /^t[2-7]_[1-5]_col[12]$/;
+                const clean = {};
+                let kept = 0, ignored = 0;
+                Object.entries(rawSchedule || {}).forEach(([k, v]) => {
+                    const normKey = String(k).trim().toLowerCase();
+                    const val = (v == null) ? '' : String(v).trim();
+                    if (!val) return; // bỏ qua ô rỗng
+                    if (validKey.test(normKey)) {
+                        clean[normKey] = val;
+                        kept++;
+                    } else {
+                        ignored++;
+                    }
+                });
+                return { schedule: clean, kept, ignored };
+            };
+
+            // SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): trước đây hàm này tồn tại nhưng KHÔNG hề được gọi ở
+            // đâu — kết quả AI đọc được từ ảnh bị lưu thẳng vào Firestore ngay lập tức, người
+            // dùng không có cơ hội xem/soát lại trước khi lưu đè lên lịch hiện tại. Giờ đây
+            // handleImportFileChange chỉ đưa dữ liệu vào importResult để hiển thị bản xem trước;
+            // việc lưu thật sự chỉ xảy ra khi người dùng bấm "Áp dụng" gọi hàm này.
             const handleImportApply = async () => {
                 if (!importResult) return;
-                const merged = { ...schedule, ...importResult.schedule };
-                setSchedule(merged);
-                const newH = (importResult.headers?.col1) ? importResult.headers : headers;
-                setHeaders(newH);
-                await setDoc(tkbRef, { schedule: merged, headers: newH }, { merge: true });
-                setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
+                try {
+                    setImportLoading(true);
+                    const merged = { ...schedule, ...importResult.schedule };
+                    setSchedule(merged);
+                    const newH = (importResult.headers?.col1) ? { ...headers, ...importResult.headers } : headers;
+                    setHeaders(newH);
+                    await setDoc(tkbRef, { schedule: merged, headers: newH }, { merge: true });
+                    setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
+                    setImportSuccessMsg('✅ Đã áp dụng lịch biểu thành công!');
+                    setTimeout(() => setImportSuccessMsg(''), 3000);
+                } catch (err) {
+                    setImportError('Lỗi khi lưu: ' + (err.message || String(err)));
+                } finally {
+                    setImportLoading(false);
+                }
+            };
+
+            const handleImportCancel = () => {
+                setImportResult(null); setImportFile(null); setImportPreview(null); setImportError('');
             };
 
             // Hàm tải file mẫu Excel
@@ -1474,17 +1623,30 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                         if (!key) { setShowKeyInput(true); setImportError('Cần nhập Gemini API Key để đọc ảnh.'); setImportLoading(false); return; }
                         const b64 = await fileToBase64(f);
                         const mime = f.type || 'image/jpeg';
-                        const bodyObj = { contents: [{ parts: [{ text: GEMINI_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 } };
-                        const result = await callGeminiAPI(bodyObj, key);
+                        // SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): maxOutputTokens=2048 trước đây quá thấp, với
+                        // ảnh TKB đầy đủ 6 ngày x 5 tiết x 2 cột, câu trả lời JSON có thể bị CẮT CỤT
+                        // giữa chừng → JSON hỏng/thiếu dữ liệu mà không có cảnh báo rõ ràng. Nâng lên
+                        // 4096 và ép "responseMimeType: application/json" để Gemini bắt buộc trả về
+                        // đúng cú pháp JSON (không kèm lời giải thích/markdown làm hỏng parse).
+                        const bodyObj = {
+                            contents: [{ parts: [{ text: GEMINI_PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
+                            generationConfig: { temperature: 0.1, maxOutputTokens: 4096, responseMimeType: 'application/json' }
+                        };
+                        const result = await callGeminiAPI(bodyObj, key, geminiModelOverride.trim());
                         if (!result.schedule) throw new Error('Không tìm thấy dữ liệu lịch biểu trong ảnh.');
-                        const merged = { ...schedule, ...result.schedule };
-                        setSchedule(merged);
-                        const newH = result.headers?.col1 ? result.headers : headers;
-                        setHeaders(newH);
-                        await setDoc(tkbRef, { schedule: merged, headers: newH }, { merge: true });
-                        setShowImportAI(false); setImportFile(null); setImportResult(null); setImportPreview(null); setImportError('');
-                        setImportSuccessMsg('✅ Đã nhập lịch biểu từ ảnh thành công!');
-                        setTimeout(() => setImportSuccessMsg(''), 3000);
+
+                        // SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): validate + chuẩn hoá key trước khi dùng, để
+                        // không âm thầm lưu các key sai định dạng (mất dữ liệu không rõ nguyên nhân).
+                        const { schedule: sanitized, kept, ignored } = sanitizeAiSchedule(result.schedule);
+                        if (kept === 0) {
+                            throw new Error('AI không đọc được ô nào hợp lệ từ ảnh này. Hãy chụp lại ảnh rõ nét hơn, đủ sáng và thẳng góc với bảng.');
+                        }
+
+                        // KHÔNG lưu thẳng vào Firestore nữa — đưa ra bản xem trước để người dùng
+                        // kiểm tra và bấm "Áp dụng" mới thực sự ghi đè lên lịch hiện tại.
+                        const newH = result.headers?.col1 ? { ...headers, ...result.headers } : headers;
+                        setImportResult({ schedule: sanitized, headers: newH, kept, ignored });
+                        setImportError(ignored > 0 ? `⚠ AI đọc được ${kept} ô hợp lệ, đã bỏ qua ${ignored} ô không đúng định dạng.` : '');
                     }
                 } catch(err) {
                     setImportError('Lỗi: ' + (err.message || String(err)));
@@ -1529,7 +1691,7 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                                 value={geminiKey}
                                                 onChange={e => setGeminiKey(e.target.value)}
                                                 onBlur={() => { try { localStorage.setItem('vt_gemini_key', geminiKey); } catch(e2){} setShowKeyInput(false); }}
-                                                onKeyDown={e => { if(e.key==='Enter'){ try { localStorage.setItem('vt_gemini_key', geminiKey); } catch(e2){} setShowKeyInput(false); }}}/>
+                                                onKeyDown={e => { if(e.key==='Enter'){ try { localStorage.setItem('vt_gemini_key', geminiKey); } catch(e2){} setShowKeyInput(false); } }}/>
                                         ) : (
                                             <button onClick={() => setShowKeyInput(true)} className="flex-1 text-left text-xs hover:opacity-80 transition">
                                                 {geminiKey
@@ -1539,6 +1701,34 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                         )}
                                     </div>
                                 </div>
+
+                                {/* GIẢI PHÁP CHO YÊU CẦU 2: ô nhập tên model Gemini tuỳ chọn. Ứng
+                                    dụng tự dò model mới khi model cũ bị Google khai tử, nhưng nếu
+                                    trường hợp đó vẫn thất bại (VD: Google đổi hẳn cách đặt tên),
+                                    người dùng có thể tự dán tên model mới vào đây mà KHÔNG cần
+                                    sửa code / chờ cập nhật ứng dụng. */}
+                                {importTab === 'image' && (
+                                    <div className="px-4 py-1.5 bg-slate-50 border-b border-slate-100 shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <Settings size={12} className="text-slate-400 shrink-0"/>
+                                            {showModelInput ? (
+                                                <input autoFocus type="text"
+                                                    className="flex-1 text-[11px] border border-slate-300 rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500 bg-white"
+                                                    placeholder="VD: gemini-2.5-flash (để trống = tự động chọn)"
+                                                    value={geminiModelOverride}
+                                                    onChange={e => setGeminiModelOverride(e.target.value)}
+                                                    onBlur={() => { try { localStorage.setItem('vt_gemini_model_override', geminiModelOverride.trim()); } catch(e2){} setShowModelInput(false); }}
+                                                    onKeyDown={e => { if(e.key==='Enter'){ try { localStorage.setItem('vt_gemini_model_override', geminiModelOverride.trim()); } catch(e2){} setShowModelInput(false); } }}/>
+                                            ) : (
+                                                <button onClick={() => setShowModelInput(true)} className="flex-1 text-left text-[11px] text-slate-500 hover:opacity-80 transition">
+                                                    {geminiModelOverride
+                                                        ? <span>Model tuỳ chọn: <span className="font-semibold text-slate-700">{geminiModelOverride}</span> (bấm để đổi)</span>
+                                                        : <span>Model AI: <span className="font-semibold">Tự động</span> (bấm để tự nhập nếu cần)</span>}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex-1 overflow-y-auto">
                                     {/* Tabs */}
@@ -1554,6 +1744,43 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                     </div>
 
                                     <div className="p-4 space-y-3">
+                                        {/* SỬA LỖI ĐỌC ẢNH (Yêu cầu 1): khi đã có kết quả AI đọc được (importResult),
+                                            hiện bản XEM TRƯỚC để người dùng kiểm tra đúng/sai trước khi ghi vào lịch,
+                                            thay vì tự động lưu ngay như trước đây. */}
+                                        {importResult ? (
+                                            <div className="space-y-3">
+                                                <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5 text-xs text-blue-700 font-semibold flex items-center gap-2">
+                                                    <CheckSquare size={14} className="shrink-0"/>
+                                                    Đọc được {importResult.kept} ô dữ liệu{importResult.ignored > 0 ? `, bỏ qua ${importResult.ignored} ô lỗi định dạng` : ''}. Vui lòng kiểm tra lại trước khi lưu.
+                                                </div>
+                                                <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+                                                    {Object.entries(importResult.schedule)
+                                                        .sort(([a],[b]) => a.localeCompare(b))
+                                                        .map(([k, v]) => {
+                                                            const [dk, per, col] = k.split('_');
+                                                            return (
+                                                                <div key={k} className="px-3 py-2 flex items-center gap-2 text-xs">
+                                                                    <span className="shrink-0 font-bold text-blue-600 w-16">{dayLabels2[dk] || dk}</span>
+                                                                    <span className="shrink-0 text-slate-400 w-12">Tiết {per}</span>
+                                                                    <span className="shrink-0 text-[10px] text-slate-400 w-16">{col === 'col1' ? (importResult.headers.col1 || 'Môn') : (importResult.headers.col2 || 'Ghi chú')}</span>
+                                                                    <span className="flex-1 font-medium text-slate-800 truncate">{v}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={handleImportCancel} disabled={importLoading}
+                                                        className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition disabled:opacity-50">
+                                                        ✕ Huỷ
+                                                    </button>
+                                                    <button onClick={handleImportApply} disabled={importLoading}
+                                                        className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition disabled:opacity-50">
+                                                        {importLoading ? 'Đang lưu...' : '✓ Áp dụng vào lịch'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                        <>
                                         {/* Vùng chọn file — bấm vào là xử lý ngay */}
                                         <div onClick={() => !importLoading && importFileRef.current && importFileRef.current.click()}
                                             className={'border-2 border-dashed rounded-xl p-6 text-center transition ' + (importLoading ? 'border-blue-300 bg-blue-50 cursor-wait' : 'border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 cursor-pointer')}>
@@ -1563,7 +1790,7 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                             {importLoading ? (
                                                 <div className="flex flex-col items-center gap-3">
                                                     <span className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin inline-block" style={{borderWidth:3}}></span>
-                                                    <p className="text-sm font-bold text-blue-600">AI đang phân tích và áp dụng...</p>
+                                                    <p className="text-sm font-bold text-blue-600">AI đang phân tích...</p>
                                                     <p className="text-[10px] text-blue-400">Vui lòng chờ trong giây lát</p>
                                                 </div>
                                             ) : (
@@ -1571,7 +1798,7 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                                     <p className="text-4xl mb-2">{importTab==='image' ? '📷' : '📊'}</p>
                                                     <p className="text-sm text-slate-700 font-bold">Bấm để chọn {importTab==='image' ? 'ảnh' : 'file Excel'}</p>
                                                     <p className="text-[10px] text-slate-400 mt-1.5">{importTab==='image' ? 'Ảnh chụp, screenshot, scan bảng TKB' : '.xlsx · .xls · .csv'}</p>
-                                                    <p className="text-[10px] text-blue-500 mt-1 font-semibold">✨ AI sẽ tự đọc và điền vào lịch ngay</p>
+                                                    <p className="text-[10px] text-blue-500 mt-1 font-semibold">✨ AI sẽ đọc và cho bạn xem trước trước khi lưu</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1598,6 +1825,8 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                                                 className="w-full py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
                                                 ↩ Thử lại
                                             </button>
+                                        )}
+                                        </>
                                         )}
                                     </div>
                                 </div>
@@ -1835,13 +2064,16 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
         };
         // END: TimeTableView
 
-        // --- MÀN HÌNH LỊCH NGÀY (DAILY VIEW) ---
+        // ==============================================================
+        // MÀN HÌNH LỊCH NGÀY (DAILY VIEW) – ĐÃ TỐI ƯU TOÀN BỘ
+        // ==============================================================
         const DailyView = ({ user, db, appId, today, setToday }) => {
             const [weather, setWeather] = useState(null);
             const [verses, setVerses] = useState([]);
             const [currentVerse, setCurrentVerse] = useState(DEFAULT_VERSES[0]);
             const [animClass, setAnimClass] = useState('');
-            const [locationName, setLocationName] = useState('Hanoi');
+            const [locationName, setLocationName] = useState('Bắc Ninh');
+            const [showWeatherSearch, setShowWeatherSearch] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
             const [todayEvents, setTodayEvents] = useState([]);
             const [isNewYearWish, setIsNewYearWish] = useState(false);
@@ -1855,7 +2087,7 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
             const onTouchStart = (e) => {
                 if (e.touches.length > 1) return;
                 setTouchStart(e.targetTouches[0].clientX);
-            }
+            };
             const onTouchEnd = (e) => {
                 if (!touchStart || e.changedTouches.length > 1) return;
                 const distance = touchStart - e.changedTouches[0].clientX;
@@ -1869,10 +2101,10 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                     setTimeout(() => { newDate.setDate(today.getDate() - 1); setToday(newDate); setAnimClass(''); }, 400);
                 }
                 setTouchStart(null);
-            }
+            };
             
-            const goNextDay = () => { setAnimClass('anim-next'); setTimeout(() => { const d = new Date(today); d.setDate(today.getDate()+1); setToday(d); setAnimClass(''); }, 300); }
-            const goPrevDay = () => { setAnimClass('anim-prev'); setTimeout(() => { const d = new Date(today); d.setDate(today.getDate()-1); setToday(d); setAnimClass(''); }, 300); }
+            const goNextDay = () => { setAnimClass('anim-next'); setTimeout(() => { const d = new Date(today); d.setDate(today.getDate()+1); setToday(d); setAnimClass(''); }, 300); };
+            const goPrevDay = () => { setAnimClass('anim-prev'); setTimeout(() => { const d = new Date(today); d.setDate(today.getDate()-1); setToday(d); setAnimClass(''); }, 300); };
             const stopSwipe = (e) => e.stopPropagation();
 
             useEffect(() => {
@@ -1907,6 +2139,7 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                 setTodayEvents(todays);
             }), [today, eventsRef]);
 
+            // Gọi thời tiết ngay khi vào màn hình
             useEffect(() => {
                 const fetchWeather = async () => {
                     try {
@@ -1920,8 +2153,8 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                         }
                     } catch (e) { console.error("Lỗi thời tiết", e); }
                 };
-                if (viewMode === 'weather') fetchWeather();
-            }, [locationName, viewMode]);
+                fetchWeather();
+            }, [locationName]);
 
             const handleSearch = (e) => { e.preventDefault(); if(searchQuery.trim()) { setLocationName(searchQuery); } };
             const handleAddVerse = async () => { if (newVerse.trim()) { await addDoc(verseRef, { text: newVerse, createdAt: serverTimestamp() }); setNewVerse(''); setShowAddVerse(false); } };
@@ -1945,33 +2178,6 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
             const getVerseFontSize = (text) => { const len = text.length; if (len < 50) return 'text-xl'; if (len < 100) return 'text-lg'; if (len < 200) return 'text-sm'; return 'text-xs'; };
 
             const renderCenterContent = () => {
-                if (viewMode === 'weather') {
-                    return (
-                        <div className="w-full" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
-                            <form onSubmit={handleSearch} className="flex items-center gap-2 mb-4 bg-white/20 p-2 rounded-lg w-full">
-                                <button type="submit" className="p-1 hover:bg-white/10 rounded">
-                                     <Search size={16} className="text-white shrink-0"/>
-                                </button>
-                                <input className="flex-1 bg-transparent outline-none text-white placeholder-white/70 text-sm font-bold text-right" placeholder="Nhập tên TP..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} />
-                            </form>
-                             <div className="text-xs font-bold uppercase text-yellow-300 text-center mb-2">{locationName}</div>
-
-                            <div className="flex justify-between overflow-x-auto no-scrollbar gap-2 pb-2">
-                                {weather ? weather.time.slice(0, 7).map((t, i) => (
-                                    <div key={t} className="flex flex-col items-center min-w-[40px] bg-black/20 p-2 rounded-lg">
-                                        <span className="text-[10px] opacity-80 mb-1">{weekDays[new Date(t).getDay()]}</span>
-                                        <div className="my-1 scale-90">{getWeatherIcon(weather.weathercode[i])}</div>
-                                        <div className="text-[10px] flex flex-col items-center">
-                                            <span className="font-bold">{Math.round(weather.temperature_2m_max[i])}°</span>
-                                            <span className="opacity-60">{Math.round(weather.temperature_2m_min[i])}°</span>
-                                        </div>
-                                    </div>
-                                )) : <span className="text-xs animate-pulse">Đang tải dữ liệu...</span>}
-                            </div>
-                        </div>
-                    );
-                }
-
                 if (viewMode === 'events') {
                      return (
                         <div className="w-full h-full overflow-y-auto no-scrollbar" onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
@@ -2015,31 +2221,78 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                     <div className="absolute inset-0 bg-gray-900 z-0">
                         <img src={bgImage} className="w-full h-full object-cover opacity-80 transition-opacity duration-500" alt="background" />
                     </div>
-                    
+
+                    {/* ======= THỜI TIẾT ======= */}
+                    <div className="absolute top-0 inset-x-0 z-30 px-3 pt-2 pb-0"
+                        onTouchStart={stopSwipe} onTouchEnd={stopSwipe}>
+                        
+                        {/* Hàng 1: 7 ô thời tiết */}
+                        <div className="flex justify-between overflow-x-auto no-scrollbar gap-1.5">
+                            {weather ? weather.time.slice(0, 7).map((t, i) => (
+                                <div key={t} className={'flex flex-col items-center min-w-[38px] p-1.5 rounded-lg ' + (i === 0 ? 'bg-white/20' : 'bg-black/10')}>
+                                    <span className="text-[9px] opacity-80 mb-0.5">{i === 0 ? 'Hôm nay' : weekDays[new Date(t).getDay()]}</span>
+                                    <div className="my-0.5 scale-75">{getWeatherIcon(weather.weathercode[i])}</div>
+                                    <div className="text-[9px] flex flex-col items-center leading-tight">
+                                        <span className="font-bold">{Math.round(weather.temperature_2m_max[i])}°</span>
+                                        <span className="opacity-60">{Math.round(weather.temperature_2m_min[i])}°</span>
+                                    </div>
+                                </div>
+                            )) : Array.from({length: 7}).map((_, i) => (
+                                <div key={i} className="flex flex-col items-center min-w-[38px] p-1.5 rounded-lg bg-black/10 opacity-40">
+                                    <span className="text-[9px] mb-0.5">--</span>
+                                    <div className="my-0.5 w-5 h-5 rounded-full bg-white/20"></div>
+                                    <span className="text-[9px]">--°</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Hàng 2: nút chọn thành phố + trạng thái tải, căn phải */}
+                        <div className="flex items-center justify-between mt-0.5">
+                            <div className="flex items-center gap-2">
+                                {!weather && <span className="text-[9px] opacity-60 animate-pulse">Đang tải thời tiết...</span>}
+                            </div>
+                            <button onClick={() => setShowWeatherSearch(v => !v)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-yellow-300 hover:text-yellow-200 transition">
+                                <MapPin size={10}/> {locationName} <ChevronDown size={10} className={showWeatherSearch ? 'rotate-180 transition-transform' : 'transition-transform'}/>
+                            </button>
+                        </div>
+
+                        {/* Form tìm kiếm thành phố (ẩn/hiện) */}
+                        {showWeatherSearch && (
+                            <form onSubmit={(e) => { handleSearch(e); setShowWeatherSearch(false); }} className="flex items-center gap-2 mt-1 bg-white/20 p-1.5 rounded-lg w-full">
+                                <button type="submit" className="p-1 hover:bg-white/10 rounded"><Search size={14} className="text-white shrink-0"/></button>
+                                <input autoFocus className="flex-1 bg-transparent outline-none text-white placeholder-white/70 text-xs font-bold" placeholder="Nhập tên thành phố..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} />
+                            </form>
+                        )}
+                    </div>
+                    {/* ======= END THỜI TIẾT ======= */}
+
                     <button onClick={goPrevDay} className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-2 bg-black/20 hover:bg-black/50 rounded-full text-white/50 hover:text-white transition"><ChevronLeft size={32}/></button>
                     <button onClick={goNextDay} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 bg-black/20 hover:bg-black/50 rounded-full text-white/50 hover:text-white transition"><ChevronRight size={32}/></button>
 
-                    <div className={`relative z-10 flex-1 flex flex-col items-center gap-2 overflow-hidden ${animClass}`}>
+                    <div className={`relative z-10 flex-1 flex flex-col items-center gap-1 overflow-hidden ${animClass}`}>
                         
-                        {/* Khu vực Ngày chính */}
-                        <div className="text-center drop-shadow-lg mt-12 z-20 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" onClick={() => setToday(new Date())} title="Về hôm nay">
-                            <p className="text-2xl font-light uppercase tracking-widest mb-1 text-white/90">{getDayOfWeek(today)}</p>
-                            <h2 className="text-[7rem] md:text-[8rem] font-bold leading-none text-white">{today.getDate()}</h2>
-                            <p className="text-xl mt-2 font-medium text-white/90">Tháng {today.getMonth() + 1} - {today.getFullYear()}</p>
-                            <div className="mt-4 inline-block bg-white/20 backdrop-blur-sm px-6 py-2 rounded-full text-base border border-white/30 font-serif">
-                                Âm lịch: {getLunarDate(today)}
+                        {/* Khu vực Ngày chính – đã giảm margin-top và cỡ chữ để vừa màn hình */}
+                        {/* Tăng margin-top từ mt-16 lên mt-20 để đẩy xuống thêm khoảng 1cm */}
+                        <div className="text-center drop-shadow-lg mt-20 z-20 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" onClick={() => setToday(new Date())} title="Về hôm nay">
+                            <p className="text-xl font-light uppercase tracking-widest mb-0.5 text-white/90">{getDayOfWeek(today)}</p>
+                            <h2 className="text-[5.5rem] md:text-[6rem] font-bold leading-none text-white">{today.getDate()}</h2>
+                            <p className="text-base mt-1 font-medium text-white/90">Tháng {today.getMonth() + 1} - {today.getFullYear()}</p>
+                            <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
+                                <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-1 rounded-full text-sm border border-white/30 font-serif">
+                                    Âm lịch: {getLunarDate(today)}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Thẻ Thông Tin Trung Tâm */}
+                        {/* Thẻ Thông Tin Trung Tâm – giảm padding để tiết kiệm không gian */}
                         <div className="w-full max-w-md mt-auto relative group z-30 flex-1 flex flex-col justify-end pb-0">
-                            <div className="bg-black/20 backdrop-blur-sm rounded-t-2xl p-6 border-t border-x border-white/10 flex-1 flex flex-col justify-center items-center relative transition-all duration-300">
-                                <div className="absolute top-3 right-3">
-                                    <button onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} className="p-1 opacity-60 hover:opacity-100 transition bg-black/20 rounded-full"><MoreVertical size={16} /></button>
+                            {/* Giảm 1/4 chiều cao thanh nền danh ngôn: thêm max-h-[65%] và overflow-hidden, giảm padding dọc */}
+                            <div className="bg-black/20 backdrop-blur-sm rounded-t-2xl px-4 py-2 border-t border-x border-white/10 flex-1 flex flex-col justify-center items-center relative transition-all duration-300 max-h-[65%] overflow-hidden">
+                                <div className="absolute top-2 right-2">
+                                    <button onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} className="p-1 opacity-60 hover:opacity-100 transition bg-black/20 rounded-full"><MoreVertical size={15} /></button>
                                     {showMenu && (
-                                        <div className="absolute right-0 top-8 bg-white text-gray-800 rounded-lg shadow-xl w-32 py-1 z-50 fade-in overflow-hidden text-sm font-medium">
+                                        <div className="absolute right-0 top-7 bg-white text-gray-800 rounded-lg shadow-xl w-32 py-1 z-50 fade-in overflow-hidden text-sm font-medium">
                                             <button onClick={() => { setViewMode('verse'); setShowMenu(false); }} className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${viewMode==='verse'?'text-blue-600 bg-blue-50':''}`}>Danh ngôn</button>
-                                            <button onClick={() => { setViewMode('weather'); setShowMenu(false); }} className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${viewMode==='weather'?'text-blue-600 bg-blue-50':''}`}>Thời tiết</button>
                                             <button onClick={() => { setViewMode('events'); setShowMenu(false); }} className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${viewMode==='events'?'text-blue-600 bg-blue-50':''}`}>Sự kiện</button>
                                         </div>
                                     )}
@@ -2058,6 +2311,28 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
             const [showEventModal, setShowEventModal] = useState(false);
             const [animClass, setAnimClass] = useState('');
             const [touchStart, setTouchStart] = useState(null);
+
+            // Bộ chọn nhanh Năm / Tháng / Ngày — mở khi bấm vào tiêu đề "Tháng X / Y"
+            const [showQuickJump, setShowQuickJump] = useState(false);
+            const [pickerYear, setPickerYear] = useState(currentDate.getFullYear());
+            const [pickerMonth, setPickerMonth] = useState(currentDate.getMonth());
+
+            const openQuickJump = () => {
+                setPickerYear(currentDate.getFullYear());
+                setPickerMonth(currentDate.getMonth());
+                setShowQuickJump(true);
+            };
+
+            const pickerDaysInMonth = new Date(pickerYear, pickerMonth + 1, 0).getDate();
+            const pickerStartDayIndex = new Date(pickerYear, pickerMonth, 1).getDay() === 0 ? 6 : new Date(pickerYear, pickerMonth, 1).getDay() - 1;
+            const pickerDays = Array(pickerStartDayIndex).fill(null).concat(Array.from({length: pickerDaysInMonth}, (_, i) => i + 1));
+
+            const handlePickDay = (d) => {
+                const newDate = new Date(pickerYear, pickerMonth, d);
+                setCurrentDate(new Date(pickerYear, pickerMonth, 1));
+                setSelectedDate(newDate);
+                setShowQuickJump(false);
+            };
             
             // START: Logic vuốt sang ngang để chuyển tháng (Sửa lỗi 1)
             const onTouchStart = (e) => { 
@@ -2172,9 +2447,69 @@ Quy tắc key: [thứ]_[tiết]_[cột] — thứ: t2/t3/t4/t5/t6/t7 — tiết:
                 <div className="p-4 select-none perspective-container" style={{ color: theme.textColor }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
                     <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-150">
                         <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft className="text-gray-600" /></button>
-                        <h2 className="text-lg font-bold uppercase text-gray-800">Tháng {month + 1} / {year}</h2>
+                        <button onClick={openQuickJump} className="text-lg font-bold uppercase text-gray-800 hover:text-blue-600 transition flex items-center gap-1.5">
+                            Tháng {month + 1} / {year}
+                            <ChevronDown size={16} className="text-gray-400"/>
+                        </button>
                         <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight className="text-gray-600" /></button>
                     </div>
+
+                    {/* MỚI: Popup chọn nhanh Năm / Tháng / Ngày */}
+                    {showQuickJump && (
+                        <div className="fixed inset-0 bg-black/50 z-[70] flex items-end sm:items-center justify-center" onClick={() => setShowQuickJump(false)}>
+                            <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
+                                    <h3 className="font-bold text-sm">Chọn ngày</h3>
+                                    <button onClick={() => setShowQuickJump(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-500 transition"><X size={18}/></button>
+                                </div>
+                                <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                                    {/* Chọn năm */}
+                                    <div className="flex items-center justify-center gap-4">
+                                        <button onClick={() => setPickerYear(y => y - 1)} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft size={18} className="text-gray-600"/></button>
+                                        <input type="number" value={pickerYear}
+                                            onChange={e => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) setPickerYear(v); }}
+                                            className="w-24 text-center text-lg font-bold border border-slate-200 rounded-lg py-1.5 outline-none focus:border-blue-500" />
+                                        <button onClick={() => setPickerYear(y => y + 1)} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight size={18} className="text-gray-600"/></button>
+                                    </div>
+
+                                    {/* Chọn tháng */}
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {Array.from({length: 12}, (_, i) => i).map(m => (
+                                            <button key={m} onClick={() => setPickerMonth(m)}
+                                                className={'py-2 rounded-lg text-xs font-bold transition ' + (m === pickerMonth ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-50')}>
+                                                Th{m + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Chọn ngày */}
+                                    <div>
+                                        <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                                            {['T2','T3','T4','T5','T6','T7','CN'].map(d => <div key={d} className="text-[10px] font-bold text-gray-400">{d}</div>)}
+                                        </div>
+                                        <div className="grid grid-cols-7 gap-1">
+                                            {pickerDays.map((d, idx) => {
+                                                if (!d) return <div key={idx} className="aspect-square"/>;
+                                                const isSel = pickerYear === selectedDate.getFullYear() && pickerMonth === selectedDate.getMonth() && d === selectedDate.getDate();
+                                                const isToday = pickerYear === new Date().getFullYear() && pickerMonth === new Date().getMonth() && d === new Date().getDate();
+                                                return (
+                                                    <button key={idx} onClick={() => handlePickDay(d)}
+                                                        className={'aspect-square flex items-center justify-center rounded-lg text-xs font-semibold transition ' + (isSel ? 'bg-blue-600 text-white' : 'bg-gray-50 hover:bg-blue-50 text-gray-700') + (isToday && !isSel ? ' border-2 border-blue-500' : '')}>
+                                                        {d}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <button onClick={() => { const t = new Date(); setPickerYear(t.getFullYear()); setPickerMonth(t.getMonth()); }}
+                                        className="w-full py-2 rounded-xl border border-blue-200 text-blue-600 font-bold text-xs hover:bg-blue-50 transition">
+                                        📍 Hôm nay
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <div className="grid grid-cols-7 gap-1 text-center mb-2">
                         {['T2','T3','T4','T5','T6','T7','CN'].map((d, i) => <div key={d} className={`text-sm font-bold ${getDayColor(i)}`}>{d}</div>)}
                     </div>
