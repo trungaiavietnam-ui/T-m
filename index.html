@@ -426,23 +426,155 @@
             return { text: 'Sắp đến hạn', isOverdue: false };
         };
 
+        // ==================================================================================
+        // THUẬT TOÁN CHUYỂN ĐỔI DƯƠNG LỊCH SANG ÂM LỊCH VIỆT NAM (dựa trên múi giờ UTC+7)
+        // Nguyên lý: xác định các điểm Sóc (New Moon - thời điểm trăng non) và kinh độ Mặt Trời
+        // theo tọa độ thiên văn, quy đổi mọi mốc thời gian về múi giờ Việt Nam (UTC+7) để
+        // tính đúng ngày bắt đầu tháng Âm lịch và năm nhuận theo quy ước lịch Việt Nam.
+        // ==================================================================================
+        const VN_TIMEZONE = 7; // Việt Nam sử dụng múi giờ UTC+7 làm chuẩn tính lịch Âm
+
+        // Quy đổi ngày Dương lịch (dd/mm/yyyy) sang số ngày Julius (Julian Day Number)
+        const jdFromDate = (dd, mm, yy) => {
+            const a = Math.floor((14 - mm) / 12);
+            const y = yy + 4800 - a;
+            const m = mm + 12 * a - 3;
+            let jd = dd + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4)
+                - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+            if (jd < 2299161) {
+                jd = dd + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - 32083;
+            }
+            return jd;
+        };
+
+        // Tính kinh độ Mặt Trời (đơn vị: cung 30 độ, 0-11) tại thời điểm jdn, quy theo múi giờ
+        const getSunLongitude = (jdn, timeZone) => {
+            const T = (jdn - 2451545.5 - timeZone / 24) / 36525;
+            const T2 = T * T;
+            const dr = Math.PI / 180;
+            const M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
+            const L0 = 280.46645 + 36000.76983 * T + 0.0003032 * T2;
+            let DL = (1.914600 - 0.004817 * T - 0.000014 * T2) * Math.sin(dr * M);
+            DL += (0.019993 - 0.000101 * T) * Math.sin(dr * 2 * M) + 0.000290 * Math.sin(dr * 3 * M);
+            let L = (L0 + DL) * dr;
+            L -= Math.PI * 2 * Math.floor(L / (Math.PI * 2));
+            return Math.floor((L / Math.PI) * 6);
+        };
+
+        // Tính thời điểm Sóc (New Moon) lần thứ k kể từ mốc gốc, trả về số ngày Julius quy theo múi giờ
+        const getNewMoonDay = (k, timeZone) => {
+            const T = k / 1236.85;
+            const T2 = T * T;
+            const T3 = T2 * T;
+            const dr = Math.PI / 180;
+            let jd1 = 2415020.75933 + 29.53058868 * k + 0.0001178 * T2 - 0.000000155 * T3;
+            jd1 += 0.00033 * Math.sin((166.56 + 132.87 * T - 0.009173 * T2) * dr);
+            const M = 359.2242 + 29.10535608 * k - 0.0000333 * T2 - 0.00000347 * T3;
+            const Mpr = 306.0253 + 385.81691806 * k + 0.0107306 * T2 + 0.00001236 * T3;
+            const F = 21.2964 + 390.67050646 * k - 0.0016528 * T2 - 0.00000239 * T3;
+            let C1 = (0.1734 - 0.000393 * T) * Math.sin(M * dr) + 0.0021 * Math.sin(2 * dr * M);
+            C1 -= 0.4068 * Math.sin(Mpr * dr) + 0.0161 * Math.sin(dr * 2 * Mpr);
+            C1 -= 0.0004 * Math.sin(dr * 3 * Mpr);
+            C1 += 0.0104 * Math.sin(dr * 2 * F) - 0.0051 * Math.sin(dr * (M + Mpr));
+            C1 -= 0.0074 * Math.sin(dr * (M - Mpr)) + 0.0004 * Math.sin(dr * (2 * F + M));
+            C1 -= 0.0004 * Math.sin(dr * (2 * F - M)) - 0.0006 * Math.sin(dr * (2 * F + Mpr));
+            C1 += 0.0010 * Math.sin(dr * (2 * F - Mpr)) + 0.0005 * Math.sin(dr * (2 * Mpr + M));
+            let deltaT;
+            if (T < -11) {
+                deltaT = 0.001 + 0.000839 * T + 0.0002261 * T2 - 0.00000845 * T3 - 0.000000081 * T * T3;
+            } else {
+                deltaT = -0.000278 + 0.000265 * T + 0.000262 * T2;
+            }
+            const jdNew = jd1 + C1 - deltaT;
+            return Math.floor(jdNew + 0.5 + timeZone / 24);
+        };
+
+        // Tìm ngày (Julius) mà tháng 11 Âm lịch của năm yy bắt đầu (dùng làm mốc quy chiếu năm Âm lịch)
+        const getLunarMonth11 = (yy, timeZone) => {
+            const off = jdFromDate(31, 12, yy) - 2415021;
+            const k = Math.floor(off / 29.530588853);
+            let nm = getNewMoonDay(k, timeZone);
+            if (getSunLongitude(nm, timeZone) >= 9) {
+                nm = getNewMoonDay(k - 1, timeZone);
+            }
+            return nm;
+        };
+
+        // Xác định tháng nhuận (nếu năm Âm lịch có 13 tháng) rơi vào vị trí thứ mấy
+        const getLeapMonthOffset = (a11, timeZone) => {
+            const k = Math.floor((a11 - 2415021.076998695) / 29.530588853 + 0.5);
+            let last = getSunLongitude(getNewMoonDay(k + 1, timeZone), timeZone);
+            let i = 1;
+            let arc = last;
+            do {
+                i++;
+                last = arc;
+                arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone);
+            } while (arc !== last && i < 14);
+            return i - 1;
+        };
+
+        // HÀM CHÍNH: chuyển một ngày Dương lịch (dd/mm/yyyy) sang ngày Âm lịch Việt Nam
+        // Trả về { day, month, year, leap } — leap = true nếu rơi vào tháng nhuận
+        const convertSolar2Lunar = (dd, mm, yy, timeZone = VN_TIMEZONE) => {
+            const dayNumber = jdFromDate(dd, mm, yy);
+            const k = Math.floor((dayNumber - 2415021.076998695) / 29.530588853);
+            let monthStart = getNewMoonDay(k + 1, timeZone);
+            if (monthStart > dayNumber) monthStart = getNewMoonDay(k, timeZone);
+
+            let a11 = getLunarMonth11(yy, timeZone);
+            let b11 = a11;
+            let lunarYear;
+            if (a11 >= monthStart) {
+                lunarYear = yy;
+                a11 = getLunarMonth11(yy - 1, timeZone);
+            } else {
+                lunarYear = yy + 1;
+                b11 = getLunarMonth11(yy + 1, timeZone);
+            }
+
+            const lunarDay = dayNumber - monthStart + 1;
+            const diff = Math.floor((monthStart - a11) / 29);
+            let lunarLeap = false;
+            let lunarMonth = diff + 11;
+
+            if (b11 - a11 > 365) {
+                const leapMonthOff = getLeapMonthOffset(a11, timeZone);
+                if (diff >= leapMonthOff) {
+                    lunarMonth = diff + 10;
+                    if (diff === leapMonthOff) lunarLeap = true;
+                }
+            }
+            if (lunarMonth > 12) lunarMonth -= 12;
+            if (lunarMonth >= 11 && diff < 4) lunarYear -= 1;
+
+            return { day: lunarDay, month: lunarMonth, year: lunarYear, leap: lunarLeap };
+        };
+
+        // Quy đổi một đối tượng Date bất kỳ (theo giờ máy người dùng) về đúng ngày/tháng/năm
+        // theo múi giờ UTC+7 của Việt Nam, để đảm bảo tính Âm lịch luôn chính xác dù người dùng ở múi giờ khác
+        // Nguyên lý: date.getTime() luôn là mốc thời gian UTC tuyệt đối (bất kể múi giờ máy đang đặt là gì),
+        // nên chỉ cần cộng thêm đúng 7 giờ rồi đọc lại bằng các hàm getUTC... để có ngày/giờ theo giờ Việt Nam.
+        const toVNDateParts = (date) => {
+            const vnMs = date.getTime() + VN_TIMEZONE * 3600000;
+            const vnDate = new Date(vnMs);
+            return { dd: vnDate.getUTCDate(), mm: vnDate.getUTCMonth() + 1, yy: vnDate.getUTCFullYear() };
+        };
+        // ==================== KẾT THÚC THUẬT TOÁN CHUYỂN ĐỔI ÂM LỊCH VIỆT NAM ====================
+
         const getLunarDate = (date) => {
             try {
-                const formatter = new Intl.DateTimeFormat('vi-VN', { calendar: 'chinese', day: 'numeric', month: 'numeric' });
-                const parts = formatter.formatToParts(date);
-                return `${parts.find(p => p.type === 'day').value}/${parts.find(p => p.type === 'month').value}`;
+                const { dd, mm, yy } = toVNDateParts(date);
+                const lunar = convertSolar2Lunar(dd, mm, yy, VN_TIMEZONE);
+                return `${lunar.day}/${lunar.month}${lunar.leap ? ' (nhuận)' : ''}`;
             } catch (e) { return ''; }
         };
 
         const getLunarDetails = (date) => {
             try {
-                const formatter = new Intl.DateTimeFormat('vi-VN', { calendar: 'chinese', day: 'numeric', month: 'numeric' });
-                const parts = formatter.formatToParts(date);
-                return { 
-                    day: parseInt(parts.find(p => p.type === 'day').value),
-                    month: parseInt(parts.find(p => p.type === 'month').value)
-                };
-            } catch (e) { return { day: 0, month: 0 }; }
+                const { dd, mm, yy } = toVNDateParts(date);
+                return convertSolar2Lunar(dd, mm, yy, VN_TIMEZONE);
+            } catch (e) { return { day: 0, month: 0, year: 0, leap: false }; }
         };
 
         const getDayOfWeek = (date) => {
@@ -2502,9 +2634,19 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 });
             };
 
-            const handleAddEvent = async (title, repeatType, weeklyMonths) => {
-                const data = { title, date: Timestamp.fromDate(selectedDate), repeat: repeatType };
-                if (repeatType === 'lunar') { const lunar = getLunarDetails(selectedDate); data.lunarDay = lunar.day; data.lunarMonth = lunar.month; }
+            const handleAddEvent = async (title, repeatType, weeklyMonths, eventDateStr) => {
+                // SỬA LỖI: cho phép chọn ngày/tháng/năm bất kỳ khi thêm sự kiện,
+                // thay vì luôn gán cứng vào ngày đang được chọn trên lịch (selectedDate).
+                let eventDate = selectedDate;
+                if (eventDateStr) {
+                    const [yyyy, mm, dd] = eventDateStr.split('-').map(Number);
+                    if (yyyy && mm && dd) {
+                        eventDate = new Date(selectedDate);
+                        eventDate.setFullYear(yyyy, mm - 1, dd);
+                    }
+                }
+                const data = { title, date: Timestamp.fromDate(eventDate), repeat: repeatType };
+                if (repeatType === 'lunar') { const lunar = getLunarDetails(eventDate); data.lunarDay = lunar.day; data.lunarMonth = lunar.month; }
                 if (repeatType === 'weekly' && weeklyMonths && weeklyMonths.length > 0) { data.weeklyMonths = weeklyMonths; }
                 await addDoc(eventsRef, data);
             };
@@ -2605,7 +2747,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                     </div>
                     <div className="mt-6 flex justify-center gap-2">
                          <button onClick={() => setShowEventModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform"><Plus size={16}/> Thêm sự kiện</button>
-                         <button onClick={() => onTabChange('day')} className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform">Hôm nay</button>
+                         <button onClick={() => { const t = new Date(); setCurrentDate(t); setSelectedDate(t); }} className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold active:scale-95 transition-transform">Hôm nay</button>
                     </div>
                     {showEventModal && <EventModal 
                         date={selectedDate} 
@@ -2639,6 +2781,12 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
 
         const EventModal = ({ date, events, onClose, onAdd, onDelete, onUpdate }) => {
             const [newEvent, setNewEvent] = useState('');
+            const [newEventDate, setNewEventDate] = useState(() => {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            });
             const [repeatType, setRepeatType] = useState('none'); 
             const [weeklyMonths, setWeeklyMonths] = useState([]); // [] = mọi tháng; [1,3,5,...] = tháng cụ thể
             const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -2825,8 +2973,14 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                 </div>
                             )}
                             <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    value={newEventDate}
+                                    onChange={e => setNewEventDate(e.target.value)}
+                                    className="border rounded px-2 py-2 text-xs outline-none focus:border-blue-500 text-slate-800 w-[124px] shrink-0"
+                                />
                                 <input className="flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800" placeholder="Tên sự kiện..." value={newEvent} onChange={e => setNewEvent(e.target.value)} />
-                                <button onClick={() => { if(newEvent.trim()) { onAdd(newEvent, repeatType, weeklyMonths); setNewEvent(''); setWeeklyMonths([]); } }} className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"><Plus size={20}/></button>
+                                <button onClick={() => { if(newEvent.trim()) { onAdd(newEvent, repeatType, weeklyMonths, newEventDate); setNewEvent(''); setWeeklyMonths([]); } }} className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"><Plus size={20}/></button>
                             </div>
                         </div>
                     </div>
