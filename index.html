@@ -3566,6 +3566,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 setTodayEvents(todays);
             }), [today, eventsRef]);
 
+            // Tự động làm mới thời tiết mỗi 30 phút
             useEffect(() => {
                 const fetchWeather = async () => {
                     try {
@@ -3576,10 +3577,13 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                             const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
                             const weatherData = await weatherRes.json();
                             setWeather(weatherData.daily);
+                            toast.info("Đã cập nhật thời tiết!", { position: "top-center" });
                         }
                     } catch (e) { console.error("Lỗi thời tiết", e); }
                 };
                 fetchWeather();
+                const interval = setInterval(fetchWeather, 30 * 60 * 1000);
+                return () => clearInterval(interval);
             }, [locationName]);
 
             const handleSearch = (e) => { e.preventDefault(); if(searchQuery.trim()) { setLocationName(searchQuery); } };
@@ -3687,6 +3691,9 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                         <div className="flex items-center justify-between mt-0.5">
                             <div className="flex items-center gap-2">
                                 {!weather && <span className="text-[9px] opacity-60 animate-pulse">Đang tải thời tiết...</span>}
+                                <button onClick={() => fetchWeather()} className="text-[9px] bg-white/20 hover:bg-white/30 p-1 rounded-full transition" title="Làm mới thời tiết">
+                                    <RefreshCw size={12} />
+                                </button>
                             </div>
                             <button onClick={() => setShowWeatherSearch(v => !v)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-yellow-300 hover:text-yellow-200 transition">
                                 <MapPin size={10}/> {locationName} <ChevronDown size={10} className={showWeatherSearch ? 'rotate-180 transition-transform' : 'transition-transform'}/>
@@ -3935,12 +3942,12 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
 
                     {showQuickJump && (
                         <div className="fixed inset-0 bg-black/50 z-[70] flex items-end sm:items-center justify-center" onClick={() => setShowQuickJump(false)}>
-                            <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                                <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
+                            <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white shrink-0">
                                     <h3 className="font-bold text-sm">Chọn ngày</h3>
                                     <button onClick={() => setShowQuickJump(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-500 transition"><X size={18}/></button>
                                 </div>
-                                <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                                <div className="p-4 space-y-4 overflow-y-auto flex-1">
                                     <div className="flex items-center justify-center gap-4">
                                         <button onClick={() => setPickerYear(y => y - 1)} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft size={18} className="text-gray-600"/></button>
                                         <input type="number" value={pickerYear}
@@ -4078,6 +4085,13 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 const val = e.target.value;
                 setRepeat(val);
             };
+
+            // Gọi requestPermission khi bật lần đầu
+            useEffect(() => {
+                if (enabled && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }, [enabled]);
 
             return (
                 <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
@@ -4238,8 +4252,28 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 if (!reminderTimeStr || !('Notification' in window) || Notification.permission !== 'granted') return;
                 try {
                     const baseTime = new Date(reminderTimeStr);
-                    const triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
+                    let triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
                     if (triggerTime.getTime() <= Date.now()) return; // không lên lịch quá khứ
+                    
+                    // Nếu lặp lại, tính triggerTime dựa trên lần lặp tiếp theo
+                    if (repeatType === 'daily') {
+                        // Đặt trigger vào cùng giờ vào ngày mai
+                        triggerTime = new Date(baseTime);
+                        triggerTime.setDate(triggerTime.getDate() + 1);
+                        triggerTime.setHours(baseTime.getHours(), baseTime.getMinutes(), 0, 0);
+                        // Nếu vẫn quá khứ, thì lùi lại cho đến khi trong tương lai
+                        while (triggerTime.getTime() <= Date.now()) {
+                            triggerTime.setDate(triggerTime.getDate() + 1);
+                        }
+                    } else if (repeatType === 'custom') {
+                        const days = parseInt(document.querySelector('input[type="number"]')?.value) || 1;
+                        triggerTime = new Date(baseTime);
+                        triggerTime.setDate(triggerTime.getDate() + days);
+                        while (triggerTime.getTime() <= Date.now()) {
+                            triggerTime.setDate(triggerTime.getDate() + days);
+                        }
+                    }
+
                     if (!('showTrigger' in Notification.prototype)) {
                         console.warn('Trình duyệt không hỗ trợ Notification Triggers API');
                         return;
@@ -4252,7 +4286,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                         requireInteraction: true,
                         showTrigger: new TimestampTrigger(triggerTime)
                     });
-                    // Phát âm thanh nhẹ (thêm để báo hiệu)
+                    // Phát âm thanh nhẹ
                     try {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         const oscillator = audioCtx.createOscillator();
@@ -4269,7 +4303,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 }
             };
 
-            // Kiểm tra và xin phép thông báo khi bật reminder
+            // Gọi requestPermission khi bật reminder
             useEffect(() => {
                 if (reminderEnabled && Notification.permission === 'default') {
                     Notification.requestPermission();
@@ -4520,8 +4554,17 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                     try {
                         const baseTime = new Date(finalReminder);
                         const offsetMinutes = reminderOffset === 'custom' ? (parseInt(document.querySelector('input[type="number"]')?.value) || 30) : reminderOffset;
-                        const triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
-                        if (triggerTime.getTime() > Date.now() && 'showTrigger' in Notification.prototype) {
+                        let triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
+                        if (triggerTime.getTime() <= Date.now()) {
+                            // Nếu quá khứ, set vào ngày mai cùng giờ
+                            triggerTime = new Date(baseTime);
+                            triggerTime.setDate(triggerTime.getDate() + 1);
+                            triggerTime.setHours(baseTime.getHours(), baseTime.getMinutes(), 0, 0);
+                            while (triggerTime.getTime() <= Date.now()) {
+                                triggerTime.setDate(triggerTime.getDate() + 1);
+                            }
+                        }
+                        if ('showTrigger' in Notification.prototype) {
                             const registration = await navigator.serviceWorker.ready;
                             await registration.showNotification(`⏰ Nhắc nhở: ${text}`, {
                                 body: `Deadline: ${deadline ? new Date(deadline).toLocaleString('vi-VN') : 'Không có'}`,
@@ -4616,8 +4659,16 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                     try {
                         const baseTime = new Date(finalReminder);
                         const offsetMinutes = reminderOffset === 'custom' ? (parseInt(document.querySelector('input[type="number"]')?.value) || 30) : reminderOffset;
-                        const triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
-                        if (triggerTime.getTime() > Date.now() && 'showTrigger' in Notification.prototype) {
+                        let triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
+                        if (triggerTime.getTime() <= Date.now()) {
+                            triggerTime = new Date(baseTime);
+                            triggerTime.setDate(triggerTime.getDate() + 1);
+                            triggerTime.setHours(baseTime.getHours(), baseTime.getMinutes(), 0, 0);
+                            while (triggerTime.getTime() <= Date.now()) {
+                                triggerTime.setDate(triggerTime.getDate() + 1);
+                            }
+                        }
+                        if ('showTrigger' in Notification.prototype) {
                             const registration = await navigator.serviceWorker.ready;
                             await registration.showNotification(`📝 Nhắc ghi chú: ${title || 'Không tiêu đề'}`, {
                                 body: content ? content.slice(0, 60) : '',
@@ -5624,9 +5675,6 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                             console.warn('Lỗi đăng ký Service Worker:', err);
                         });
                 }
-
-                // Yêu cầu quyền thông báo khi tương tác, không gọi tự động ngay
-                // Chỉ gọi khi người dùng bật nhắc nhở trong các modal
             }, []);
 
             useEffect(() => {
@@ -5649,9 +5697,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                             }
                         }
 
-                        if ('Notification' in window && Notification.permission !== 'granted') {
-                            // Không request tự động, để khi người dùng bật nhắc nhở
-                        }
+                        // Không request quyền ở đây, để trong ReminderSettings
 
                         onAuthStateChanged(auth, async (u) => {
                             setUser(u);
