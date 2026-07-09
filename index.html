@@ -4055,14 +4055,29 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 { value: 60, label: '1 giờ trước' },
                 { value: 120, label: '2 giờ trước' },
                 { value: 1440, label: '1 ngày trước' },
+                { value: 'custom', label: 'Tùy chỉnh...' },
             ];
             const REPEAT_OPTIONS = [
                 { value: 'none', label: 'Không lặp' },
                 { value: 'daily', label: 'Hàng ngày' },
-                { value: 'weekly', label: 'Hàng tuần' },
-                { value: 'monthly', label: 'Hàng tháng' },
-                { value: 'yearly', label: 'Hàng năm' },
+                { value: 'custom', label: 'Tùy chỉnh (ngày)' },
             ];
+
+            const [customOffset, setCustomOffset] = useState(30);
+            const [customRepeatDays, setCustomRepeatDays] = useState(1);
+
+            const handleOffsetChange = (e) => {
+                const val = e.target.value;
+                setOffset(val);
+                if (val !== 'custom') {
+                    // nếu chọn giá trị khác, không cần custom
+                }
+            };
+
+            const handleRepeatChange = (e) => {
+                const val = e.target.value;
+                setRepeat(val);
+            };
 
             return (
                 <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
@@ -4094,24 +4109,48 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                     <select
                                         className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none bg-white"
                                         value={offset}
-                                        onChange={e => setOffset(parseInt(e.target.value, 10))}
+                                        onChange={handleOffsetChange}
                                     >
                                         {OFFSET_OPTIONS.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>
+                                    {offset === 'custom' && (
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={customOffset}
+                                                onChange={e => setCustomOffset(parseInt(e.target.value, 10) || 1)}
+                                                className="w-20 px-2 py-1 border rounded text-sm text-slate-800"
+                                            />
+                                            <span className="text-xs text-slate-500">phút</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1">
                                     <label className="text-[10px] font-bold text-slate-500 uppercase">Lặp lại</label>
                                     <select
                                         className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none bg-white"
                                         value={repeat}
-                                        onChange={e => setRepeat(e.target.value)}
+                                        onChange={handleRepeatChange}
                                     >
                                         {REPEAT_OPTIONS.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>
+                                    {repeat === 'custom' && (
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={customRepeatDays}
+                                                onChange={e => setCustomRepeatDays(parseInt(e.target.value, 10) || 1)}
+                                                className="w-20 px-2 py-1 border rounded text-sm text-slate-800"
+                                            />
+                                            <span className="text-xs text-slate-500">ngày</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -4213,16 +4252,43 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                         requireInteraction: true,
                         showTrigger: new TimestampTrigger(triggerTime)
                     });
+                    // Phát âm thanh nhẹ (thêm để báo hiệu)
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        oscillator.frequency.value = 800;
+                        gainNode.gain.value = 0.2;
+                        oscillator.start();
+                        setTimeout(() => oscillator.stop(), 200);
+                    } catch (e) { /* Bỏ qua nếu không hỗ trợ AudioContext */ }
                 } catch (error) {
                     console.warn('Lỗi lên lịch thông báo:', error);
                 }
             };
 
+            // Kiểm tra và xin phép thông báo khi bật reminder
+            useEffect(() => {
+                if (reminderEnabled && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }, [reminderEnabled]);
+
             const handleAddWithReminder = async () => {
                 if (!newEvent.trim()) return;
+                // Nếu reminder được bật nhưng chưa có thời gian, đặt mặc định là thời gian hiện tại + 1 giờ
+                let finalReminderTime = reminderTime;
+                if (reminderEnabled && !finalReminderTime) {
+                    const d = new Date();
+                    d.setHours(d.getHours() + 1);
+                    finalReminderTime = formatDateTimeForInput(d);
+                }
                 await onAdd(newEvent, repeatType, weeklyMonths, newEventDate);
-                if (reminderEnabled && reminderTime) {
-                    await scheduleReminder(newEvent, reminderTime, reminderOffset, reminderRepeat);
+                if (reminderEnabled && finalReminderTime) {
+                    const offsetMinutes = reminderOffset === 'custom' ? (parseInt(document.querySelector('input[type="number"]')?.value) || 30) : reminderOffset;
+                    await scheduleReminder(newEvent, finalReminderTime, offsetMinutes, reminderRepeat);
                 }
                 setNewEvent('');
                 setWeeklyMonths([]);
@@ -4343,7 +4409,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                 })}
                             </ul>
                         </div>
-                        <div className="p-4 border-t bg-gray-50 flex flex-col gap-2">
+                        <div className="p-4 border-t bg-gray-50 flex flex-col gap-2 max-h-60 overflow-y-auto">
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center justify-end">
                                     {repeatType !== 'none' && (
@@ -4391,7 +4457,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                 </div>
                             )}
 
-                            {/* Reminder Settings */}
+                            {/* Reminder Settings - chuyển lên trước ô nhập */}
                             <ReminderSettings
                                 enabled={reminderEnabled}
                                 setEnabled={setReminderEnabled}
@@ -4453,7 +4519,8 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 if (reminderEnabled && finalReminder) {
                     try {
                         const baseTime = new Date(finalReminder);
-                        const triggerTime = new Date(baseTime.getTime() - reminderOffset * 60000);
+                        const offsetMinutes = reminderOffset === 'custom' ? (parseInt(document.querySelector('input[type="number"]')?.value) || 30) : reminderOffset;
+                        const triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
                         if (triggerTime.getTime() > Date.now() && 'showTrigger' in Notification.prototype) {
                             const registration = await navigator.serviceWorker.ready;
                             await registration.showNotification(`⏰ Nhắc nhở: ${text}`, {
@@ -4462,6 +4529,18 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                 requireInteraction: true,
                                 showTrigger: new TimestampTrigger(triggerTime)
                             });
+                            // Phát âm thanh
+                            try {
+                                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                                const oscillator = audioCtx.createOscillator();
+                                const gainNode = audioCtx.createGain();
+                                oscillator.connect(gainNode);
+                                gainNode.connect(audioCtx.destination);
+                                oscillator.frequency.value = 800;
+                                gainNode.gain.value = 0.2;
+                                oscillator.start();
+                                setTimeout(() => oscillator.stop(), 200);
+                            } catch (e) {}
                         }
                     } catch (e) { console.warn('Lỗi lên lịch todo:', e); }
                 }
@@ -4471,6 +4550,12 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 setReminderOffset(0);
                 setReminderRepeat('none');
             };
+
+            useEffect(() => {
+                if (reminderEnabled && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }, [reminderEnabled]);
 
             return (
                 <div className="fixed inset-0 bg-white z-40 flex flex-col animate-in slide-in-from-bottom-5">
@@ -4530,7 +4615,8 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 if (reminderEnabled && finalReminder) {
                     try {
                         const baseTime = new Date(finalReminder);
-                        const triggerTime = new Date(baseTime.getTime() - reminderOffset * 60000);
+                        const offsetMinutes = reminderOffset === 'custom' ? (parseInt(document.querySelector('input[type="number"]')?.value) || 30) : reminderOffset;
+                        const triggerTime = new Date(baseTime.getTime() - offsetMinutes * 60000);
                         if (triggerTime.getTime() > Date.now() && 'showTrigger' in Notification.prototype) {
                             const registration = await navigator.serviceWorker.ready;
                             await registration.showNotification(`📝 Nhắc ghi chú: ${title || 'Không tiêu đề'}`, {
@@ -4539,6 +4625,17 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                                 requireInteraction: true,
                                 showTrigger: new TimestampTrigger(triggerTime)
                             });
+                            try {
+                                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                                const oscillator = audioCtx.createOscillator();
+                                const gainNode = audioCtx.createGain();
+                                oscillator.connect(gainNode);
+                                gainNode.connect(audioCtx.destination);
+                                oscillator.frequency.value = 800;
+                                gainNode.gain.value = 0.2;
+                                oscillator.start();
+                                setTimeout(() => oscillator.stop(), 200);
+                            } catch (e) {}
                         }
                     } catch (e) { console.warn('Lỗi lên lịch note:', e); }
                 }
@@ -4547,6 +4644,12 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                 setReminderOffset(0);
                 setReminderRepeat('none');
             };
+
+            useEffect(() => {
+                if (reminderEnabled && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            }, [reminderEnabled]);
 
             return (
                 <div className="fixed inset-0 bg-white z-40 flex flex-col animate-in slide-in-from-bottom-5 font-sans">
@@ -5522,12 +5625,8 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                         });
                 }
 
-                // Yêu cầu quyền thông báo
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission().then(perm => {
-                        console.log('Quyền thông báo:', perm);
-                    });
-                }
+                // Yêu cầu quyền thông báo khi tương tác, không gọi tự động ngay
+                // Chỉ gọi khi người dùng bật nhắc nhở trong các modal
             }, []);
 
             useEffect(() => {
@@ -5551,7 +5650,7 @@ Ví dụ đầy đủ (chỉ là ví dụ minh họa, không copy nội dung):
                         }
 
                         if ('Notification' in window && Notification.permission !== 'granted') {
-                            Notification.requestPermission();
+                            // Không request tự động, để khi người dùng bật nhắc nhở
                         }
 
                         onAuthStateChanged(auth, async (u) => {
